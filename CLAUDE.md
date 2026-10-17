@@ -5,7 +5,7 @@
 The app version is shown at the bottom of `public/index.html`:
 
 ```html
-<span class="version-tag">v1.1.0</span> · <span class="version-date">2026/10/17</span>
+<span class="version-tag">v1.2.0</span> · <span class="version-date">2026/10/17</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown at the bottom of `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v1.1.0 — 2026/10/17**
+**Current version: v1.2.0 — 2026/10/17**
 
 ## Architecture
 
@@ -24,7 +24,8 @@ The app version is shown at the bottom of `public/index.html`:
   - `POST /api/auth/login` — verifies a Google ID token, creates a session (KV, 60 days)
   - `POST /api/auth/logout`, `GET /api/me`
   - `GET/PUT /api/words` — the signed-in user's whole word list (`wm:words:<google sub>`)
-  - `GET /api/lookup?word=` — dictionary entry: Free Dictionary API + Wiktionary in parallel (the one with more examples wins; Free Dictionary keeps the audio), Datamuse for similar words. Cached in KV (`wm:dict:<word>`, 90 days).
+  - `GET /api/lookup?word=` — dictionary entry. Priority: Merriam-Webster Learner's → Merriam-Webster Collegiate → Free Dictionary API → Wiktionary (first one with an example sentence wins). Datamuse adds similar words. Cached in KV (`wm:dict:<word>`, 90 days).
+- **Secrets** (Cloudflare dashboard → Worker → Settings → Variables and Secrets, never in the repo): `MW_LEARNER_KEY`, `MW_COLLEGIATE_KEY`. Without them the worker skips Merriam-Webster.
 - **Storage**: Workers KV namespace `word-memory`, binding `WORDS`. Keys start with `wm:`.
 - **Auth**: Google Identity Services, same OAuth client as video-repeat-player.
 - **Deploy**: Cloudflare Workers Builds (GitHub connected in the Cloudflare dashboard) — auto on push to `main`.
