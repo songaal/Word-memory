@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "word-memory",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-25",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "public",
+    "binding": "ASSETS"
+  },
+  // Word lists and login sessions. Shares the KV namespace used by video-repeat-player;
+  // every key here starts with "wm:" so the two apps never collide.
+  "kv_namespaces": [
+    {
+      "binding": "WORDS",
+      "id": "3818ed0bb72349d68834d07f056aab23"
+    }
+  ]
+}

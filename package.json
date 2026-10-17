@@ -1,0 +1,13 @@
+{
+  "name": "word-memory",
+  "version": "1.0.0",
+  "description": "Spaced Word Box: English vocabulary with dictionary lookup and spaced-repetition tests",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.105.0"
+  }
+}
