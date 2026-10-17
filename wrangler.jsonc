@@ -10,12 +10,11 @@
     "directory": "public",
     "binding": "ASSETS"
   },
-  // Word lists and login sessions. Shares the KV namespace used by video-repeat-player;
-  // every key here starts with "wm:" so the two apps never collide.
+  // Word lists and login sessions (KV namespace "word-memory"). Keys start with "wm:".
   "kv_namespaces": [
     {
       "binding": "WORDS",
-      "id": "3818ed0bb72349d68834d07f056aab23"
+      "id": "62473079ad074d29b0cb31d1b9d8e678"
     }
   ]
 }

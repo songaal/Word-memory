@@ -16,8 +16,7 @@ npx wrangler dev
 
 ## Deploy
 
-Pushing to `main` deploys to Cloudflare Workers through GitHub Actions.
+Live at https://word-memory.songaal.workers.dev
 
-One-time setup:
-1. Add the repository secret `CLOUDFLARE_API_TOKEN` (Settings → Secrets and variables → Actions). The same token as video-repeat-player works.
-2. In Google Cloud Console → Credentials → the OAuth client used by video-repeat-player, add the deployed URL (e.g. `https://word-memory.<your-subdomain>.workers.dev`) to **Authorized JavaScript origins**.
+Cloudflare Workers Builds is connected to this repository, so every push to `main` deploys automatically.
+Google sign-in requires `https://word-memory.songaal.workers.dev` in the OAuth client's **Authorized JavaScript origins**.
