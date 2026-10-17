@@ -161,8 +161,8 @@ ol.defs li{font-family:var(--f-word);font-size:17px;line-height:1.55}
   <section id="p-test" hidden></section>
   <section id="p-list" hidden></section>
 
-  <p class="note">Dictionary data: Free Dictionary API (dictionaryapi.dev). Words without dictionary audio are read by your browser's voice.</p>
-  <p class="version"><span class="version-tag">v1.0.1</span> · <span class="version-date">2026/10/17</span></p>
+  <p class="note">Dictionary data: Free Dictionary API, Wiktionary, and Datamuse. Words without dictionary audio are read by your browser's voice.</p>
+  <p class="version"><span class="version-tag">v1.1.0</span> · <span class="version-date">2026/10/17</span></p>
 </div>
 
 <script>
@@ -352,26 +352,16 @@ function todayWords(){return[
 
 
 // ---------- dictionary lookup ----------
+// Lookups go through our server, which caches results and falls back to Wiktionary
+// when the Free Dictionary API is down.
 async function lookup(word){
-  const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word));
+  let r;
+  try{r=await fetch('/api/lookup?word='+encodeURIComponent(word))}catch(e){throw new Error('offline')}
   if(r.status===404) throw new Error('notfound');
+  if(r.status===503) throw new Error('unavailable');
   if(!r.ok) throw new Error('http');
-  const data=await r.json();
-  let phonetic='',audio='';const syn=new Set();const meanings=[];
-  for(const e of data){
-    if(!phonetic&&e.phonetic) phonetic=e.phonetic;
-    for(const p of (e.phonetics||[])){if(!phonetic&&p.text) phonetic=p.text;if(!audio&&p.audio) audio=p.audio}
-    for(const m of (e.meanings||[])){
-      (m.synonyms||[]).forEach(s=>syn.add(s));
-      let g=meanings.find(x=>x.pos===m.partOfSpeech);
-      if(!g){g={pos:m.partOfSpeech,defs:[]};meanings.push(g)}
-      for(const d of (m.definitions||[])){
-        (d.synonyms||[]).forEach(s=>syn.add(s));
-        if(g.defs.length<3) g.defs.push({d:d.definition,ex:d.example||''});
-      }
-    }
-  }
-  return{word:data[0].word||word,phonetic,audio,meanings:meanings.slice(0,3),synonyms:[...syn].slice(0,10)};
+  const e=await r.json();
+  return{word:e.word||word,phonetic:e.phonetic||'',audio:e.audio||'',meanings:e.meanings||[],synonyms:e.synonyms||[]};
 }
 
 // ---------- sound ----------
@@ -483,7 +473,11 @@ $('addForm').addEventListener('submit',async e=>{
     $('wordIn').value='';
   }catch(err){
     $('addMsg').className='msg err';
-    $('addMsg').textContent=err.message==='notfound'?`"${w}" wasn't found in the dictionary. Check the spelling and try again.`:'Couldn\'t reach the dictionary. Check your internet connection and try again.';
+    $('addMsg').textContent={
+      notfound:`"${w}" wasn't found in the dictionary. Check the spelling and try again.`,
+      unavailable:'The dictionaries are not responding right now. Please try again in a minute.',
+      offline:'You seem to be offline. Check your internet connection and try again.'
+    }[err.message]||'Something went wrong looking that up. Please try again.';
   }finally{$('addBtn').disabled=false}
 });
 
