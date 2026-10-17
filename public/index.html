@@ -162,7 +162,7 @@ ol.defs li{font-family:var(--f-word);font-size:17px;line-height:1.55}
   <section id="p-list" hidden></section>
 
   <p class="note">Dictionary data: Merriam-Webster, Free Dictionary API, Wiktionary, and Datamuse. Words without dictionary audio are read by your browser's voice.</p>
-  <p class="version"><span class="version-tag">v1.2.1</span> · <span class="version-date">2026/10/17</span></p>
+  <p class="version"><span class="version-tag">v1.2.2</span> · <span class="version-date">2026/10/17</span></p>
 </div>
 
 <script>
@@ -208,6 +208,17 @@ async function push(){
 }
 window.addEventListener('online',()=>{if(acct==='cloud'&&lsGet(pendingKey())==='1') schedulePush()});
 
+// Removes leftover Wiktionary style code from saved text (saved before v1.2.2). Returns true if anything changed.
+function cleanText(t){return String(t||'').replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/gi,'').replace(/\.mw-parser-output[^{}]*\{[^}]*\}/g,'').replace(/\s+/g,' ').trim()}
+function cleanCards(){
+  let changed=false;
+  for(const c of cards||[]) for(const g of c.meanings||[]) for(const d of g.defs||[]){
+    const nd=cleanText(d.d), ne=cleanText(d.ex);
+    if(nd!==d.d||ne!==(d.ex||'')){d.d=nd;d.ex=ne;changed=true}
+  }
+  return changed;
+}
+
 // Adds the built-in words once per account. Returns true if anything changed.
 function applySeeds(){
   if(!Array.isArray(cards)){cards=[...todayWords(),...samples()];seed=SEED_VERSION;return true}
@@ -221,12 +232,12 @@ function applySeeds(){
 
 function loadGuest(){
   cards=lsJSON(GUEST_KEY);seed=Number(lsGet(GUEST_SEED)||0);
-  if(applySeeds()) save();
+  if(applySeeds()|cleanCards()) save();
   showView('app');renderAll();
 }
 async function loadCloud(){
   const cache=lsJSON(cacheKey());
-  if(cache&&Array.isArray(cache.cards)){cards=cache.cards;seed=cache.seed||0;showView('app');renderAll()}
+  if(cache&&Array.isArray(cache.cards)){cards=cache.cards;seed=cache.seed||0;if(cleanCards()) lsSet(cacheKey(),JSON.stringify({cards,seed}));showView('app');renderAll()}
   else showView('loading','Loading your words…');
   // Changes made offline win: send them up instead of downloading.
   if(cache&&lsGet(pendingKey())==='1'){schedulePush();return}
@@ -242,7 +253,7 @@ async function loadCloud(){
       const g=lsJSON(GUEST_KEY);
       if(Array.isArray(g)&&g.length){cards=g;seed=Number(lsGet(GUEST_SEED)||0)}else{cards=null;seed=0}
     }
-    const changed=applySeeds()||!Array.isArray(d.cards);
+    const changed=applySeeds()|cleanCards()||!Array.isArray(d.cards);
     lsSet(cacheKey(),JSON.stringify({cards,seed}));
     showView('app');renderAll();
     if(changed) save(); else setSync('saved');

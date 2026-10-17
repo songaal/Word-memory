@@ -12,7 +12,7 @@
 // Storage (KV binding WORDS):
 //   wm:sess:<session>  → { sub, email, name, picture }   (expires after 60 days)
 //   wm:words:<sub>     → { cards, seed, updatedAt }
-//   wm:dict:<word>     → cached dictionary entry (90 days; "not found" for 1 day)
+//   wm:dict2:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
 //
 // Dictionary sources, in priority order (the first one with an example sentence wins):
 //   1. Merriam-Webster Learner's  (secret MW_LEARNER_KEY)  — asked first
@@ -127,7 +127,7 @@ const UA = 'SpacedWordBox/1.0 (https://word-memory.songaal.workers.dev)';
 async function lookup(url, env) {
   const word = (url.searchParams.get('word') || '').trim().toLowerCase();
   if (!/^[a-z][a-z' -]{0,48}$/.test(word)) return json({ error: 'invalid' }, 400);
-  const key = `wm:dict:${word}`;
+  const key = `wm:dict2:${word}`;
   const fresh = url.searchParams.get('fresh') === '1';
 
   if (!fresh) {
@@ -318,7 +318,10 @@ async function fromFreeDictionary(word) {
 // Wiktionary REST API (English section only)
 function stripHTML(s) {
   return String(s || '')
+    .replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/gi, '')   // Wiktionary embeds TemplateStyles CSS
+    .replace(/<span[^>]*class="[^"]*defdate[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '')   // "from 17th c." date notes
     .replace(/<[^>]*>/g, '')
+    .replace(/\.mw-parser-output[^{}]*\{[^}]*\}/g, '')
     .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'")
     .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
     .replace(/\s+/g, ' ').trim();
