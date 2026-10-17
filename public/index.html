@@ -161,8 +161,8 @@ ol.defs li{font-family:var(--f-word);font-size:17px;line-height:1.55}
   <section id="p-test" hidden></section>
   <section id="p-list" hidden></section>
 
-  <p class="note">Dictionary data: Merriam-Webster, Free Dictionary API, Wiktionary, and Datamuse. Words without dictionary audio are read by your browser's voice.</p>
-  <p class="version"><span class="version-tag">v1.2.4</span> · <span class="version-date">2026/10/18</span></p>
+  <p class="note">Dictionary data: Merriam-Webster. Similar words: Datamuse. Words without dictionary audio are read by your browser's voice.</p>
+  <p class="version"><span class="version-tag">v1.2.5</span> · <span class="version-date">2026/10/18</span></p>
 </div>
 
 <script>
@@ -363,8 +363,7 @@ function todayWords(){return[
 
 
 // ---------- dictionary lookup ----------
-// Lookups go through our server, which caches results and falls back to Wiktionary
-// when the Free Dictionary API is down.
+// Lookups go through our server, which asks Merriam-Webster and caches the result.
 // Similar words from Datamuse, asked from the browser (Datamuse blocks Cloudflare servers).
 async function similarWords(word){
   const get=async q=>{try{const r=await fetch('https://api.datamuse.com/words?'+q+'='+encodeURIComponent(word)+'&max=10',{signal:AbortSignal.timeout(5000)});return r.ok?await r.json():[]}catch(e){return []}};

@@ -14,13 +14,10 @@
 //   wm:words:<sub>     → { cards, seed, updatedAt }
 //   wm:dict2:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
 //
-// Dictionary sources, in priority order (the first one with an example sentence wins):
-//   1. Merriam-Webster Learner's  (secret MW_LEARNER_KEY)  — asked first
-//   2. Merriam-Webster Collegiate (secret MW_COLLEGIATE_KEY)
-//   3. Free Dictionary API (dictionaryapi.dev)
-//   4. Wiktionary REST API
-//   2-4 are asked together, only when Learner's has no example sentence.
-//   Similar words: dictionary synonyms here; the app adds Datamuse words from the browser.
+// Dictionary: Merriam-Webster only.
+//   1. Learner's  (secret MW_LEARNER_KEY)   — asked first
+//   2. Collegiate (secret MW_COLLEGIATE_KEY) — asked only when Learner's has no example sentence
+//   Similar words come from Datamuse, asked by the app in the browser.
 
 const GOOGLE_CLIENT_ID = '719116381133-drmp1g433dj5qfnhp7u5ujbichl7d0j2.apps.googleusercontent.com';
 const SESSION_TTL = 60 * 60 * 24 * 60;
@@ -129,71 +126,46 @@ async function lookup(url, env) {
   if (!/^[a-z][a-z' -]{0,48}$/.test(word)) return json({ error: 'invalid' }, 400);
   const key = `wm:dict2:${word}`;
   const fresh = url.searchParams.get('fresh') === '1';
+  const debug = url.searchParams.get('debug') === '1';
 
   if (!fresh) {
     const cached = await env.WORDS.get(key, 'json').catch(() => null);
     if (cached) return cached.notfound ? json({ error: 'notfound' }, 404) : json(cached);
   }
 
-  const debug = url.searchParams.get('debug') === '1';
-  // 1) Merriam-Webster Learner's: easy definitions and plenty of example sentences.
+  // Learner's first; Collegiate only when Learner's has no example sentence.
   const results = { learners: await safe(() => fromMerriamWebster(word, 'learners', env.MW_LEARNER_KEY)) };
-  // 2) If that has no example sentence, ask everyone else at once.
   if (!countExamples(results.learners.entry)) {
-    const [col, fd, wk] = await Promise.all([
-      safe(() => fromMerriamWebster(word, 'collegiate', env.MW_COLLEGIATE_KEY)),
-      safe(() => fromFreeDictionary(word)), safe(() => fromWiktionary(word)),
-    ]);
-    Object.assign(results, { collegiate: col, freedictionary: fd, wiktionary: wk });
+    results.collegiate = await safe(() => fromMerriamWebster(word, 'collegiate', env.MW_COLLEGIATE_KEY));
   }
-  const order = ['learners', 'collegiate', 'freedictionary', 'wiktionary'];
-  const found = order.filter(k => results[k] && results[k].entry);
-  const answered = order.filter(k => results[k] && !results[k].error && !results[k].skipped);
-  // What each source did, for troubleshooting (shown with ?debug=1 and on "unavailable").
+  const order = ['learners', 'collegiate'];
   const sources = {};
   for (const k of order) {
     const r = results[k];
     sources[k] = !r ? 'not asked' : r.skipped ? 'skipped (no key)' : r.error ? 'failed: ' + (r.why || 'unknown') : r.entry ? `found (${countExamples(r.entry)} examples)` : 'not found';
   }
+  const found = order.filter(k => results[k] && results[k].entry);
+  const failed = order.filter(k => results[k] && (results[k].error || results[k].skipped));
 
   if (!found.length) {
-    if (!answered.length) return json({ error: 'unavailable', sources }, 503);
-    const allAnswered = order.every(k => !results[k] || results[k].skipped || !results[k].error);
-    if (allAnswered) await env.WORDS.put(key, JSON.stringify({ notfound: true }), { expirationTtl: MISS_TTL });
+    const asked = order.filter(k => results[k]);
+    if (failed.length === asked.length) return json({ error: 'unavailable', sources }, 503);
+    if (!failed.length) await env.WORDS.put(key, JSON.stringify({ notfound: true }), { expirationTtl: MISS_TTL });
     return json(debug ? { error: 'notfound', sources } : { error: 'notfound' }, 404);
   }
 
-  // First source in priority order that has an example sentence; otherwise the first one found.
   const pick = found.find(k => countExamples(results[k].entry)) || found[0];
   const base = results[pick].entry;
-  const soundFrom = found.map(k => results[k].entry).find(e => e.audio) || base;
-  const phonFrom = found.map(k => results[k].entry).find(e => e.phonetic) || base;
-  // Similar words: whatever the dictionaries gave, else Free Dictionary's synonym lists.
-  // (The app adds Datamuse words from the browser; Datamuse blocks requests from Cloudflare.)
-  let synList = found.flatMap(k => results[k].entry.synonyms || []);
-  let synTrouble = false;
-  if (!synList.length) {
-    const fd = results.freedictionary || await safe(() => fromFreeDictionary(word, 4000, 1));
-    synTrouble = !!fd.error;
-    synList = (fd.entry && fd.entry.synonyms) || [];
-    sources.similar = fd.error ? 'freedictionary failed: ' + (fd.why || 'unknown') : `freedictionary (${synList.length})`;
-  }
-  const synonyms = [];
-  for (const sy of synList) {
-    const t = String(sy).toLowerCase();
-    if (t !== word && !synonyms.includes(t)) synonyms.push(t);
-  }
+  const other = found.map(k => results[k].entry);
   const entry = {
     word: base.word || word,
-    phonetic: phonFrom.phonetic || '',
-    audio: soundFrom.audio || '',
+    phonetic: base.phonetic || (other.find(e => e.phonetic) || {}).phonetic || '',
+    audio: base.audio || (other.find(e => e.audio) || {}).audio || '',
     meanings: base.meanings,
-    synonyms: synonyms.slice(0, 10),
+    synonyms: [],   // the app adds similar words from Datamuse
     source: pick,
   };
-  // Don't lock in a backup-only answer while the main dictionaries are having trouble.
-  const mainTrouble = ['learners', 'freedictionary'].some(k => results[k] && results[k].error) || (!synonyms.length && synTrouble);
-  if (!mainTrouble || pick === 'learners') await env.WORDS.put(key, JSON.stringify(entry), { expirationTtl: DICT_TTL });
+  if (!failed.length || pick === 'learners') await env.WORDS.put(key, JSON.stringify(entry), { expirationTtl: DICT_TTL });
   return json(debug ? { ...entry, sources } : entry);
 }
 
@@ -297,67 +269,7 @@ async function fromMerriamWebster(word, ref, apiKey) {
   return { entry: { word: base(use[0]), phonetic, audio, meanings: kept, synonyms: [] } };
 }
 
-// Free Dictionary API
-async function fromFreeDictionary(word, timeoutMs = 6000, tries = 2) {
-  const r = await getJSON('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), timeoutMs, tries);
-  if (r.status === 404) return { entry: null };
-  if (r.status !== 200 || !Array.isArray(r.data)) return { error: true, why: r.why || (r.status === 404 ? 'HTTP 404' : 'unexpected response') };
-  let phonetic = '', audio = '';
-  const syn = new Set(), meanings = [];
-  for (const e of r.data) {
-    if (!phonetic && e.phonetic) phonetic = e.phonetic;
-    for (const p of e.phonetics || []) {
-      if (!phonetic && p.text) phonetic = p.text;
-      if (!audio && p.audio) audio = p.audio;
-    }
-    for (const m of e.meanings || []) {
-      (m.synonyms || []).forEach(s => syn.add(s));
-      let g = meanings.find(x => x.pos === m.partOfSpeech);
-      if (!g) { g = { pos: m.partOfSpeech, defs: [] }; meanings.push(g); }
-      for (const d of m.definitions || []) {
-        (d.synonyms || []).forEach(s => syn.add(s));
-        if (g.defs.length < 3) g.defs.push({ d: d.definition, ex: d.example || '' });
-      }
-    }
-  }
-  if (!meanings.length) return { entry: null };
-  return { entry: { word: r.data[0].word || word, phonetic, audio, meanings: meanings.slice(0, 3), synonyms: [...syn] } };
-}
-
-// Wiktionary REST API (English section only)
-function stripHTML(s) {
-  return String(s || '')
-    .replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/gi, '')   // Wiktionary embeds TemplateStyles CSS
-    .replace(/<span[^>]*class="[^"]*defdate[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '')   // "from 17th c." date notes
-    .replace(/<[^>]*>/g, '')
-    .replace(/\.mw-parser-output[^{}]*\{[^}]*\}/g, '')
-    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'")
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/\s+/g, ' ').trim();
-}
 function stemRe(word) {
   const stem = word.length > 4 ? word.slice(0, Math.max(4, word.length - 2)) : word;
   return new RegExp('\\b' + stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-}
-async function fromWiktionary(word) {
-  const r = await getJSON('https://en.wiktionary.org/api/rest_v1/page/definition/' + encodeURIComponent(word));
-  if (r.status === 404) return { entry: null };
-  if (r.status !== 200 || !r.data) return { error: true, why: r.why || 'unexpected response' };
-  const re = stemRe(word);
-  const meanings = [];
-  for (const sec of r.data.en || []) {
-    const pos = String(sec.partOfSpeech || '').toLowerCase();
-    let g = meanings.find(x => x.pos === pos);
-    if (!g) { g = { pos, defs: [] }; meanings.push(g); }
-    for (const d of sec.definitions || []) {
-      const def = stripHTML(d.definition);
-      if (!def || g.defs.length >= 3) continue;
-      const exs = [...(d.parsedExamples || []).map(x => x.example), ...(d.examples || [])]
-        .map(stripHTML).filter(x => x && x.length <= 220 && re.test(x));
-      g.defs.push({ d: def, ex: exs[0] || '' });
-    }
-  }
-  const kept = meanings.filter(g => g.defs.length).slice(0, 3);
-  if (!kept.length) return { entry: null };
-  return { entry: { word, phonetic: '', audio: '', meanings: kept, synonyms: [] } };
 }
