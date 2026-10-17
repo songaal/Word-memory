@@ -54,6 +54,18 @@ input[type=text]{flex:1;min-width:0;font:500 17px var(--f-word);padding:12px 14p
 .play{border:1px solid var(--line);background:none;color:var(--fg);border-radius:20px;padding:3px 12px;font:500 12px var(--f-ui);cursor:pointer}
 .play:hover{border-color:var(--accent);color:var(--accent)}
 .say{border:0;background:none;color:var(--accent);cursor:pointer;font-size:12px;padding:0 4px;font-style:normal}
+.tr{border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;padding:1px 4px;border-radius:6px;vertical-align:-3px;line-height:0}
+.tr svg{width:17px;height:17px}
+.tr:hover{color:var(--accent)}
+.tr[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.ko{display:block;font:400 16px/1.55 var(--f-ui);font-style:normal;color:var(--muted);margin-top:4px}
+.ko.err{color:var(--bad);font-size:13px}
+.tab.icon{flex:0 0 48px;font-size:18px}
+.tab{white-space:nowrap}
+@media (max-width:440px){.tab{font-size:13px;padding-inline:2px}.tab .n{margin-left:2px;padding:0 5px}.tab.icon{flex-basis:40px}}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:600}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;color:var(--muted);font-size:13px}
 .pos{font:500 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 ol.defs{margin:4px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
 ol.defs li{font-family:var(--f-word);font-size:17px;line-height:1.55}
@@ -147,6 +159,7 @@ ol.defs li{font-family:var(--f-word);font-size:17px;line-height:1.55}
     <button class="tab" role="tab" id="t-add" aria-selected="true">Add</button>
     <button class="tab" role="tab" id="t-test" aria-selected="false">Today's test<span class="n" id="dueN">0</span></button>
     <button class="tab" role="tab" id="t-list" aria-selected="false">Word list</button>
+    <button class="tab icon" role="tab" id="t-settings" aria-selected="false" aria-label="Settings" title="Settings">⚙</button>
   </nav>
 
   <section id="p-add">
@@ -160,9 +173,32 @@ ol.defs li{font-family:var(--f-word);font-size:17px;line-height:1.55}
 
   <section id="p-test" hidden></section>
   <section id="p-list" hidden></section>
+  <section id="p-settings" hidden>
+    <div class="card">
+      <form class="field" id="setForm" autocomplete="off">
+        <label for="trKey">Google Translate API key</label>
+        <p class="note" style="margin:0">Used for the Korean translation button next to example sentences. <span id="keyWhere"></span></p>
+        <div class="row">
+          <input type="password" id="trKey" placeholder="Paste your API key" spellcheck="false" autocapitalize="none">
+          <button class="btn ghost" id="trShow" type="button">Show</button>
+        </div>
+        <div class="row"><button class="btn" type="submit" id="trSave">Save and test</button><button class="btn ghost" type="button" id="trClear">Remove key</button></div>
+        <div class="msg" id="setMsg"></div>
+      </form>
+      <div class="field">
+        <span class="label">How to get a key</span>
+        <ol class="steps">
+          <li>Open Google Cloud Console and pick (or create) a project.</li>
+          <li>APIs &amp; Services → Library → enable <b>Cloud Translation API</b>. Billing must be on; the first 500,000 characters each month are free.</li>
+          <li>APIs &amp; Services → Credentials → Create credentials → <b>API key</b>.</li>
+          <li>Recommended: restrict the key to the Cloud Translation API and to this website.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
 
   <p class="note">Dictionary data: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-  <p class="version"><span class="version-tag">v1.3.0</span> · <span class="version-date">2026/10/18</span></p>
+  <p class="version"><span class="version-tag">v1.4.0</span> · <span class="version-date">2026/10/18</span></p>
 </div>
 
 <script>
@@ -231,11 +267,13 @@ function applySeeds(){
 }
 
 function loadGuest(){
+  loadSettings();
   cards=lsJSON(GUEST_KEY);seed=Number(lsGet(GUEST_SEED)||0);
   if(applySeeds()|cleanCards()) save();
   showView('app');renderAll();
 }
 async function loadCloud(){
+  loadSettings();
   const cache=lsJSON(cacheKey());
   if(cache&&Array.isArray(cache.cards)){cards=cache.cards;seed=cache.seed||0;if(cleanCards()) lsSet(cacheKey(),JSON.stringify({cards,seed}));showView('app');renderAll()}
   else showView('loading','Loading your words…');
@@ -438,6 +476,62 @@ document.addEventListener('click',e=>{
   else speak(b.dataset.say);
 });
 
+// ---------- translation ----------
+// Google Cloud Translation, called from the browser with the user's own API key.
+const TR_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h8M8 3v2M5.5 5c.8 3 3.2 5.6 6 7M10.5 5c-.9 3.6-3.3 6.5-6.5 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/></svg>';
+let settings={translateKey:''};
+async function translateKo(text){
+  const k=settings.translateKey;
+  if(!k) throw new Error('nokey');
+  let r;
+  try{
+    r=await fetch('https://translation.googleapis.com/language/translate/v2?key='+encodeURIComponent(k),{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({q:text,source:'en',target:'ko',format:'text'})});
+  }catch(e){throw new Error('Could not reach Google Translate. Check your connection.')}
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error((j.error&&j.error.message)||('Google Translate error (HTTP '+r.status+').'));
+  return j.data.translations[0].translatedText;
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-tr]');
+  if(!b) return;
+  e.stopPropagation();
+  const box=b.parentElement.querySelector('.ko');
+  if(b.getAttribute('aria-pressed')==='true'){b.setAttribute('aria-pressed','false');box.hidden=true;return}
+  const [w,gi,di]=b.dataset.tr.split('|');
+  const c=cards.find(x=>x.word===w);
+  const d=c&&c.meanings[+gi]&&c.meanings[+gi].defs[+di];
+  if(!d) return;
+  b.setAttribute('aria-pressed','true');box.hidden=false;box.className='ko';
+  if(d.exKo){box.textContent=d.exKo;return}
+  if(!settings.translateKey){box.className='ko err';box.textContent='Add your Google Translate API key in Settings (⚙) to see translations.';return}
+  box.textContent='Translating…';
+  try{d.exKo=await translateKo(d.ex);box.textContent=d.exKo;save()}
+  catch(err){box.className='ko err';box.textContent=err.message}
+});
+
+// ---------- settings ----------
+async function loadSettings(){
+  if(acct==='cloud'){
+    try{const r=await api('/api/settings');if(r.ok){const j=await r.json();settings={translateKey:j.translateKey||''};return}}catch(e){}
+    settings=lsJSON('wm.settings.'+user.sub)||{translateKey:''};
+  }else settings=lsJSON('wm.settings')||{translateKey:''};
+}
+async function storeSettings(){
+  if(acct==='cloud'){
+    lsSet('wm.settings.'+user.sub,JSON.stringify(settings));
+    const r=await api('/api/settings',{method:'PUT',body:JSON.stringify(settings)});
+    if(r.status===401){expired();throw new Error('Signed out')}
+    if(!r.ok) throw new Error('save');
+  }else lsSet('wm.settings',JSON.stringify(settings));
+}
+function renderSettings(){
+  $('trKey').value=settings.translateKey||'';$('trKey').type='password';$('trShow').textContent='Show';
+  $('keyWhere').textContent=acct==='cloud'?'Saved to your account, so it works on all your devices.':'Saved in this browser only. Sign in to use it on all your devices.';
+  $('setMsg').className='msg';$('setMsg').textContent=settings.translateKey?'A key is saved.':'No key saved yet.';
+}
+
 // ---------- helpers ----------
 const $=id=>document.getElementById(id);
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -453,7 +547,7 @@ function mask(text,word,blankHTML){
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function cardHTML(c){
   const s=c.synonyms.length?`<div class="synblock"><div class="label">Similar words</div><div class="syn">${c.synonyms.map(x=>`<span class="chip">${esc(x)}</span>`).join('')}</div></div>`:'';
-  const m=c.meanings.map(g=>`<div><div class="pos">${esc(g.pos)}</div><ol class="defs">${g.defs.map(d=>`<li>${esc(d.d)} <button class="say" data-say="${esc(d.d)}" type="button" aria-label="Play definition">🔊</button>${d.ex?`<span class="ex">“${esc(d.ex).replace(wordRe(c.word),m=>'<strong>'+m+'</strong>')}” <button class="say" data-say="${esc(d.ex)}" type="button" aria-label="Play example sentence">🔊</button></span>`:''}</li>`).join('')}</ol></div>`).join('');
+  const m=c.meanings.map((g,gi)=>`<div><div class="pos">${esc(g.pos)}</div><ol class="defs">${g.defs.map((d,di)=>`<li>${esc(d.d)} <button class="say" data-say="${esc(d.d)}" type="button" aria-label="Play definition">🔊</button>${d.ex?`<span class="ex">“${esc(d.ex).replace(wordRe(c.word),m=>'<strong>'+m+'</strong>')}” <button class="say" data-say="${esc(d.ex)}" type="button" aria-label="Play example sentence">🔊</button><button class="tr" data-tr="${esc(c.word)}|${gi}|${di}" type="button" aria-pressed="false" aria-label="Show Korean translation" title="Korean translation">${TR_ICON}</button><span class="ko" hidden></span></span>`:''}</li>`).join('')}</ol></div>`).join('');
   return `<div class="word"><h2>${esc(c.word)}</h2><span class="ph">${esc(c.phonetic||'')}</span>
     <button class="play" data-kind="word" data-say="${esc(c.word)}" data-audio="${esc(c.audio||'')}" type="button">🔊 Listen</button>
     ${c.sample?'<span class="tag">Sample</span>':''}</div>${s}${m}`;
@@ -479,7 +573,7 @@ function renderBoxes(){
 }
 
 // ---------- tabs ----------
-const tabs={add:'t-add',test:'t-test',list:'t-list'};
+const tabs={add:'t-add',test:'t-test',list:'t-list',settings:'t-settings'};
 let curTab='add';
 function renderAll(){renderAcct();renderBoxes();show(curTab);setTimeout(fillMissingSimilar,1500)}
 function show(name){
@@ -487,8 +581,28 @@ function show(name){
   for(const k in tabs){$(tabs[k]).setAttribute('aria-selected',k===name);$('p-'+k).hidden=k!==name}
   if(name==='test') testHome();
   if(name==='list') renderList();
+  if(name==='settings') renderSettings();
 }
-$('t-add').onclick=()=>show('add');$('t-test').onclick=()=>show('test');$('t-list').onclick=()=>show('list');
+$('t-add').onclick=()=>show('add');$('t-test').onclick=()=>show('test');$('t-list').onclick=()=>show('list');$('t-settings').onclick=()=>show('settings');
+$('trShow').onclick=()=>{const i=$('trKey');i.type=i.type==='password'?'text':'password';$('trShow').textContent=i.type==='password'?'Show':'Hide'};
+$('setForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const k=$('trKey').value.trim(),m=$('setMsg');
+  if(!k){m.className='msg err';m.textContent='Paste a key first.';return}
+  m.className='msg';m.textContent='Testing the key…';$('trSave').disabled=true;
+  const prev=settings.translateKey;settings.translateKey=k;
+  try{
+    const t=await translateKo('Hello, nice to meet you.');
+    await storeSettings();
+    m.textContent='Saved. Test translation: '+t;
+  }catch(err){settings.translateKey=prev;m.className='msg err';m.textContent="The key didn't work: "+err.message}
+  finally{$('trSave').disabled=false}
+});
+$('trClear').onclick=async()=>{
+  settings.translateKey='';
+  try{await storeSettings()}catch(e){}
+  renderSettings();$('setMsg').textContent='Key removed.';
+};
 
 // ---------- add ----------
 $('addForm').addEventListener('submit',async e=>{

@@ -7,11 +7,14 @@
 // GET    /api/words                     → { cards, seed, updatedAt } for the signed-in user
 // PUT    /api/words        { cards, seed } → replaces the user's word list
 // GET    /api/lookup?word=              → dictionary entry (no sign-in needed)
+// GET    /api/settings                  → { translateKey } for the signed-in user
+// PUT    /api/settings     { translateKey } → saves the user's settings
 //
 // Auth: /api/me and /api/words send "Authorization: Bearer <session>".
 // Storage (KV binding WORDS):
 //   wm:sess:<session>  → { sub, email, name, picture }   (expires after 60 days)
 //   wm:words:<sub>     → { cards, seed, updatedAt }
+//   wm:settings:<sub>  → { translateKey }   (the user's own Google Translate API key)
 //   wm:dict2:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
 //
 // Dictionary: Merriam-Webster only (keys are Worker secrets, never in the repo).
@@ -36,6 +39,8 @@ export default {
       if (pathname === '/api/words' && method === 'GET') return await getWords(request, env);
       if (pathname === '/api/words' && method === 'PUT') return await putWords(request, env);
       if (pathname === '/api/lookup' && method === 'GET') return await lookup(url, env);
+      if (pathname === '/api/settings' && method === 'GET') return await getSettings(request, env);
+      if (pathname === '/api/settings' && method === 'PUT') return await putSettings(request, env);
       if (pathname.startsWith('/api/')) return json({ error: 'Not found' }, 404);
     } catch (e) {
       return json({ error: 'Server error', detail: String(e && e.message || e).slice(0, 200) }, 500);
@@ -114,6 +119,25 @@ async function putWords(request, env) {
   const record = { cards: body.cards, seed: Number(body.seed) || 0, updatedAt: new Date().toISOString() };
   await env.WORDS.put(`wm:words:${user.sub}`, JSON.stringify(record));
   return json({ ok: true, updatedAt: record.updatedAt });
+}
+
+// ── Settings ─────────────────────────────────────
+async function getSettings(request, env) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
+  const s = await env.WORDS.get(`wm:settings:${user.sub}`, 'json').catch(() => null);
+  return json({ translateKey: (s && s.translateKey) || '' });
+}
+
+async function putSettings(request, env) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+  const translateKey = String((body && body.translateKey) || '').trim();
+  if (translateKey.length > 200 || /\s/.test(translateKey)) return json({ error: 'Invalid key' }, 400);
+  await env.WORDS.put(`wm:settings:${user.sub}`, JSON.stringify({ translateKey }));
+  return json({ ok: true });
 }
 
 // ── Dictionary lookup ────────────────────────────
