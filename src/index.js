@@ -20,7 +20,7 @@
 //   3. Free Dictionary API (dictionaryapi.dev)
 //   4. Wiktionary REST API
 //   2-4 are asked together, only when Learner's has no example sentence.
-//   Datamuse supplies similar words (synonyms, then "means like").
+//   Similar words: dictionary synonyms here; the app adds Datamuse words from the browser.
 
 const GOOGLE_CLIENT_ID = '719116381133-drmp1g433dj5qfnhp7u5ujbichl7d0j2.apps.googleusercontent.com';
 const SESSION_TTL = 60 * 60 * 24 * 60;
@@ -136,7 +136,6 @@ async function lookup(url, env) {
   }
 
   const debug = url.searchParams.get('debug') === '1';
-  const synP = safe(() => fromDatamuse(word));
   // 1) Merriam-Webster Learner's: easy definitions and plenty of example sentences.
   const results = { learners: await safe(() => fromMerriamWebster(word, 'learners', env.MW_LEARNER_KEY)) };
   // 2) If that has no example sentence, ask everyone else at once.
@@ -169,14 +168,15 @@ async function lookup(url, env) {
   const base = results[pick].entry;
   const soundFrom = found.map(k => results[k].entry).find(e => e.audio) || base;
   const phonFrom = found.map(k => results[k].entry).find(e => e.phonetic) || base;
-  const dm = await synP;
-  sources.similar = dm.error ? 'failed: ' + (dm.why || 'unknown') : dm.why ? 'failed: ' + dm.why : `datamuse (${dm.list.length})`;
-  let synList = [...found.flatMap(k => results[k].entry.synonyms || []), ...(dm.list || [])];
-  // Backup for similar words: Free Dictionary's synonym lists.
+  // Similar words: whatever the dictionaries gave, else Free Dictionary's synonym lists.
+  // (The app adds Datamuse words from the browser; Datamuse blocks requests from Cloudflare.)
+  let synList = found.flatMap(k => results[k].entry.synonyms || []);
+  let synTrouble = false;
   if (!synList.length) {
-    const fd = results.freedictionary || await safe(() => fromFreeDictionary(word));
+    const fd = results.freedictionary || await safe(() => fromFreeDictionary(word, 4000, 1));
+    synTrouble = !!fd.error;
     synList = (fd.entry && fd.entry.synonyms) || [];
-    sources.similar += ` + freedictionary (${synList.length})`;
+    sources.similar = fd.error ? 'freedictionary failed: ' + (fd.why || 'unknown') : `freedictionary (${synList.length})`;
   }
   const synonyms = [];
   for (const sy of synList) {
@@ -192,7 +192,7 @@ async function lookup(url, env) {
     source: pick,
   };
   // Don't lock in a backup-only answer while the main dictionaries are having trouble.
-  const mainTrouble = ['learners', 'freedictionary'].some(k => results[k] && results[k].error) || (!synonyms.length && (dm.error || dm.why));
+  const mainTrouble = ['learners', 'freedictionary'].some(k => results[k] && results[k].error) || (!synonyms.length && synTrouble);
   if (!mainTrouble || pick === 'learners') await env.WORDS.put(key, JSON.stringify(entry), { expirationTtl: DICT_TTL });
   return json(debug ? { ...entry, sources } : entry);
 }
@@ -298,8 +298,8 @@ async function fromMerriamWebster(word, ref, apiKey) {
 }
 
 // Free Dictionary API
-async function fromFreeDictionary(word) {
-  const r = await getJSON('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word));
+async function fromFreeDictionary(word, timeoutMs = 6000, tries = 2) {
+  const r = await getJSON('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), timeoutMs, tries);
   if (r.status === 404) return { entry: null };
   if (r.status !== 200 || !Array.isArray(r.data)) return { error: true, why: r.why || (r.status === 404 ? 'HTTP 404' : 'unexpected response') };
   let phonetic = '', audio = '';
@@ -360,17 +360,4 @@ async function fromWiktionary(word) {
   const kept = meanings.filter(g => g.defs.length).slice(0, 3);
   if (!kept.length) return { entry: null };
   return { entry: { word, phonetic: '', audio: '', meanings: kept, synonyms: [] } };
-}
-
-// Datamuse similar words
-async function fromDatamuse(word) {
-  const q = encodeURIComponent(word);
-  const [a, b] = await Promise.all([
-    getJSON(`https://api.datamuse.com/words?rel_syn=${q}&max=10`, 5000, 2),
-    getJSON(`https://api.datamuse.com/words?ml=${q}&max=10`, 5000, 2),
-  ]);
-  const list = [...(Array.isArray(a.data) ? a.data : []), ...(Array.isArray(b.data) ? b.data : [])]
-    .map(x => x && x.word).filter(w => w && w.split(' ').length <= 2);
-  const why = a.status === 200 || b.status === 200 ? '' : (a.why || b.why || 'no response');
-  return { list, why };
 }

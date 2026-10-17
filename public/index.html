@@ -162,7 +162,7 @@ ol.defs li{font-family:var(--f-word);font-size:17px;line-height:1.55}
   <section id="p-list" hidden></section>
 
   <p class="note">Dictionary data: Merriam-Webster, Free Dictionary API, Wiktionary, and Datamuse. Words without dictionary audio are read by your browser's voice.</p>
-  <p class="version"><span class="version-tag">v1.2.3</span> · <span class="version-date">2026/10/18</span></p>
+  <p class="version"><span class="version-tag">v1.2.4</span> · <span class="version-date">2026/10/18</span></p>
 </div>
 
 <script>
@@ -365,6 +365,28 @@ function todayWords(){return[
 // ---------- dictionary lookup ----------
 // Lookups go through our server, which caches results and falls back to Wiktionary
 // when the Free Dictionary API is down.
+// Similar words from Datamuse, asked from the browser (Datamuse blocks Cloudflare servers).
+async function similarWords(word){
+  const get=async q=>{try{const r=await fetch('https://api.datamuse.com/words?'+q+'='+encodeURIComponent(word)+'&max=10',{signal:AbortSignal.timeout(5000)});return r.ok?await r.json():[]}catch(e){return []}};
+  const [a,b]=await Promise.all([get('rel_syn'),get('ml')]);
+  return [...a,...b].map(x=>x&&x.word).filter(w=>w&&w.split(' ').length<=2);
+}
+function mergeSyn(word,...lists){
+  const out=[];
+  for(const w of lists.flat()){const t=String(w).toLowerCase();if(t!==word.toLowerCase()&&!out.includes(t)) out.push(t)}
+  return out.slice(0,10);
+}
+// Fills in similar words for saved cards that have none (a few per visit).
+let synFilling=false;
+async function fillMissingSimilar(){
+  if(synFilling) return;synFilling=true;
+  const todo=(cards||[]).filter(c=>!(c.synonyms||[]).length).slice(0,15);
+  let changed=false;
+  for(const c of todo){const extra=await similarWords(c.word);if(extra.length){c.synonyms=mergeSyn(c.word,extra);changed=true}}
+  synFilling=false;
+  if(changed){save();renderAll()}
+}
+
 async function lookup(word){
   let r;
   try{r=await fetch('/api/lookup?word='+encodeURIComponent(word))}catch(e){throw new Error('offline')}
@@ -372,7 +394,8 @@ async function lookup(word){
   if(r.status===503) throw new Error('unavailable');
   if(!r.ok) throw new Error('http');
   const e=await r.json();
-  return{word:e.word||word,phonetic:e.phonetic||'',audio:e.audio||'',meanings:e.meanings||[],synonyms:e.synonyms||[]};
+  const extra=await similarWords(e.word||word);
+  return{word:e.word||word,phonetic:e.phonetic||'',audio:e.audio||'',meanings:e.meanings||[],synonyms:mergeSyn(e.word||word,e.synonyms||[],extra)};
 }
 
 // ---------- sound ----------
@@ -459,7 +482,7 @@ function renderBoxes(){
 // ---------- tabs ----------
 const tabs={add:'t-add',test:'t-test',list:'t-list'};
 let curTab='add';
-function renderAll(){renderAcct();renderBoxes();show(curTab)}
+function renderAll(){renderAcct();renderBoxes();show(curTab);setTimeout(fillMissingSimilar,1500)}
 function show(name){
   curTab=name;
   for(const k in tabs){$(tabs[k]).setAttribute('aria-selected',k===name);$('p-'+k).hidden=k!==name}
