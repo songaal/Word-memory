@@ -161,8 +161,8 @@ ol.defs li{font-family:var(--f-word);font-size:17px;line-height:1.55}
   <section id="p-test" hidden></section>
   <section id="p-list" hidden></section>
 
-  <p class="note">Dictionary data: Merriam-Webster. Similar words: Datamuse. Words without dictionary audio are read by your browser's voice.</p>
-  <p class="version"><span class="version-tag">v1.2.5</span> · <span class="version-date">2026/10/18</span></p>
+  <p class="note">Dictionary data: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
+  <p class="version"><span class="version-tag">v1.3.0</span> · <span class="version-date">2026/10/18</span></p>
 </div>
 
 <script>
@@ -393,7 +393,7 @@ async function lookup(word){
   if(r.status===503) throw new Error('unavailable');
   if(!r.ok) throw new Error('http');
   const e=await r.json();
-  const extra=await similarWords(e.word||word);
+  const extra=(e.synonyms||[]).length>=4?[]:await similarWords(e.word||word);
   return{word:e.word||word,phonetic:e.phonetic||'',audio:e.audio||'',meanings:e.meanings||[],synonyms:mergeSyn(e.word||word,e.synonyms||[],extra)};
 }
 

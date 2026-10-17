@@ -14,10 +14,10 @@
 //   wm:words:<sub>     → { cards, seed, updatedAt }
 //   wm:dict2:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
 //
-// Dictionary: Merriam-Webster only.
-//   1. Learner's  (secret MW_LEARNER_KEY)   — asked first
-//   2. Collegiate (secret MW_COLLEGIATE_KEY) — asked only when Learner's has no example sentence
-//   Similar words come from Datamuse, asked by the app in the browser.
+// Dictionary: Merriam-Webster only (keys are Worker secrets, never in the repo).
+//   Learner's  (MW_LEARNER_KEY)   — definitions, example sentences, pronunciation
+//   Thesaurus  (MW_THESAURUS_KEY) — similar words
+//   The app tops up similar words from Datamuse (asked in the browser) when there are fewer than 4.
 
 const GOOGLE_CLIENT_ID = '719116381133-drmp1g433dj5qfnhp7u5ujbichl7d0j2.apps.googleusercontent.com';
 const SESSION_TTL = 60 * 60 * 24 * 60;
@@ -133,39 +133,39 @@ async function lookup(url, env) {
     if (cached) return cached.notfound ? json({ error: 'notfound' }, 404) : json(cached);
   }
 
-  // Learner's first; Collegiate only when Learner's has no example sentence.
-  const results = { learners: await safe(() => fromMerriamWebster(word, 'learners', env.MW_LEARNER_KEY)) };
-  if (!countExamples(results.learners.entry)) {
-    results.collegiate = await safe(() => fromMerriamWebster(word, 'collegiate', env.MW_COLLEGIATE_KEY));
-  }
-  const order = ['learners', 'collegiate'];
-  const sources = {};
-  for (const k of order) {
-    const r = results[k];
-    sources[k] = !r ? 'not asked' : r.skipped ? 'skipped (no key)' : r.error ? 'failed: ' + (r.why || 'unknown') : r.entry ? `found (${countExamples(r.entry)} examples)` : 'not found';
-  }
-  const found = order.filter(k => results[k] && results[k].entry);
-  const failed = order.filter(k => results[k] && (results[k].error || results[k].skipped));
+  // Learner's for the definition; Thesaurus for similar words. Asked together.
+  const [learners, thes] = await Promise.all([
+    safe(() => fromMerriamWebster(word, 'learners', env.MW_LEARNER_KEY)),
+    safe(() => fromThesaurus(word, env.MW_THESAURUS_KEY)),
+  ]);
+  const status = r => r.skipped ? 'skipped (no key)' : r.error ? 'failed: ' + (r.why || 'unknown') : null;
+  const sources = {
+    learners: status(learners) || (learners.entry ? `found (${countExamples(learners.entry)} examples)` : 'not found'),
+    thesaurus: status(thes) || `${thes.list.length} similar words`,
+  };
 
-  if (!found.length) {
-    const asked = order.filter(k => results[k]);
-    if (failed.length === asked.length) return json({ error: 'unavailable', sources }, 503);
-    if (!failed.length) await env.WORDS.put(key, JSON.stringify({ notfound: true }), { expirationTtl: MISS_TTL });
+  if (!learners.entry) {
+    if (learners.error || learners.skipped) return json({ error: 'unavailable', sources }, 503);
+    await env.WORDS.put(key, JSON.stringify({ notfound: true }), { expirationTtl: MISS_TTL });
     return json(debug ? { error: 'notfound', sources } : { error: 'notfound' }, 404);
   }
 
-  const pick = found.find(k => countExamples(results[k].entry)) || found[0];
-  const base = results[pick].entry;
-  const other = found.map(k => results[k].entry);
+  const base = learners.entry;
+  const synonyms = [];
+  for (const sy of thes.list || []) {
+    const t = String(sy).toLowerCase();
+    if (t !== word && t !== base.word && !synonyms.includes(t)) synonyms.push(t);
+  }
   const entry = {
     word: base.word || word,
-    phonetic: base.phonetic || (other.find(e => e.phonetic) || {}).phonetic || '',
-    audio: base.audio || (other.find(e => e.audio) || {}).audio || '',
+    phonetic: base.phonetic || '',
+    audio: base.audio || '',
     meanings: base.meanings,
-    synonyms: [],   // the app adds similar words from Datamuse
-    source: pick,
+    synonyms: synonyms.slice(0, 10),   // the app tops this up from Datamuse when it's short
+    source: 'learners',
   };
-  if (!failed.length || pick === 'learners') await env.WORDS.put(key, JSON.stringify(entry), { expirationTtl: DICT_TTL });
+  // Cache only once the Thesaurus has answered, so similar words get filled in later otherwise.
+  if (!thes.error && !thes.skipped) await env.WORDS.put(key, JSON.stringify(entry), { expirationTtl: DICT_TTL });
   return json(debug ? { ...entry, sources } : entry);
 }
 
@@ -272,4 +272,23 @@ async function fromMerriamWebster(word, ref, apiKey) {
 function stemRe(word) {
   const stem = word.length > 4 ? word.slice(0, Math.max(4, word.length - 2)) : word;
   return new RegExp('\\b' + stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+}
+
+// Merriam-Webster Thesaurus: similar words, most relevant sense first.
+async function fromThesaurus(word, apiKey) {
+  if (!apiKey) return { skipped: true, list: [] };
+  const r = await getJSON(`https://www.dictionaryapi.com/api/v3/references/thesaurus/json/${encodeURIComponent(word)}?key=${encodeURIComponent(apiKey)}`);
+  if (r.status !== 200 || !Array.isArray(r.data)) return { error: true, why: r.why || 'unexpected response', list: [] };
+  const entries = r.data.filter(e => e && typeof e === 'object' && e.meta);
+  const base = e => String(e.meta.id || '').split(':')[0].toLowerCase();
+  let use = entries.filter(e => base(e) === word);
+  if (!use.length) use = entries.filter(e => (e.meta.stems || []).map(x => String(x).toLowerCase()).includes(word));
+  // Main sense first (up to 6 words), then the other senses in turn.
+  const groups = use.flatMap(e => Array.isArray(e.meta.syns) ? e.meta.syns : []);
+  const list = [];
+  const add = w => { if (w && !list.includes(w)) list.push(w); };
+  (groups[0] || []).slice(0, 6).forEach(add);
+  for (let i = 0; i < 10 && list.length < 12; i++) for (const g of groups.slice(1)) add(g[i]);
+  (groups[0] || []).slice(6).forEach(w => list.length < 12 && add(w));
+  return { list };
 }
