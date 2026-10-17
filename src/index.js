@@ -41,7 +41,7 @@ export default {
       if (pathname === '/api/lookup' && method === 'GET') return await lookup(url, env);
       if (pathname.startsWith('/api/')) return json({ error: 'Not found' }, 404);
     } catch (e) {
-      return json({ error: 'Server error' }, 500);
+      return json({ error: 'Server error', detail: String(e && e.message || e).slice(0, 200) }, 500);
     }
     return env.ASSETS.fetch(request);
   },
@@ -135,26 +135,33 @@ async function lookup(url, env) {
     if (cached) return cached.notfound ? json({ error: 'notfound' }, 404) : json(cached);
   }
 
-  const synP = fromDatamuse(word);
+  const debug = url.searchParams.get('debug') === '1';
+  const synP = safe(() => fromDatamuse(word)).then(r => Array.isArray(r) ? r : []);
   // 1) Merriam-Webster Learner's: easy definitions and plenty of example sentences.
-  const results = { learners: await fromMerriamWebster(word, 'learners', env.MW_LEARNER_KEY) };
+  const results = { learners: await safe(() => fromMerriamWebster(word, 'learners', env.MW_LEARNER_KEY)) };
   // 2) If that has no example sentence, ask everyone else at once.
   if (!countExamples(results.learners.entry)) {
     const [col, fd, wk] = await Promise.all([
-      fromMerriamWebster(word, 'collegiate', env.MW_COLLEGIATE_KEY),
-      fromFreeDictionary(word), fromWiktionary(word),
+      safe(() => fromMerriamWebster(word, 'collegiate', env.MW_COLLEGIATE_KEY)),
+      safe(() => fromFreeDictionary(word)), safe(() => fromWiktionary(word)),
     ]);
     Object.assign(results, { collegiate: col, freedictionary: fd, wiktionary: wk });
   }
   const order = ['learners', 'collegiate', 'freedictionary', 'wiktionary'];
   const found = order.filter(k => results[k] && results[k].entry);
   const answered = order.filter(k => results[k] && !results[k].error && !results[k].skipped);
+  // What each source did, for troubleshooting (shown with ?debug=1 and on "unavailable").
+  const sources = {};
+  for (const k of order) {
+    const r = results[k];
+    sources[k] = !r ? 'not asked' : r.skipped ? 'skipped (no key)' : r.error ? 'failed: ' + (r.why || 'unknown') : r.entry ? `found (${countExamples(r.entry)} examples)` : 'not found';
+  }
 
   if (!found.length) {
-    if (!answered.length) return json({ error: 'unavailable' }, 503);
+    if (!answered.length) return json({ error: 'unavailable', sources }, 503);
     const allAnswered = order.every(k => !results[k] || results[k].skipped || !results[k].error);
     if (allAnswered) await env.WORDS.put(key, JSON.stringify({ notfound: true }), { expirationTtl: MISS_TTL });
-    return json({ error: 'notfound' }, 404);
+    return json(debug ? { error: 'notfound', sources } : { error: 'notfound' }, 404);
   }
 
   // First source in priority order that has an example sentence; otherwise the first one found.
@@ -178,10 +185,16 @@ async function lookup(url, env) {
   // Don't lock in a backup-only answer while the main dictionaries are having trouble.
   const mainTrouble = ['learners', 'freedictionary'].some(k => results[k] && results[k].error);
   if (!mainTrouble || pick === 'learners') await env.WORDS.put(key, JSON.stringify(entry), { expirationTtl: DICT_TTL });
-  return json(entry);
+  return json(debug ? { ...entry, sources } : entry);
+}
+
+// Runs one source; a crash inside it counts as that source failing, not the whole lookup.
+async function safe(fn) {
+  try { return await fn(); } catch (e) { return { error: true, why: 'crash: ' + (e && e.message || e) }; }
 }
 
 async function getJSON(u, timeoutMs = 6000, tries = 2) {
+  let why = '';
   for (let i = 0; i < tries; i++) {
     try {
       const res = await fetch(u, {
@@ -189,10 +202,14 @@ async function getJSON(u, timeoutMs = 6000, tries = 2) {
         signal: AbortSignal.timeout(timeoutMs),
       });
       if (res.status === 404) return { status: 404 };
-      if (res.ok) return { status: 200, data: await res.json() };
-    } catch (e) { /* timeout or network error: retry */ }
+      if (res.ok) {
+        const text = await res.text();
+        try { return { status: 200, data: JSON.parse(text) }; }
+        catch { why = 'not JSON: ' + text.slice(0, 80).replace(/\s+/g, ' '); }
+      } else why = 'HTTP ' + res.status;
+    } catch (e) { why = (e && e.name === 'TimeoutError') ? 'timeout' : 'network: ' + (e && e.message || e); }
   }
-  return { status: 0 };
+  return { status: 0, why };
 }
 
 function countExamples(entry) {
@@ -231,7 +248,7 @@ function mwSense(sense) {
 async function fromMerriamWebster(word, ref, apiKey) {
   if (!apiKey) return { skipped: true };
   const r = await getJSON(`https://www.dictionaryapi.com/api/v3/references/${ref}/json/${encodeURIComponent(word)}?key=${encodeURIComponent(apiKey)}`);
-  if (r.status !== 200 || !Array.isArray(r.data)) return { error: true };
+  if (r.status !== 200 || !Array.isArray(r.data)) return { error: true, why: r.why || (r.status === 404 ? 'HTTP 404' : 'unexpected response') };
   const entries = r.data.filter(e => e && typeof e === 'object' && e.meta && e.fl);
   if (!entries.length) return { entry: null }; // MW returns spelling suggestions (strings) when not found
   const base = e => String(e.meta.id || '').split(':')[0].toLowerCase();
@@ -275,7 +292,7 @@ async function fromMerriamWebster(word, ref, apiKey) {
 async function fromFreeDictionary(word) {
   const r = await getJSON('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word));
   if (r.status === 404) return { entry: null };
-  if (r.status !== 200 || !Array.isArray(r.data)) return { error: true };
+  if (r.status !== 200 || !Array.isArray(r.data)) return { error: true, why: r.why || (r.status === 404 ? 'HTTP 404' : 'unexpected response') };
   let phonetic = '', audio = '';
   const syn = new Set(), meanings = [];
   for (const e of r.data) {
@@ -313,7 +330,7 @@ function stemRe(word) {
 async function fromWiktionary(word) {
   const r = await getJSON('https://en.wiktionary.org/api/rest_v1/page/definition/' + encodeURIComponent(word));
   if (r.status === 404) return { entry: null };
-  if (r.status !== 200 || !r.data) return { error: true };
+  if (r.status !== 200 || !r.data) return { error: true, why: r.why || 'unexpected response' };
   const re = stemRe(word);
   const meanings = [];
   for (const sec of r.data.en || []) {
