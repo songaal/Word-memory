@@ -136,7 +136,7 @@ async function lookup(url, env) {
   }
 
   const debug = url.searchParams.get('debug') === '1';
-  const synP = safe(() => fromDatamuse(word)).then(r => Array.isArray(r) ? r : []);
+  const synP = safe(() => fromDatamuse(word));
   // 1) Merriam-Webster Learner's: easy definitions and plenty of example sentences.
   const results = { learners: await safe(() => fromMerriamWebster(word, 'learners', env.MW_LEARNER_KEY)) };
   // 2) If that has no example sentence, ask everyone else at once.
@@ -169,9 +169,18 @@ async function lookup(url, env) {
   const base = results[pick].entry;
   const soundFrom = found.map(k => results[k].entry).find(e => e.audio) || base;
   const phonFrom = found.map(k => results[k].entry).find(e => e.phonetic) || base;
+  const dm = await synP;
+  sources.similar = dm.error ? 'failed: ' + (dm.why || 'unknown') : dm.why ? 'failed: ' + dm.why : `datamuse (${dm.list.length})`;
+  let synList = [...found.flatMap(k => results[k].entry.synonyms || []), ...(dm.list || [])];
+  // Backup for similar words: Free Dictionary's synonym lists.
+  if (!synList.length) {
+    const fd = results.freedictionary || await safe(() => fromFreeDictionary(word));
+    synList = (fd.entry && fd.entry.synonyms) || [];
+    sources.similar += ` + freedictionary (${synList.length})`;
+  }
   const synonyms = [];
-  for (const sy of [...found.flatMap(k => results[k].entry.synonyms || []), ...(await synP)]) {
-    const t = sy.toLowerCase();
+  for (const sy of synList) {
+    const t = String(sy).toLowerCase();
     if (t !== word && !synonyms.includes(t)) synonyms.push(t);
   }
   const entry = {
@@ -183,7 +192,7 @@ async function lookup(url, env) {
     source: pick,
   };
   // Don't lock in a backup-only answer while the main dictionaries are having trouble.
-  const mainTrouble = ['learners', 'freedictionary'].some(k => results[k] && results[k].error);
+  const mainTrouble = ['learners', 'freedictionary'].some(k => results[k] && results[k].error) || (!synonyms.length && (dm.error || dm.why));
   if (!mainTrouble || pick === 'learners') await env.WORDS.put(key, JSON.stringify(entry), { expirationTtl: DICT_TTL });
   return json(debug ? { ...entry, sources } : entry);
 }
@@ -357,10 +366,11 @@ async function fromWiktionary(word) {
 async function fromDatamuse(word) {
   const q = encodeURIComponent(word);
   const [a, b] = await Promise.all([
-    getJSON(`https://api.datamuse.com/words?rel_syn=${q}&max=10`, 4000, 1),
-    getJSON(`https://api.datamuse.com/words?ml=${q}&max=10`, 4000, 1),
+    getJSON(`https://api.datamuse.com/words?rel_syn=${q}&max=10`, 5000, 2),
+    getJSON(`https://api.datamuse.com/words?ml=${q}&max=10`, 5000, 2),
   ]);
   const list = [...(Array.isArray(a.data) ? a.data : []), ...(Array.isArray(b.data) ? b.data : [])]
-    .map(x => x.word).filter(w => w && w.split(' ').length <= 2);
-  return list;
+    .map(x => x && x.word).filter(w => w && w.split(' ').length <= 2);
+  const why = a.status === 200 || b.status === 200 ? '' : (a.why || b.why || 'no response');
+  return { list, why };
 }
