@@ -46,7 +46,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:4px var(--gutter-r) 24px var(--gutter-l)}
 .stack{display:flex;flex-direction:column;gap:14px;max-width:640px;margin:0 auto}
 .stack .stack{margin:0;max-width:none;width:100%}
-.kb .tabbar{display:none}
+.kb .tabbar,.intest .tabbar{display:none}
 .tabbar{display:flex;background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 6px) var(--gutter-l)}
 .tabbar button{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;color:var(--muted);font:500 11px var(--f-ui);cursor:pointer;position:relative}
 .tabbar svg{width:25px;height:25px}
@@ -193,6 +193,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .seg button[aria-selected="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px #0002}
 .pane{flex:1;min-height:0;display:flex;flex-direction:column}
 .composer{display:flex;gap:8px;padding:8px var(--gutter-r) 10px var(--gutter-l);border-top:1px solid var(--line);background:var(--bg)}
+.composer.top{border-top:0;padding-top:2px}
 .composer input{flex:1}
 .bubble{align-self:center;font-size:13px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 14px}
 .bubble.err{color:var(--bad)}
@@ -321,11 +322,11 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
       <button role="tab" id="seg-story" aria-selected="false" type="button">Story</button>
     </div>
     <div class="pane" id="pane-search">
-      <div class="scroll" id="searchScroll"><div class="stack" id="searchBody"></div></div>
-      <form class="composer" id="searchForm" autocomplete="off">
+      <form class="composer top" id="searchForm" autocomplete="off">
         <input type="search" id="searchIn" placeholder="Look up a word" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="search">
         <button class="btn" id="searchBtn" type="submit">Search</button>
       </form>
+      <div class="scroll" id="searchScroll"><div class="stack" id="searchBody"></div></div>
     </div>
     <div class="pane" id="pane-list" hidden>
       <div class="scroll"><div class="stack" id="listBody"></div></div>
@@ -349,7 +350,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.10.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.11.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -837,8 +838,8 @@ function show(name){
   curTab=name;
   for(const t of TABS){$('tab-'+t).setAttribute('aria-selected',t===name);$('s-'+t).hidden=t!==name}
   if(name==='home') renderHome();
-  if(name==='test') renderTestTab();
-  if(name==='dict') renderDict();
+  if(name==='test') renderTestTab();else document.body.classList.remove('intest');
+  if(name==='dict'){renderDict();if(dictPane==='search') $('searchIn').focus()}
   if(name==='me') renderMe();
 }
 for(const t of TABS) $('tab-'+t).onclick=()=>show(t);
@@ -934,7 +935,7 @@ $('testBody').addEventListener('click',e=>{
 // ---------- test tab: Schedule / Story ----------
 let testPane='schedule';
 // Quit sits in the header while a test is running
-function setQuit(fn){const q=$('testQuit');q.hidden=!fn;q.onclick=fn||null}
+function setQuit(fn){const q=$('testQuit');q.hidden=!fn;q.onclick=fn||null;document.body.classList.toggle('intest',!!fn)}   // no tab bar during a test
 function renderTestTab(){
   $('tseg-schedule').setAttribute('aria-selected',testPane==='schedule');$('tseg-story').setAttribute('aria-selected',testPane==='story');
   $('testScroll').hidden=testPane!=='schedule';$('storyTestScroll').hidden=testPane!=='story';
@@ -1264,7 +1265,7 @@ function renderDict(){
   for(const k of ['search','list','story']){$('seg-'+k).setAttribute('aria-selected',dictPane===k);$('pane-'+k).hidden=dictPane!==k}
   if(dictPane==='search') renderSearch(true);else if(dictPane==='list') renderList();else renderStories();
 }
-$('seg-search').onclick=()=>{dictPane='search';renderDict()};
+$('seg-search').onclick=()=>{dictPane='search';renderDict();$('searchIn').focus()};
 $('seg-list').onclick=()=>{dictPane='list';renderDict()};
 $('seg-story').onclick=()=>{dictPane='story';storyView=null;renderDict()};
 
@@ -1416,11 +1417,11 @@ async function saveStory(){
   storyView=s.id;try{history.pushState({story:s.id},'')}catch(e){}
   renderStories();$('storyScroll').scrollTop=0;
 }
-function renderSearch(scrollEnd){
+function renderSearch(scrollTop){
   const b=$('searchBody');
-  b.innerHTML=searchResults.length?searchResults.map(r=>r.card?`<div class="card">${cardHTML(r.card,{add:true})}</div>`:r.pending?`<div class="bubble">Looking up "${esc(r.q)}"…</div>`:`<div class="bubble err">${esc(r.error)}</div>`).join('')
+  b.innerHTML=searchResults.length?[...searchResults].reverse().map(r=>r.card?`<div class="card">${cardHTML(r.card,{add:true})}</div>`:r.pending?`<div class="bubble">Looking up "${esc(r.q)}"…</div>`:`<div class="bubble err">${esc(r.error)}</div>`).join('')
     :`<div class="empty">Search for any word. It won't be added to your study list until you tap <b>+ Add</b>.</div>`;
-  if(scrollEnd){const s=$('searchScroll');s.scrollTop=s.scrollHeight}
+  if(scrollTop) $('searchScroll').scrollTop=0;   // newest result is at the top
 }
 $('searchForm').addEventListener('submit',async e=>{
   e.preventDefault();
