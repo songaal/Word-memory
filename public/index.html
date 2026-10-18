@@ -374,7 +374,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.16.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.16.1</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -1406,8 +1406,11 @@ document.addEventListener('keydown',e=>{if(e.key!=='Escape') return;if(!$('pop')
 
 // ---------- dict: search ----------
 let dictPane='search',searchResults=[];   // [{q, card} | {q, error}]
+let tbScreen='';
+function tbScreenIs(k){if(k!==tbScreen){tbScreen=k;setTabbarHidden(false)}}
 function renderDict(){
   if(dictPane!=='list') listSel=null;
+  tbScreenIs(dictPane+(dictPane==='story'?':'+(storyView||''):''));
   for(const k of ['search','list','story']){$('seg-'+k).setAttribute('aria-selected',dictPane===k);$('pane-'+k).hidden=dictPane!==k}
   if(dictPane==='search') renderSearch(true);else if(dictPane==='list') renderList();else renderStories();
 }
@@ -1434,6 +1437,7 @@ async function toggleStoryTr(s){
 }
 function renderStories(){
   const b=$('storyBody');
+  tbScreenIs('story:'+(storyView&&storyById(storyView)?storyView:''));
   if(storyView&&storyById(storyView)){renderStoryView(storyById(storyView));return}
   storyView=null;
   b.innerHTML=`<div class="listhead"><span class="label">${plural(stories.length,'story','stories')}</span><button class="plus" id="storyAdd" type="button" aria-label="Add a story">+</button></div>
