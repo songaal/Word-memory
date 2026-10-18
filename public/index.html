@@ -375,7 +375,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.17.2</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.17.3</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -2073,14 +2073,21 @@ $('aiClear').onclick=async()=>{
 async function writeStory(words,hint){
   const list=words.map(w=>w.def?`- ${w.word}: ${w.def}`:`- ${w.word}`).join('\n');
   const len=words.length<=6?'150-220':words.length<=10?'200-300':'260-360';
-  const prompt=`Write an original short story of ${len} words in 2-4 paragraphs for an adult learner of English (about B2 level).
-Use every word below at least once, each in the sense given and in a context that makes its meaning clear. A different form of the word (plural, past tense, -ing) is fine. Keep the rest of the vocabulary fairly simple, and give the story a small twist or a warm ending.${hint?`\nThe learner's request for the story (genre, setting, mood, characters…): ${hint}`:''}
+  const req=hint?`The learner's request (it may be in Korean). Follow it closely: it decides the format, genre, tone and difficulty — for example a radio or podcast script, a dialogue, a diary, a letter, a news report, or a story:
+"${hint}"
+If it mentions a real show or person you don't know well, write in the general style it suggests (for example a radio DJ chatting with listeners and reading their messages) and don't invent facts about real people.
+
+Write an original English text of about ${len} words that does what the request asks.`
+    :`Write an original short story of about ${len} words in 2-4 paragraphs, with a small twist or a warm ending.`;
+  const prompt=`${req}
+Use every word below at least once, each in the sense given and in a context that makes its meaning clear. A different form of the word (plural, past tense, -ing) is fine. Unless the request says otherwise, write for an adult learner around B2 level and keep the other vocabulary fairly simple.
 
 Words:
 ${list}
 
-Reply with JSON only, no other text: {"title": "a short title", "story": "the story, with paragraphs separated by a blank line"}`;
-  const txt=await aiComplete('You write short, original, natural-sounding stories that help people learn English vocabulary.',prompt);
+Layout: separate paragraphs with a blank line. For a script or dialogue, write each line as "Name: what they say" and put a blank line between lines.
+Reply with JSON only, no other text: {"title": "a short title", "story": "the whole text"}`;
+  const txt=await aiComplete('You write short, original English texts that help people learn vocabulary: stories, scripts, dialogues, letters, diaries, news pieces — whatever the learner asks for. The learner\'s request always decides the format, genre, tone and difficulty. Always write in English, even when the request is in another language.',prompt);
   let out;
   try{const m=String(txt).match(/\{[\s\S]*\}/);out=JSON.parse(m?m[0]:txt)}catch(e){throw new Error(AI[aiProv()].name+' sent back something unexpected. Try again.')}
   const story=String(out.story||out.text||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim();
