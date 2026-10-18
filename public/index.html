@@ -47,7 +47,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .tabbar{display:flex;background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 6px) var(--gutter-l)}
 .tabbar button{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;color:var(--muted);font:500 11px var(--f-ui);cursor:pointer;position:relative}
 .tabbar svg{width:25px;height:25px}
-.tabbar button[aria-selected="true"]{color:var(--accent)}
+.tabbar button[aria-selected="true"]{color:var(--accent);font-weight:600}
+.tabbar button[aria-selected="true"] .f{fill:currentColor}
+.tabbar button[aria-selected="true"] .cut{stroke:var(--card);stroke-width:2.2}
 .tabbar .n{position:absolute;top:0;left:calc(50% + 6px);min-width:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font:600 11px/18px var(--f-mono)}
 
 /* ---- common ---- */
@@ -174,6 +176,39 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .field label{font-weight:600}
 .steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;color:var(--muted);font-size:13px}
 
+.mepage{flex:1;min-height:0;display:flex;flex-direction:column}
+.bar.sub{align-items:center;padding-bottom:8px}
+.bar.sub h2{flex:1;text-align:center;font:600 17px var(--f-ui);margin:0}
+.back{width:40px;height:40px;margin-left:-8px;border:0;background:none;color:var(--accent);font:400 34px/1 var(--f-ui);cursor:pointer;display:grid;place-items:center;padding-bottom:4px}
+.back-spacer{width:32px}
+.group{display:flex;flex-direction:column;gap:6px}
+.grouplabel{padding-left:4px}
+.menu{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.mi{display:flex;align-items:center;gap:12px;width:100%;padding:14px;border:0;border-top:1px solid var(--line);background:none;text-align:left;cursor:pointer}
+.mi:first-child{border-top:0}
+.mi:active{background:var(--bg)}
+.mi .ic{width:32px;height:32px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.mi .ic svg{width:19px;height:19px}
+.mi .t{flex:1;font:500 16px var(--f-ui)}
+.mi .v{font-size:14px;color:var(--muted)}
+.mi .v.on{color:var(--good)}
+.mi .chev{color:var(--muted);font-size:22px;line-height:1}
+
+/* ---- results ---- */
+.score{font:700 44px/1 var(--f-mono);font-variant-numeric:tabular-nums}
+.score small{font-size:22px;color:var(--muted);font-weight:500}
+.splitbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line)}
+.splitbar .ok{background:var(--good)} .splitbar .no{background:var(--bad)}
+.rlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
+.ri{display:grid;grid-template-columns:24px 1fr;gap:4px 10px;padding:12px 14px;border:0;border-top:1px solid var(--line);background:none;text-align:left;cursor:pointer;width:100%}
+.ri:first-child{border-top:0}
+.ri .mk{font:700 16px var(--f-ui);grid-row:span 2}
+.ri .mk.ok{color:var(--good)} .ri .mk.no{color:var(--bad)}
+.ri .top{display:flex;justify-content:space-between;gap:8px;font:600 16px var(--f-word)}
+.ri .top span{font:400 12px var(--f-mono);color:var(--muted);white-space:nowrap}
+.ri .sent{font:italic 400 14px/1.45 var(--f-word);color:var(--muted)}
+.ri .sent b{font-style:normal;color:var(--fg)}
+
 /* ---- sheet (popup layer) ---- */
 .sheet{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;justify-content:flex-end;background:#0007}
 .sheet-panel{background:var(--bg);border-radius:18px 18px 0 0;max-height:88%;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -242,21 +277,39 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 
   <!-- Me -->
   <section class="screen" id="s-me" hidden>
-    <div class="bar"><h1>Me</h1></div>
-    <div class="scroll"><div class="stack">
-      <div class="card profile" id="profile"></div>
-      <div class="card">
-        <form class="field" id="setForm" autocomplete="off">
-          <label for="trKey">Google Translate API key</label>
-          <p class="note">Used for the Korean translation button next to example sentences. <span id="keyWhere"></span></p>
-          <div class="row" style="flex-wrap:nowrap">
-            <input type="password" id="trKey" placeholder="Paste your API key" spellcheck="false" autocapitalize="none" style="flex:1">
-            <button class="btn ghost" id="trShow" type="button">Show</button>
-          </div>
-          <div class="row"><button class="btn" type="submit" id="trSave">Save and test</button><button class="btn ghost" type="button" id="trClear">Remove key</button></div>
-          <div class="msg" id="setMsg"></div>
-        </form>
-        <div class="field">
+    <!-- Me: main page -->
+    <div class="mepage" id="me-main">
+      <div class="bar"><h1>Me</h1></div>
+      <div class="scroll"><div class="stack">
+        <div class="card profile" id="profile"></div>
+        <div class="group">
+          <div class="label grouplabel">Settings</div>
+          <div class="menu" id="settingsMenu"></div>
+        </div>
+        <div class="card">
+          <span class="label">About</span>
+          <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
+          <p class="note"><span class="version-tag">v2.1.0</span> · <span class="version-date">2026/10/18</span></p>
+        </div>
+      </div></div>
+    </div>
+    <!-- Me: Google Translate settings page -->
+    <div class="mepage" id="me-translate" hidden>
+      <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>Google Translate</h2><span class="back-spacer"></span></div>
+      <div class="scroll"><div class="stack">
+        <div class="card">
+          <form class="field" id="setForm" autocomplete="off">
+            <label for="trKey">API key</label>
+            <p class="note">Used for the Korean translation button next to example sentences. <span id="keyWhere"></span></p>
+            <div class="row" style="flex-wrap:nowrap">
+              <input type="password" id="trKey" placeholder="Paste your API key" spellcheck="false" autocapitalize="none" style="flex:1">
+              <button class="btn ghost" id="trShow" type="button">Show</button>
+            </div>
+            <div class="row"><button class="btn" type="submit" id="trSave">Save and test</button><button class="btn ghost" type="button" id="trClear">Remove key</button></div>
+            <div class="msg" id="setMsg"></div>
+          </form>
+        </div>
+        <div class="card">
           <span class="label">How to get a key</span>
           <ol class="steps">
             <li>Open Google Cloud Console and pick (or create) a project.</li>
@@ -265,24 +318,19 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
             <li>Recommended: restrict the key to the Cloud Translation API and to this website.</li>
           </ol>
         </div>
-      </div>
-      <div class="card">
-        <span class="label">About</span>
-        <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-        <p class="note"><span class="version-tag">v2.0.0</span> · <span class="version-date">2026/10/18</span></p>
-      </div>
-    </div></div>
+      </div></div>
+    </div>
   </section>
 
   <nav class="tabbar" role="tablist" aria-label="Main">
     <button role="tab" id="tab-home" aria-selected="true" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
     <button role="tab" id="tab-test" aria-selected="false" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>Test<span class="n" id="dueBadge" hidden></span></button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="f" x="4" y="3" width="16" height="18" rx="2"/><path class="cut" d="m8.5 12 2.5 2.5 4.5-5"/></svg>Test<span class="n" id="dueBadge" hidden></span></button>
     <button role="tab" id="tab-dict" aria-selected="false" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/><path d="M9 8h7M9 11.5h5"/></svg>Dict</button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/><path class="cut" d="M9 8h7M9 11.5h5"/></svg>Dict</button>
     <button role="tab" id="tab-me" aria-selected="false" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>Me</button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="f" cx="12" cy="8" r="4"/><path class="f" d="M4 21c0-4 3.6-7 8-7s8 3 8 7z"/></svg>Me</button>
   </nav>
 </div>
 
@@ -718,7 +766,7 @@ function renderHome(){
 
 // ---------- test ----------
 // Practice rule: a sentence already answered today (and not due) is practice and keeps its schedule.
-let queue=[],cur=null,answered=false,score={ok:0,no:0},total=0,hint={shown:new Set(),used:0},inTest=false;
+let queue=[],cur=null,answered=false,score={ok:0,no:0},total=0,hint={shown:new Set(),used:0},inTest=false,results=[];
 const testActive=()=>inTest;
 function testHome(){
   inTest=false;
@@ -726,7 +774,8 @@ function testHome(){
   const pending=set.filter(it=>isDue(it.d)).length;
   if(!set.length){
     const next=allItems().map(it=>it.d.due).sort()[0];
-    $('testBody').innerHTML=`<div class="card empty"><div style="font:600 18px var(--f-ui);color:var(--fg)">All done for today</div>${next?`<div class="note">Next review: ${dueLabel(next).toLowerCase()}</div>`:'<div class="note">Add words in the Dict tab to start.</div>'}</div>`;
+    $('testBody').innerHTML=`<div class="card empty"><div style="font:600 18px var(--f-ui);color:var(--fg)">All done for today</div>${next?`<div class="note">Next review: ${dueLabel(next).toLowerCase()}</div>`:'<div class="note">Add words in the Dict tab to start.</div>'}${results.length?'<button class="btn ghost" id="lastRes" type="button">View last results</button>':''}</div>`;
+    if(results.length) $('lastRes').onclick=finish;
     return;
   }
   $('testBody').innerHTML=`<div class="card">
@@ -736,8 +785,10 @@ function testHome(){
     </div>
     <p class="note">Each question is an example sentence with a blank. A word with three sentences comes up three times. Sentences you already answered today count as practice and keep their schedule.</p>
     <button class="btn block" id="startBtn" type="button">${pending?'Start test':'Practice again'}</button>
+    ${results.length?'<button class="btn ghost block" id="lastRes" type="button">View last results</button>':''}
   </div>`;
   $('startBtn').onclick=startTest;
+  if(results.length) $('lastRes').onclick=finish;
 }
 // Shuffle, then avoid the same word twice in a row where possible.
 function spread(list){
@@ -753,7 +804,7 @@ function spread(list){
 function startTest(){
   const set=todayItems();
   if(!set.length){testHome();return}
-  queue=spread(set.slice());total=queue.length;score={ok:0,no:0};inTest=true;
+  queue=spread(set.slice());total=queue.length;score={ok:0,no:0};results=[];inTest=true;
   next();
 }
 // Answer form = the word as it appears in the sentence (e.g. "mitigating"); the base word is accepted too.
@@ -844,6 +895,7 @@ function grade(ans){
   else{d.stage=0;d.due=addDays(1);d.last=today();when='Back tomorrow'}
   if(!prac){const t=today();log[t]=log[t]||{ok:0,no:0};log[t][ok?'ok':'no']++}
   ok?score.ok++:score.no++;
+  results.push({c:cur.c,d,ok,prac,form:curForm,typed:a,noEx:!!cur.noEx});
   save();renderBadge();
   // Fill the blank(s) with the answer: green if right, red if not. Tap it for the word's entry.
   $('ansIn').outerHTML=`<button class="fill ${ok?'ok':'no'}" type="button" data-pop="${esc(cur.c.word)}" title="Show the word's entry">${esc(curForm)}</button>`;
@@ -861,15 +913,29 @@ function grade(ans){
 }
 function finish(){
   inTest=false;
+  const pct=total?Math.round(score.ok/total*100):0;
+  const again=results.filter(r=>!r.ok&&!r.prac).length;
+  const order=[...results.filter(r=>!r.ok),...results.filter(r=>r.ok)];   // misses first
+  const sent=r=>r.noEx?esc(r.d.d):esc(r.d.ex).replace(wordRe(r.c.word),m=>'<b>'+m+'</b>');
   $('testBody').innerHTML=`
-    <div class="progress"><span class="count">${total}<small> / ${total}</small></span><div class="pbar"><i style="width:100%"></i></div></div>
-    <div class="card" style="text-align:center">
-      <div style="font:600 20px var(--f-ui)">Test complete</div>
-      <div class="stats"><div class="stat"><b style="color:var(--good)">${score.ok}</b><span>Correct</span></div><div class="stat"><b style="color:var(--bad)">${score.no}</b><span>Missed</span></div></div>
+    <div class="card">
+      <span class="label">Test complete</span>
+      <div class="row" style="justify-content:space-between;align-items:flex-end">
+        <span class="score">${score.ok}<small> / ${total} correct</small></span>
+        <span style="font:600 22px var(--f-mono);color:${pct>=80?'var(--good)':pct>=50?'var(--accent)':'var(--bad)'}">${pct}%</span>
+      </div>
+      <div class="splitbar"><div class="ok" style="width:${total?score.ok/total*100:0}%"></div><div class="no" style="width:${total?score.no/total*100:0}%"></div></div>
+      <div class="note">${again?`${plural(again,'sentence')} will come back tomorrow.`:'Every sentence moves to a longer review interval.'}${results.some(r=>r.prac)?' Practice answers did not change the schedule.':''}</div>
       <button class="btn block" id="again" type="button">Retake test</button>
-      <p class="note">A retake shuffles the sentences again and counts as practice.</p>
-    </div>`;
+    </div>
+    <div class="label" style="padding-left:4px">Answers · tap to see the word</div>
+    <div class="rlist">${order.map(r=>`<button class="ri" type="button" data-pop="${esc(r.c.word)}">
+      <span class="mk ${r.ok?'ok':'no'}">${r.ok?'✓':'✗'}</span>
+      <span class="top">${esc(r.form)}<span>${r.prac?'Practice':dueLabel(r.d.due)}</span></span>
+      <span class="sent">${sent(r)}${!r.ok&&r.typed?` <span style="font-style:normal;color:var(--bad)">· you wrote “${esc(r.typed)}”</span>`:''}</span>
+    </button>`).join('')}</div>`;
   $('again').onclick=startTest;
+  $('testScroll').scrollTop=0;
 }
 // Tap a filled-in answer (or a word in lists) to see its entry
 document.addEventListener('click',e=>{
@@ -1011,6 +1077,11 @@ async function runBulk(){
 }
 
 // ---------- me ----------
+// Settings menu: add new settings here; each opens its own page with a back button.
+const SETTINGS_MENU=[
+  {id:'translate',title:'Google Translate',icon:TR_ICON,value:()=>settings.translateKey?['On','on']:['Not set',''],render:()=>renderSettings()},
+];
+let mePage='main';
 function renderMe(){
   const p=$('profile');
   if(acct==='cloud'){
@@ -1023,8 +1094,29 @@ function renderMe(){
       <button class="btn" id="inBtn" type="button">Sign in</button>`;
     $('inBtn').onclick=()=>showView('gate');
   }
-  renderSettings();
+  $('settingsMenu').innerHTML=SETTINGS_MENU.map(m=>{const [v,cls]=m.value();return `<button class="mi" type="button" data-mepage="${m.id}"><span class="ic">${m.icon}</span><span class="t">${esc(m.title)}</span><span class="v ${cls}">${esc(v)}</span><span class="chev">›</span></button>`}).join('');
+  openMePage(mePage,false);
 }
+function openMePage(page,push){
+  if(page!=='main'&&!SETTINGS_MENU.some(m=>m.id===page)) page='main';
+  mePage=page;
+  document.querySelectorAll('#s-me .mepage').forEach(el=>el.hidden=el.id!=='me-'+page);
+  const m=SETTINGS_MENU.find(x=>x.id===page);if(m) m.render();
+  if(push) try{history.pushState({me:page},'')}catch(e){}
+}
+document.addEventListener('click',e=>{
+  const m=e.target.closest('[data-mepage]');
+  if(m){openMePage(m.dataset.mepage,true);return}
+  if(e.target.closest('[data-back]')){
+    if(history.state&&history.state.me) history.back();else{openMePage('main',false);renderMe()}
+  }
+});
+// Phone back gesture / browser back closes a settings page instead of leaving the app
+window.addEventListener('popstate',e=>{
+  if(!$('sheet').hidden){closeSheet();return}
+  const page=(e.state&&e.state.me)||'main';
+  if(curTab==='me'){mePage=page;renderMe()}else mePage=page;
+});
 async function loadSettings(){
   if(acct==='cloud'){
     try{const r=await api('/api/settings');if(r.ok){const j=await r.json();settings={translateKey:j.translateKey||''};return}}catch(e){}
