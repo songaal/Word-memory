@@ -47,6 +47,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .stack{display:flex;flex-direction:column;gap:14px;max-width:640px;margin:0 auto}
 .stack .stack{margin:0;max-width:none;width:100%}
 .kb .tabbar,.intest .tabbar{display:none}
+.tabbar{transition:transform .28s ease,margin-bottom .28s ease;will-change:transform}
+.tbhide .tabbar{transform:translateY(100%);margin-bottom:calc(-1 * var(--tbh,64px))}
 .tabbar{display:flex;background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 6px) var(--gutter-l)}
 .tabbar button{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;color:var(--muted);font:500 11px var(--f-ui);cursor:pointer;position:relative}
 .tabbar svg{width:25px;height:25px}
@@ -354,7 +356,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.12.1</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.13.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -899,8 +901,28 @@ document.addEventListener('click',async e=>{
 // ---------- tabs ----------
 const TABS=['home','test','dict','me'];
 let curTab='home';
+// Words tab: the tab bar slides away while scrolling down and back on scrolling up
+let tbHidden=false,tbIgnore=0;
+function setTabbarHidden(h){
+  if(h===tbHidden) return; tbHidden=h;
+  if(h) document.body.style.setProperty('--tbh',document.querySelector('.tabbar').offsetHeight+'px');
+  tbIgnore=Date.now()+350;   // the scroll area resizes during the slide; ignore those scroll events
+  document.body.classList.toggle('tbhide',h);
+}
+document.querySelectorAll('#s-dict .scroll').forEach(el=>{
+  let last=0;
+  el.addEventListener('scroll',()=>{
+    const max=el.scrollHeight-el.clientHeight, top=Math.max(0,Math.min(el.scrollTop,max)), d=top-last;
+    if(Date.now()<tbIgnore){last=top;return}
+    if(top<20) setTabbarHidden(false);
+    else if(d>8) setTabbarHidden(true);
+    else if(d<-8&&top<max-2) setTabbarHidden(false);
+    if(Math.abs(d)>8||top<20) last=top;
+  },{passive:true});
+});
 function show(name){
   if(name!==curTab) stopReading();
+  setTabbarHidden(false);
   curTab=name;
   for(const t of TABS){$('tab-'+t).setAttribute('aria-selected',t===name);$('s-'+t).hidden=t!==name}
   if(name==='home') renderHome();
@@ -1331,9 +1353,9 @@ function renderDict(){
   for(const k of ['search','list','story']){$('seg-'+k).setAttribute('aria-selected',dictPane===k);$('pane-'+k).hidden=dictPane!==k}
   if(dictPane==='search') renderSearch(true);else if(dictPane==='list') renderList();else renderStories();
 }
-$('seg-search').onclick=()=>{dictPane='search';renderDict();$('searchIn').focus()};
-$('seg-list').onclick=()=>{dictPane='list';renderDict()};
-$('seg-story').onclick=()=>{dictPane='story';stopReading();storyView=null;renderDict()};
+$('seg-search').onclick=()=>{setTabbarHidden(false);dictPane='search';renderDict();$('searchIn').focus()};
+$('seg-list').onclick=()=>{setTabbarHidden(false);dictPane='list';renderDict()};
+$('seg-story').onclick=()=>{setTabbarHidden(false);dictPane='story';stopReading();storyView=null;renderDict()};
 
 // ---------- words tab: stories ----------
 let storyView=null,storyConfirm=false,storyTr=false,storyTrMsg='',storyTrErr=false;
