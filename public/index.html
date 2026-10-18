@@ -221,9 +221,8 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .selbar{padding:10px var(--gutter-r) 10px var(--gutter-l);border-top:1px solid var(--line);background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .selbar .btn{max-width:640px;margin:0 auto;display:block}
 .selbar .btn:disabled{opacity:.45;cursor:default}
-.airow{display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
-.airow input{flex:1;min-width:0;font-size:15px}
-.aibtn{display:flex;align-items:center;justify-content:center;gap:6px;flex:none;padding:10px 12px;font-size:14px}
+#stHint{font-size:15px;resize:vertical;min-height:52px}
+.aibtn{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0 10px}
 .aibtn svg{width:18px;height:18px}
 .aibtn:disabled{opacity:.6;cursor:default}
 .li .w{font:600 17px var(--f-word);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -375,7 +374,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.17.3</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.17.4</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -1536,10 +1535,9 @@ function openStoryForm(existing,presetWords){
     <label class="fieldlabel" for="stWords">Words to learn</label>
     <textarea id="stWords" rows="5" placeholder="One per line, or separated by commas&#10;&#10;Or a JSON array, same format as Add words → JSON" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-family:var(--f-mono);font-size:15px"></textarea>
     <p class="note">Each word should appear in the story (any form, like "inflated" for "inflate"). Plain words already in your word list are used as they are; the others are looked up in the dictionary and added to your word list. A JSON array (<code>[{"word","pos","pairs":[{"example","definition"}],"similar"}]</code>) adds those words to your word list with your own definitions, replacing any that are already there.</p>
-    <div class="airow">
-      <input type="text" id="stHint" placeholder="Genre, idea…" autocomplete="off" enterkeyhint="go" aria-label="Genre or idea for the AI (optional)">
-      <button class="btn ghost aibtn" id="stGen" type="button">${AI_ICON} Write with ${aiKey()?AI[aiProv()].name:'AI'}</button>
-    </div>
+    <label class="fieldlabel" for="stHint">Request for the AI <span class="note" style="display:inline">(optional)</span></label>
+    <textarea id="stHint" rows="2" placeholder="e.g. A radio DJ reading a listener's letter, in easy words" autocomplete="off"></textarea>
+    <button class="btn ghost block aibtn" id="stGen" type="button">${AI_ICON} Write with ${aiKey()?AI[aiProv()].name:'AI'}</button>
     <button class="btn block" id="stSave" type="button">${storyEditing?'Save changes':'Save story'}</button>
     <div class="msg" id="stMsg"></div>
   </div>`);
@@ -1552,7 +1550,8 @@ function openStoryForm(existing,presetWords){
   $('stSave').onclick=saveStory;
   $('stGen').onclick=genStory;
   $('stHint').value=lsGet('wm.storyHint')||'';
-  $('stHint').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();genStory()}});
+  const grow=()=>{const t=$('stHint');t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,220)+'px'};
+  $('stHint').addEventListener('input',grow);requestAnimationFrame(grow);
   if(presetWords&&presetWords.length){
     $('stWords').value=presetWords.join('\n');
     $('stMsg').className='msg';$('stMsg').textContent=`Add a genre or idea if you like, then tap Write with ${aiKey()?AI[aiProv()].name:'AI'}.`;
@@ -2115,7 +2114,7 @@ async function genStory(){
   msg.className='msg';msg.textContent=`${AI[aiProv()].name} is writing a story with ${plural(words.length,'word')}… (usually 5–20 seconds)`;
   btn.disabled=true;$('stSave').disabled=true;btn.textContent='Writing…';
   try{
-    const hint=$('stHint').value.trim().slice(0,200);lsSet('wm.storyHint',hint);
+    const hint=$('stHint').value.trim().slice(0,600);lsSet('wm.storyHint',hint);
     const g=await writeStory(words,hint);
     if(!$('stGen')) return;   // the form was closed meanwhile
     $('stTitle').value=g.title;$('stText2').value=g.story;
