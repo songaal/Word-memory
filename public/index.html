@@ -195,6 +195,13 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .mi .chev{color:var(--muted);font-size:22px;line-height:1}
 
 /* ---- results ---- */
+.hlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
+.hi{display:flex;align-items:center;gap:10px;padding:13px 14px;border:0;border-top:1px solid var(--line);background:none;text-align:left;cursor:pointer;width:100%}
+.hi:first-child{border-top:0}
+.hi .when{flex:1;font:500 15px var(--f-ui)}
+.hi .res{font:400 14px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums;display:flex;gap:10px;align-items:baseline}
+.hi .res b{font:600 15px var(--f-mono);min-width:3.2em;text-align:right}
+.hi .chev{color:var(--muted);font-size:20px}
 .score{font:700 44px/1 var(--f-mono);font-variant-numeric:tabular-nums}
 .score small{font-size:22px;color:var(--muted);font-weight:500}
 .splitbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line)}
@@ -289,7 +296,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.1.0</span> · <span class="version-date">2026/10/18</span></p>
+          <p class="note"><span class="version-tag">v2.2.0</span> · <span class="version-date">2026/10/18</span></p>
         </div>
       </div></div>
     </div>
@@ -351,7 +358,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 // Signed in: words live in the server database (Cloudflare KV), cached in this browser.
 // Guest: words live only in this browser.
 const GOOGLE_CLIENT_ID='719116381133-drmp1g433dj5qfnhp7u5ujbichl7d0j2.apps.googleusercontent.com';
-const GUEST_KEY='wordbox.v1', GUEST_SEED='wordbox.seed', GUEST_LOG='wordbox.log', SEED_VERSION=2;
+const GUEST_KEY='wordbox.v1', GUEST_SEED='wordbox.seed', GUEST_LOG='wordbox.log', GUEST_HIST='wordbox.history', SEED_VERSION=2;
 const INTERVALS=[3,7,14,30,60];
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
@@ -361,15 +368,16 @@ function lsJSON(k){try{const s=lsGet(k);return s?JSON.parse(s):null}catch(e){ret
 let session=lsGet('wm.session'), user=lsJSON('wm.user');
 let acct=session&&user?'cloud':(lsGet('wm.guest')==='1'?'guest':null);
 let cards=[], seed=0, log={};   // log: { 'YYYY-MM-DD': {ok, no} } answers per day
+let history=[];                 // finished tests, newest first: {at, total, ok, items:[{w, form, ok, prac, typed, s, noEx, due}]}
 const cacheKey=()=>'wm.cache.'+user.sub, pendingKey=()=>'wm.pending.'+user.sub;
 
 function api(path,opts={}){
   return fetch(path,{...opts,headers:{'Content-Type':'application/json','Authorization':'Bearer '+session}});
 }
 function save(){
-  if(acct==='guest'){lsSet(GUEST_KEY,JSON.stringify(cards));lsSet(GUEST_SEED,String(seed));lsSet(GUEST_LOG,JSON.stringify(log));return}
+  if(acct==='guest'){lsSet(GUEST_KEY,JSON.stringify(cards));lsSet(GUEST_SEED,String(seed));lsSet(GUEST_LOG,JSON.stringify(log));lsSet(GUEST_HIST,JSON.stringify(history));return}
   if(acct!=='cloud') return;
-  lsSet(cacheKey(),JSON.stringify({cards,seed,log}));
+  lsSet(cacheKey(),JSON.stringify({cards,seed,log,history}));
   lsSet(pendingKey(),'1');
   schedulePush();
 }
@@ -380,7 +388,7 @@ async function push(){
   if(pushing){pushTimer=setTimeout(push,500);return}
   pushing=true;dirty=false;
   try{
-    const r=await api('/api/words',{method:'PUT',body:JSON.stringify({cards,seed,log})});
+    const r=await api('/api/words',{method:'PUT',body:JSON.stringify({cards,seed,log,history})});
     if(r.status===401){expired();return}
     if(!r.ok) throw new Error('save');
     if(!dirty){lsDel(pendingKey());setSync('saved')}
@@ -418,14 +426,14 @@ function applySeeds(){
 
 function loadGuest(){
   loadSettings();
-  cards=lsJSON(GUEST_KEY);seed=Number(lsGet(GUEST_SEED)||0);log=lsJSON(GUEST_LOG)||{};
+  cards=lsJSON(GUEST_KEY);seed=Number(lsGet(GUEST_SEED)||0);log=lsJSON(GUEST_LOG)||{};history=lsJSON(GUEST_HIST)||[];
   if(applySeeds()|migrate()) save();
   showView('app');renderAll();
 }
 async function loadCloud(){
   loadSettings();
   const cache=lsJSON(cacheKey());
-  if(cache&&Array.isArray(cache.cards)){cards=cache.cards;seed=cache.seed||0;log=cache.log||{};migrate();showView('app');renderAll()}
+  if(cache&&Array.isArray(cache.cards)){cards=cache.cards;seed=cache.seed||0;log=cache.log||{};history=cache.history||[];migrate();showView('app');renderAll()}
   else showView('loading','Loading your words…');
   // Changes made offline win: send them up instead of downloading.
   if(cache&&lsGet(pendingKey())==='1'){schedulePush();return}
@@ -435,14 +443,14 @@ async function loadCloud(){
     if(r.status===401){expired();return}
     if(!r.ok) throw new Error('load');
     const d=await r.json();
-    if(Array.isArray(d.cards)){cards=d.cards;seed=d.seed||0;log=d.log||{}}
+    if(Array.isArray(d.cards)){cards=d.cards;seed=d.seed||0;log=d.log||{};history=d.history||[]}
     else{
       // First sign-in on this account: bring over words saved without signing in.
       const g=lsJSON(GUEST_KEY);
-      if(Array.isArray(g)&&g.length){cards=g;seed=Number(lsGet(GUEST_SEED)||0);log=lsJSON(GUEST_LOG)||{}}else{cards=null;seed=0;log={}}
+      if(Array.isArray(g)&&g.length){cards=g;seed=Number(lsGet(GUEST_SEED)||0);log=lsJSON(GUEST_LOG)||{};history=lsJSON(GUEST_HIST)||[]}else{cards=null;seed=0;log={};history=[]}
     }
     const changed=applySeeds()|migrate()||!Array.isArray(d.cards);
-    lsSet(cacheKey(),JSON.stringify({cards,seed,log}));
+    lsSet(cacheKey(),JSON.stringify({cards,seed,log,history}));
     showView('app');renderAll();
     if(changed) save(); else setSync('saved');
   }catch(e){
@@ -768,14 +776,25 @@ function renderHome(){
 // Practice rule: a sentence already answered today (and not due) is practice and keeps its schedule.
 let queue=[],cur=null,answered=false,score={ok:0,no:0},total=0,hint={shown:new Set(),used:0},inTest=false,results=[];
 const testActive=()=>inTest;
+function fmtWhen(iso){
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function shortDate(ymd){const [y,m,d]=String(ymd).split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+const pctColor=p=>p>=80?'var(--good)':p>=50?'var(--accent)':'var(--bad)';
+function historyHTML(){
+  if(!history.length) return `<div class="label" style="padding-left:4px">History</div><div class="card empty">No tests yet. Your results will appear here.</div>`;
+  return `<div class="label" style="padding-left:4px">History</div>
+    <div class="hlist">${history.slice(0,30).map((h,i)=>{const p=h.total?Math.round(h.ok/h.total*100):0;
+      return `<button class="hi" type="button" data-hist="${i}"><span class="when">${esc(fmtWhen(h.at))}</span><span class="res">${h.ok} / ${h.total}<b style="color:${pctColor(p)}">${p}%</b></span><span class="chev">›</span></button>`}).join('')}</div>`;
+}
 function testHome(){
   inTest=false;
   const set=todayItems();
   const pending=set.filter(it=>isDue(it.d)).length;
   if(!set.length){
     const next=allItems().map(it=>it.d.due).sort()[0];
-    $('testBody').innerHTML=`<div class="card empty"><div style="font:600 18px var(--f-ui);color:var(--fg)">All done for today</div>${next?`<div class="note">Next review: ${dueLabel(next).toLowerCase()}</div>`:'<div class="note">Add words in the Dict tab to start.</div>'}${results.length?'<button class="btn ghost" id="lastRes" type="button">View last results</button>':''}</div>`;
-    if(results.length) $('lastRes').onclick=finish;
+    $('testBody').innerHTML=`<div class="card empty"><div style="font:600 18px var(--f-ui);color:var(--fg)">All done for today</div>${next?`<div class="note">Next review: ${dueLabel(next).toLowerCase()}</div>`:'<div class="note">Add words in the Dict tab to start.</div>'}</div>${historyHTML()}`;
     return;
   }
   $('testBody').innerHTML=`<div class="card">
@@ -785,11 +804,13 @@ function testHome(){
     </div>
     <p class="note">Each question is an example sentence with a blank. A word with three sentences comes up three times. Sentences you already answered today count as practice and keep their schedule.</p>
     <button class="btn block" id="startBtn" type="button">${pending?'Start test':'Practice again'}</button>
-    ${results.length?'<button class="btn ghost block" id="lastRes" type="button">View last results</button>':''}
-  </div>`;
+  </div>${historyHTML()}`;
   $('startBtn').onclick=startTest;
-  if(results.length) $('lastRes').onclick=finish;
 }
+$('testBody').addEventListener('click',e=>{
+  const h=e.target.closest('[data-hist]');
+  if(h) renderResult(history[+h.dataset.hist],false);
+});
 // Shuffle, then avoid the same word twice in a row where possible.
 function spread(list){
   shuffle(list);
@@ -913,28 +934,38 @@ function grade(ans){
 }
 function finish(){
   inTest=false;
-  const pct=total?Math.round(score.ok/total*100):0;
-  const again=results.filter(r=>!r.ok&&!r.prac).length;
-  const order=[...results.filter(r=>!r.ok),...results.filter(r=>r.ok)];   // misses first
-  const sent=r=>r.noEx?esc(r.d.d):esc(r.d.ex).replace(wordRe(r.c.word),m=>'<b>'+m+'</b>');
+  const h={at:new Date().toISOString(),total,ok:score.ok,items:results.map(r=>({
+    w:r.c.word,form:r.form,ok:r.ok,prac:r.prac,typed:r.typed||'',s:r.noEx?r.d.d:r.d.ex,noEx:r.noEx,due:r.d.due}))};
+  history.unshift(h);if(history.length>60) history.length=60;
+  save();
+  renderResult(h,true);
+}
+// Results page. fresh = just finished (offers Retake); otherwise opened from History (offers Back).
+function renderResult(h,fresh){
+  if(!h) return;
+  const pct=h.total?Math.round(h.ok/h.total*100):0;
+  const again=h.items.filter(r=>!r.ok&&!r.prac).length;
+  const order=[...h.items.filter(r=>!r.ok),...h.items.filter(r=>r.ok)];   // misses first
+  const sent=r=>r.noEx?esc(r.s):esc(r.s).replace(wordRe(r.w),m=>'<b>'+m+'</b>');
   $('testBody').innerHTML=`
+    ${fresh?'':`<button class="linkbtn" id="resBack" type="button" style="align-self:flex-start">‹ Back</button>`}
     <div class="card">
-      <span class="label">Test complete</span>
+      <span class="label">${fresh?'Test complete':esc(fmtWhen(h.at))}</span>
       <div class="row" style="justify-content:space-between;align-items:flex-end">
-        <span class="score">${score.ok}<small> / ${total} correct</small></span>
-        <span style="font:600 22px var(--f-mono);color:${pct>=80?'var(--good)':pct>=50?'var(--accent)':'var(--bad)'}">${pct}%</span>
+        <span class="score">${h.ok}<small> / ${h.total} correct</small></span>
+        <span style="font:600 22px var(--f-mono);color:${pctColor(pct)}">${pct}%</span>
       </div>
-      <div class="splitbar"><div class="ok" style="width:${total?score.ok/total*100:0}%"></div><div class="no" style="width:${total?score.no/total*100:0}%"></div></div>
-      <div class="note">${again?`${plural(again,'sentence')} will come back tomorrow.`:'Every sentence moves to a longer review interval.'}${results.some(r=>r.prac)?' Practice answers did not change the schedule.':''}</div>
-      <button class="btn block" id="again" type="button">Retake test</button>
+      <div class="splitbar"><div class="ok" style="width:${h.total?h.ok/h.total*100:0}%"></div><div class="no" style="width:${h.total?(h.total-h.ok)/h.total*100:0}%"></div></div>
+      <div class="note">${again?`${plural(again,'sentence')} came back for the next day.`:'Every sentence moved to a longer review interval.'}${h.items.some(r=>r.prac)?' Practice answers did not change the schedule.':''}</div>
+      ${fresh?'<button class="btn block" id="again" type="button">Retake test</button>':''}
     </div>
     <div class="label" style="padding-left:4px">Answers · tap to see the word</div>
-    <div class="rlist">${order.map(r=>`<button class="ri" type="button" data-pop="${esc(r.c.word)}">
+    <div class="rlist">${order.map(r=>`<button class="ri" type="button" ${cards.some(c=>c.word===r.w)?`data-pop="${esc(r.w)}"`:''}>
       <span class="mk ${r.ok?'ok':'no'}">${r.ok?'✓':'✗'}</span>
-      <span class="top">${esc(r.form)}<span>${r.prac?'Practice':dueLabel(r.d.due)}</span></span>
+      <span class="top">${esc(r.form)}<span>${r.prac?'Practice':fresh?dueLabel(r.due):'Next: '+shortDate(r.due)}</span></span>
       <span class="sent">${sent(r)}${!r.ok&&r.typed?` <span style="font-style:normal;color:var(--bad)">· you wrote “${esc(r.typed)}”</span>`:''}</span>
     </button>`).join('')}</div>`;
-  $('again').onclick=startTest;
+  if(fresh) $('again').onclick=startTest;else $('resBack').onclick=testHome;
   $('testScroll').scrollTop=0;
 }
 // Tap a filled-in answer (or a word in lists) to see its entry
@@ -1012,23 +1043,57 @@ function openWord(word,confirm){
 }
 
 // ---------- dict: bulk add ----------
-const BULK_SAMPLE=`meticulous
-exonerate
-serendipity
-
-or JSON:
-[{"word":"dubious","pos":"adjective",
-  "pairs":[{"example":"I was dubious about our chances.","definition":"unsure or uncertain"}],
-  "similar":["doubtful","skeptical"]}]`;
+// Two ways to add: words (looked up in the dictionary) or JSON with your own sentences.
+const JSON_TEMPLATE=`[
+  {
+    "word": "",
+    "pos": "",
+    "pairs": [
+      {
+        "example": "",
+        "definition": ""
+      }
+    ],
+    "similar": []
+  }
+]`;
+let bulkMode='words',bulkDraft={words:'',json:JSON_TEMPLATE};
 function openBulk(){
   openSheet('Add words',`<div class="card">
-    <p class="note">One word per line. Each word is looked up in the dictionary. You can also paste JSON with your own sentences: <code>word</code>, <code>pos</code>, <code>pairs</code> (example + definition), <code>similar</code>.</p>
-    <textarea id="bulkIn" rows="8" placeholder="${esc(BULK_SAMPLE)}" autocapitalize="none" autocorrect="off" spellcheck="false"></textarea>
+    <div class="seg" role="tablist" style="margin:0"><button role="tab" id="bm-words" type="button">Words</button><button role="tab" id="bm-json" type="button">JSON</button></div>
+    <p class="note" id="bulkHelp"></p>
+    <textarea id="bulkIn" rows="10" autocapitalize="none" autocorrect="off" spellcheck="false"></textarea>
     <button class="btn block" id="bulkGo" type="button">Add words</button>
     <div class="msg" id="bulkMsg"></div>
     <div class="results" id="bulkRes"></div>
   </div>`);
+  const set=m=>{
+    bulkDraft[bulkMode]=$('bulkIn').value;bulkMode=m;
+    $('bm-words').setAttribute('aria-selected',m==='words');$('bm-json').setAttribute('aria-selected',m==='json');
+    $('bulkIn').value=bulkDraft[m];
+    $('bulkIn').placeholder=m==='words'?'meticulous\nexonerate\nserendipity':'';
+    $('bulkHelp').innerHTML=m==='words'
+      ?'One word per line. Each word is looked up in the dictionary and filled in for you.'
+      :'A JSON array of words with your own sentences. Copy the object inside the array for each word. <code>pairs</code> is a list of example + definition; <code>similar</code> is a list of words. One array per line also works.';
+    $('bulkMsg').textContent='';$('bulkRes').innerHTML='';
+  };
+  $('bulkIn').value=bulkDraft[bulkMode];
+  $('bm-words').onclick=()=>set('words');$('bm-json').onclick=()=>set('json');
+  bulkMode=bulkMode;set(bulkMode);
   $('bulkGo').onclick=runBulk;
+}
+// Reads the JSON box: one array/object for the whole box, or one per line.
+function parseJsonBox(text){
+  try{const d=JSON.parse(text);return Array.isArray(d)?d:[d]}catch(e){
+    const out=[];
+    text.split('\n').forEach((ln,i)=>{
+      ln=ln.trim().replace(/,$/,'');if(!ln) return;
+      let d;try{d=JSON.parse(ln)}catch(err){throw new Error(`Line ${i+1} isn't valid JSON: ${err.message}`)}
+      Array.isArray(d)?out.push(...d):out.push(d);
+    });
+    if(!out.length) throw new Error("Couldn't read the JSON: "+e.message);
+    return out;
+  }
 }
 // JSON words: {word|name|headword, pos|partOfSpeech, pairs|examples|senses: [{example|ex|sentence, definition|def|meaning} | [example, definition]], similar|synonyms|similarWords}
 function jsonToCard(o){
@@ -1044,21 +1109,26 @@ function jsonToCard(o){
 }
 async function runBulk(){
   const text=$('bulkIn').value.trim(),msg=$('bulkMsg'),res=$('bulkRes');
-  if(!text){msg.className='msg err';msg.textContent='Type at least one word.';return}
+  bulkDraft[bulkMode]=$('bulkIn').value;
   res.innerHTML='';msg.className='msg';
   const line=(cls,t)=>{res.insertAdjacentHTML('beforeend',`<div class="${cls}">${t}</div>`)};
   let added=0;
-  if(text[0]==='['||text[0]==='{'){
+  if(bulkMode==='json'){
     let data;
-    try{data=JSON.parse(text)}catch(e){msg.className='msg err';msg.textContent="That looks like JSON but couldn't be read: "+e.message;return}
-    for(const o of Array.isArray(data)?data:[data]){
+    try{data=parseJsonBox(text)}catch(e){msg.className='msg err';msg.textContent=e.message;return}
+    const filled=data.filter(o=>!(o&&typeof o==='object'&&!String(o.word||'').trim()&&JSON.stringify(o.pairs||[]).replace(/"(example|definition)"|[\s"{}\[\]:,]/g,'')===''&&!(o.similar||[]).length));
+    if(!filled.length){msg.className='msg err';msg.textContent='Fill in the template first: a word and at least one example + definition.';return}
+    for(const o of filled){
       try{
         const c=jsonToCard(o);
         if(cards.some(x=>x.word===c.word)){line('skip',`– ${esc(c.word)}: already in your list`);continue}
         cards.unshift(c);added++;line('ok',`✓ ${esc(c.word)} · ${plural(c.meanings[0].defs.length,'sentence')}`);
       }catch(err){line('no',`✗ ${esc(err.message)}`)}
     }
+    if(added){bulkDraft.json=JSON_TEMPLATE;$('bulkIn').value=JSON_TEMPLATE}
   }else{
+    if(!text){msg.className='msg err';msg.textContent='Type at least one word.';return}
+    if(text[0]==='['||text[0]==='{'){msg.className='msg err';msg.textContent='That looks like JSON. Switch to the JSON tab to add it.';return}
     const words=[...new Set(text.split(/\n/).map(w=>w.trim().toLowerCase()).filter(Boolean))];
     $('bulkGo').disabled=true;
     let i=0;
@@ -1071,6 +1141,7 @@ async function runBulk(){
       }catch(err){line('no',`✗ ${esc(lookupErr(err.message,w))}`)}
     }
     $('bulkGo').disabled=false;
+    if(added){bulkDraft.words='';$('bulkIn').value=''}
   }
   msg.textContent=added?`Added ${plural(added,'word')}.`:'No new words added.';
   if(added){save();renderList();renderBadge()}

@@ -5,7 +5,7 @@
 // POST   /api/auth/logout               → ends the session
 // GET    /api/me                        → current user
 // GET    /api/words                     → { cards, seed, updatedAt } for the signed-in user
-// PUT    /api/words        { cards, seed, log } → replaces the user's word list and answer log
+// PUT    /api/words        { cards, seed, log, history } → replaces the user's word list, answer log, and test history
 // GET    /api/lookup?word=              → dictionary entry (no sign-in needed)
 // GET    /api/settings                  → { translateKey } for the signed-in user
 // PUT    /api/settings     { translateKey } → saves the user's settings
@@ -13,7 +13,7 @@
 // Auth: /api/me and /api/words send "Authorization: Bearer <session>".
 // Storage (KV binding WORDS):
 //   wm:sess:<session>  → { sub, email, name, picture }   (expires after 60 days)
-//   wm:words:<sub>     → { cards, seed, log, updatedAt }
+//   wm:words:<sub>     → { cards, seed, log, history, updatedAt }
 //   wm:settings:<sub>  → { translateKey }   (the user's own Google Translate API key)
 //   wm:dict2:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
 //
@@ -105,7 +105,7 @@ async function getWords(request, env) {
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'Not signed in' }, 401);
   const data = await env.WORDS.get(`wm:words:${user.sub}`, 'json').catch(() => null);
-  return json(data || { cards: null, seed: 0, log: {}, updatedAt: null });
+  return json(data || { cards: null, seed: 0, log: {}, history: [], updatedAt: null });
 }
 
 async function putWords(request, env) {
@@ -124,7 +124,9 @@ async function putWords(request, env) {
       log[k] = { ok: Math.max(0, Number(v.ok) || 0), no: Math.max(0, Number(v.no) || 0) };
     }
   }
-  const record = { cards: body.cards, seed: Number(body.seed) || 0, log, updatedAt: new Date().toISOString() };
+  // history: finished tests for the Test tab, newest first; keep the latest 60
+  const history = Array.isArray(body.history) ? body.history.slice(0, 60).filter(h => h && typeof h === 'object') : [];
+  const record = { cards: body.cards, seed: Number(body.seed) || 0, log, history, updatedAt: new Date().toISOString() };
   await env.WORDS.put(`wm:words:${user.sub}`, JSON.stringify(record));
   return json({ ok: true, updatedAt: record.updatedAt });
 }
