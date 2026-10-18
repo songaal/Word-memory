@@ -296,7 +296,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.2.0</span> · <span class="version-date">2026/10/18</span></p>
+          <p class="note"><span class="version-tag">v2.3.0</span> · <span class="version-date">2026/10/18</span></p>
         </div>
       </div></div>
     </div>
@@ -339,6 +339,13 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
     <button role="tab" id="tab-me" aria-selected="false" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="f" cx="12" cy="8" r="4"/><path class="f" d="M4 21c0-4 3.6-7 8-7s8 3 8 7z"/></svg>Me</button>
   </nav>
+</div>
+
+<div class="sheet" id="pop" hidden style="z-index:60">
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="popTitle">
+    <div class="sheet-head"><b id="popTitle"></b><button class="x" id="popX" type="button" aria-label="Close">✕</button></div>
+    <div class="sheet-body" id="popBody"></div>
+  </div>
 </div>
 
 <div class="sheet" id="sheet" hidden>
@@ -973,15 +980,20 @@ document.addEventListener('click',e=>{
   const p=e.target.closest('[data-pop]');
   if(!p) return;
   const c=findCard(p.dataset.pop);
-  if(c) openSheet(c.word,`<div class="card">${cardHTML(c)}</div>`);
+  if(c) openPop(c);
 });
+// Quick word entry popup (bottom sheet). Opens above anything else, e.g. on top of "Add words".
+function openPop(c){$('popTitle').textContent=c.word;$('popBody').innerHTML=`<div class="card">${cardHTML(c)}</div>`;$('pop').hidden=false;$('popBody').scrollTop=0}
+function closePop(){$('pop').hidden=true;$('popBody').innerHTML='';try{speechSynthesis.cancel()}catch(e){}}
+$('popX').onclick=closePop;
+$('pop').addEventListener('click',e=>{if(e.target===$('pop')) closePop()});
 
 // ---------- sheet ----------
 function openSheet(title,html){$('sheetTitle').textContent=title;$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
 function closeSheet(){$('sheet').hidden=true;$('sheetBody').innerHTML='';try{speechSynthesis.cancel()}catch(e){}}
 $('sheetX').onclick=closeSheet;
 $('sheet').addEventListener('click',e=>{if(e.target===$('sheet')) closeSheet()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('sheet').hidden) closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape') return;if(!$('pop').hidden) closePop();else if(!$('sheet').hidden) closeSheet()});
 
 // ---------- dict: search ----------
 let dictPane='search',searchResults=[];   // [{q, card} | {q, error}]
@@ -1112,7 +1124,7 @@ async function runBulk(){
   bulkDraft[bulkMode]=$('bulkIn').value;
   res.innerHTML='';msg.className='msg';
   const line=(cls,t)=>{res.insertAdjacentHTML('beforeend',`<div class="${cls}">${t}</div>`)};
-  let added=0;
+  const added=[],skipped=[],failed=[];
   if(bulkMode==='json'){
     let data;
     try{data=parseJsonBox(text)}catch(e){msg.className='msg err';msg.textContent=e.message;return}
@@ -1121,11 +1133,11 @@ async function runBulk(){
     for(const o of filled){
       try{
         const c=jsonToCard(o);
-        if(cards.some(x=>x.word===c.word)){line('skip',`– ${esc(c.word)}: already in your list`);continue}
-        cards.unshift(c);added++;line('ok',`✓ ${esc(c.word)} · ${plural(c.meanings[0].defs.length,'sentence')}`);
-      }catch(err){line('no',`✗ ${esc(err.message)}`)}
+        if(cards.some(x=>x.word===c.word)){skipped.push(c.word);continue}
+        cards.unshift(c);added.push(c);
+      }catch(err){failed.push(err.message)}
     }
-    if(added){bulkDraft.json=JSON_TEMPLATE;$('bulkIn').value=JSON_TEMPLATE}
+    if(added.length) bulkDraft.json=JSON_TEMPLATE;
   }else{
     if(!text){msg.className='msg err';msg.textContent='Type at least one word.';return}
     if(text[0]==='['||text[0]==='{'){msg.className='msg err';msg.textContent='That looks like JSON. Switch to the JSON tab to add it.';return}
@@ -1134,17 +1146,44 @@ async function runBulk(){
     let i=0;
     for(const w of words){
       i++;msg.textContent=`Looking up ${i} of ${words.length}…`;
-      if(cards.some(x=>x.word===w)){line('skip',`– ${esc(w)}: already in your list`);continue}
+      if(cards.some(x=>x.word===w)){skipped.push(w);line('skip',`– ${esc(w)}: already in your list`);continue}
       try{const c=await lookup(w);
-        if(cards.some(x=>x.word===c.word)){line('skip',`– ${esc(w)}: already in your list as "${esc(c.word)}"`);continue}
-        cards.unshift(c);added++;line('ok',`✓ ${esc(c.word)} · ${plural(itemsOf(c).length,'sentence')}`);save();
-      }catch(err){line('no',`✗ ${esc(lookupErr(err.message,w))}`)}
+        if(cards.some(x=>x.word===c.word)){skipped.push(w);line('skip',`– ${esc(w)}: already in your list as "${esc(c.word)}"`);continue}
+        cards.unshift(c);added.push(c);line('ok',`✓ ${esc(c.word)}`);save();
+      }catch(err){failed.push(lookupErr(err.message,w));line('no',`✗ ${esc(lookupErr(err.message,w))}`)}
     }
     $('bulkGo').disabled=false;
-    if(added){bulkDraft.words='';$('bulkIn').value=''}
+    if(added.length) bulkDraft.words='';
   }
-  msg.textContent=added?`Added ${plural(added,'word')}.`:'No new words added.';
-  if(added){save();renderList();renderBadge()}
+  if(added.length){save();renderList();renderBadge();bulkResult(added,skipped,failed);return}
+  // Nothing added: stay on the form and explain why
+  res.innerHTML='';
+  skipped.forEach(w=>line('skip',`– ${esc(w)}: already in your list`));
+  failed.forEach(m=>line('no',`✗ ${esc(m)}`));
+  msg.textContent='No new words added.';
+}
+// Results after adding: the new words (tap one for its entry), then anything skipped or not found.
+function bulkResult(added,skipped,failed){
+  const nSent=added.reduce((n,c)=>n+itemsOf(c).length,0);
+  $('sheetTitle').textContent='Words added';
+  $('sheetBody').innerHTML=`<div class="stack" style="gap:12px">
+    <div class="card" style="flex-direction:row;align-items:center;gap:14px">
+      <span style="width:44px;height:44px;border-radius:50%;background:var(--good-soft);color:var(--good);display:grid;place-items:center;font:700 22px var(--f-ui);flex:none">✓</span>
+      <div><div style="font:600 18px var(--f-ui)">${plural(added.length,'word')} added</div><div class="note">${plural(nSent,'sentence')} ready for today's test</div></div>
+    </div>
+    <div class="label" style="padding-left:4px">Tap a word to see its entry</div>
+    <div class="rlist">${added.map(c=>{const g=c.meanings[0]||{};const first=(g.defs||[])[0]||{};
+      return `<button class="ri" type="button" data-pop="${esc(c.word)}"><span class="mk ok">✓</span>
+        <span class="top">${esc(c.word)}<span>${esc(g.pos||'')} · ${plural(itemsOf(c).length,'sentence')}</span></span>
+        <span class="sent">${esc(first.ex||first.d||'')}</span></button>`}).join('')}</div>
+    ${skipped.length||failed.length?`<div class="card results">
+      ${skipped.map(w=>`<div class="skip">– ${esc(w)}: already in your list</div>`).join('')}
+      ${failed.map(m=>`<div class="no">✗ ${esc(m)}</div>`).join('')}</div>`:''}
+    <div class="split"><button class="btn ghost" id="bulkMore" type="button">Add more</button><button class="btn" id="bulkDone" type="button">Done</button></div>
+  </div>`;
+  $('sheetBody').scrollTop=0;
+  $('bulkMore').onclick=openBulk;
+  $('bulkDone').onclick=closeSheet;
 }
 
 // ---------- me ----------
@@ -1184,6 +1223,7 @@ document.addEventListener('click',e=>{
 });
 // Phone back gesture / browser back closes a settings page instead of leaving the app
 window.addEventListener('popstate',e=>{
+  if(!$('pop').hidden){closePop();return}
   if(!$('sheet').hidden){closeSheet();return}
   const page=(e.state&&e.state.me)||'main';
   if(curTab==='me'){mePage=page;renderMe()}else mePage=page;
