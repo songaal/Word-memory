@@ -224,6 +224,7 @@ function countExamples(entry) {
 // Merriam-Webster (Learner's or Collegiate). Keys come from Worker secrets, never the repo.
 function mwClean(s) {
   return String(s || '')
+    .replace(/^\s*\{bc\}/, '').replace(/\s*\{bc\}/g, '; ')
     .replace(/\{dx\}.*?\{\/dx\}/g, '').replace(/\{dx_def\}.*?\{\/dx_def\}/g, '').replace(/\{gloss\}.*?\{\/gloss\}/g, '')
     .replace(/\{(?:a_link|d_link|i_link|et_link|sx|mat|dxt)\|([^|}]*)[^}]*\}/g, '$1')
     .replace(/\{ldquo\}|\{rdquo\}/g, '"')

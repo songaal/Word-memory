@@ -5,7 +5,7 @@
 The app version is shown at the bottom of `public/index.html`:
 
 ```html
-<span class="version-tag">v1.4.0</span> · <span class="version-date">2026/10/18</span>
+<span class="version-tag">v1.5.0</span> · <span class="version-date">2026/10/18</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,11 +13,12 @@ The app version is shown at the bottom of `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v1.4.0 — 2026/10/18**
+**Current version: v1.5.0 — 2026/10/18**
 
 ## Architecture
 
 - **Frontend**: `public/index.html` — single-file app, no build step. All UI text is English.
+  - Learning is example-first: each word card lists numbered example sentences, each with its definition underneath (no number); similar words come last.
   - Dictionary: looked up through `GET /api/lookup` on the worker (never directly from the browser).
   - Sound: dictionary audio for words; browser speech (Web Speech API) for sentences.
   - Translation: toggle button next to each example sentence → Korean via Google Cloud Translation v2, called from the browser with the user's own API key (Settings tab, ⚙). Translations are saved on the card (`exKo`).
@@ -32,6 +33,7 @@ The app version is shown at the bottom of `public/index.html`:
 - **Storage**: Workers KV namespace `word-memory`, binding `WORDS`. Keys start with `wm:`.
 - **Auth**: Google Identity Services, same OAuth client as video-repeat-player.
 - **Deploy**: Cloudflare Workers Builds (GitHub connected in the Cloudflare dashboard) — auto on push to `main`.
+  - **Do not push to `main` until the user asks to deploy.** Verify changes locally first (local worker + browser test), commit locally, and push only on request.
 - **URL**: https://word-memory.songaal.workers.dev
 
 ## Review schedule
