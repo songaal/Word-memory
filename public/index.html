@@ -33,7 +33,9 @@
 html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
 body{position:fixed;inset:0;background:var(--bg);color:var(--fg);font:15px/1.6 var(--f-ui);touch-action:manipulation;-webkit-text-size-adjust:100%}
 button{font:inherit;color:inherit}
-button,.tabbar,.seg{-webkit-user-select:none;user-select:none}
+/* App feel: no text selection by dragging (inputs still work) */
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* ---- shell ---- */
@@ -142,6 +144,35 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .card.flash-no{animation:flashNo 1.4s ease-out}
 @keyframes flashOk{0%,100%{border-color:var(--line);box-shadow:none}15%,55%{border-color:var(--good);box-shadow:0 0 0 3px var(--good),0 0 22px var(--good)}35%{border-color:var(--good);box-shadow:0 0 0 2px var(--good-soft)}}
 @keyframes flashNo{0%,100%{border-color:var(--line);box-shadow:none}15%,55%{border-color:var(--bad);box-shadow:0 0 0 3px var(--bad),0 0 22px var(--bad)}35%{border-color:var(--bad);box-shadow:0 0 0 2px var(--bad-soft)}}
+
+/* letter-slot blank: _ _ _ stays visible while typing; hint letters fixed at the front */
+.gapw{position:relative;display:inline-flex;align-items:flex-end;padding:3px 6px 3px;margin:0 3px;border-radius:8px;background:var(--accent-soft);vertical-align:baseline;cursor:text;font-style:normal;line-height:1}
+.gapw.focus{background:var(--card);box-shadow:0 0 0 2px var(--accent)}
+.gs{display:inline-block;width:.68em;text-align:center;font:600 21px/1.15 var(--f-mono);border-bottom:2.5px solid var(--muted);color:var(--fg)}
+.gs.h{color:var(--accent)}
+.gs.cur{border-bottom-color:var(--accent);border-bottom-width:3px}
+.gslots{display:inline-flex;gap:5px;align-items:flex-end}
+.gapw.sm .gslots{gap:4px}
+.gapw.sm .gs{font-size:17px}
+.gin{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;margin:0;font-size:16px;color:transparent;background:transparent;caret-color:transparent}
+
+/* ---- story ---- */
+.storytext{font:400 18px/1.8 var(--f-word)}
+.storytext p{margin:0 0 14px}
+.storytext p:last-child{margin:0}
+.sw{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--accent);cursor:pointer;text-decoration:underline dotted 1.5px;text-underline-offset:4px}
+.storytext .fill{font-size:17px}
+.slist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
+.si{display:flex;flex-direction:column;gap:6px;padding:14px;border:0;border-top:1px solid var(--line);background:none;text-align:left;cursor:pointer;width:100%}
+.si:first-child{border-top:0}
+.si .t{display:flex;justify-content:space-between;gap:10px;font:600 17px var(--f-word)}
+.si .t span{font:400 12px var(--f-mono);color:var(--muted);white-space:nowrap}
+.si .ws{display:flex;flex-wrap:wrap;gap:6px}
+.si .ws i{font:500 12px var(--f-ui);font-style:normal;padding:2px 9px;border-radius:10px;background:var(--accent-soft)}
+.si .last{font-size:12px;color:var(--muted)}
+.stitle{font:700 26px/1.2 var(--f-word);margin:0;text-wrap:balance}
+.inlineback{align-self:flex-start;margin-left:-4px}
+.fieldlabel{font-weight:600;font-size:14px}
 
 /* ---- dict ---- */
 .seg{display:flex;background:var(--line);border-radius:10px;padding:3px;margin:0 var(--gutter-r) 8px var(--gutter-l)}
@@ -260,15 +291,21 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
   <!-- Test -->
   <section class="screen" id="s-test" hidden>
     <div class="bar"><h1>Test</h1></div>
+    <div class="seg" role="tablist" id="testSeg">
+      <button role="tab" id="tseg-schedule" aria-selected="true" type="button">Schedule</button>
+      <button role="tab" id="tseg-story" aria-selected="false" type="button">Story</button>
+    </div>
     <div class="scroll" id="testScroll"><div class="stack" id="testBody"></div></div>
+    <div class="scroll" id="storyTestScroll" hidden><div class="stack" id="storyTestBody"></div></div>
   </section>
 
-  <!-- Dict -->
+  <!-- Words (dictionary, word list, stories) -->
   <section class="screen" id="s-dict" hidden>
-    <div class="bar"><h1>Dictionary</h1></div>
+    <div class="bar"><h1>Words</h1></div>
     <div class="seg" role="tablist">
-      <button role="tab" id="seg-search" aria-selected="true" type="button">Search</button>
-      <button role="tab" id="seg-list" aria-selected="false" type="button">Word list</button>
+      <button role="tab" id="seg-search" aria-selected="true" type="button">Dictionary</button>
+      <button role="tab" id="seg-list" aria-selected="false" type="button">Words</button>
+      <button role="tab" id="seg-story" aria-selected="false" type="button">Story</button>
     </div>
     <div class="pane" id="pane-search">
       <div class="scroll" id="searchScroll"><div class="stack" id="searchBody"></div></div>
@@ -279,6 +316,9 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
     </div>
     <div class="pane" id="pane-list" hidden>
       <div class="scroll"><div class="stack" id="listBody"></div></div>
+    </div>
+    <div class="pane" id="pane-story" hidden>
+      <div class="scroll" id="storyScroll"><div class="stack" id="storyBody"></div></div>
     </div>
   </section>
 
@@ -296,7 +336,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.4.0</span> · <span class="version-date">2026/10/18</span></p>
+          <p class="note"><span class="version-tag">v2.5.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -335,7 +375,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
     <button role="tab" id="tab-test" aria-selected="false" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="f" x="4" y="3" width="16" height="18" rx="2"/><path class="cut" d="m8.5 12 2.5 2.5 4.5-5"/></svg>Test<span class="n" id="dueBadge" hidden></span></button>
     <button role="tab" id="tab-dict" aria-selected="false" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/><path class="cut" d="M9 8h7M9 11.5h5"/></svg>Dict</button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/><path class="cut" d="M9 8h7M9 11.5h5"/></svg>Words</button>
     <button role="tab" id="tab-me" aria-selected="false" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="f" cx="12" cy="8" r="4"/><path class="f" d="M4 21c0-4 3.6-7 8-7s8 3 8 7z"/></svg>Me</button>
   </nav>
@@ -365,7 +405,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 // Signed in: words live in the server database (Cloudflare KV), cached in this browser.
 // Guest: words live only in this browser.
 const GOOGLE_CLIENT_ID='719116381133-drmp1g433dj5qfnhp7u5ujbichl7d0j2.apps.googleusercontent.com';
-const GUEST_KEY='wordbox.v1', GUEST_SEED='wordbox.seed', GUEST_LOG='wordbox.log', GUEST_HIST='wordbox.history', SEED_VERSION=2;
+const GUEST_KEY='wordbox.v1', GUEST_SEED='wordbox.seed', GUEST_LOG='wordbox.log', GUEST_HIST='wordbox.history', GUEST_STORIES='wordbox.stories', SEED_VERSION=2;
 const INTERVALS=[3,7,14,30,60];
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
@@ -376,15 +416,16 @@ let session=lsGet('wm.session'), user=lsJSON('wm.user');
 let acct=session&&user?'cloud':(lsGet('wm.guest')==='1'?'guest':null);
 let cards=[], seed=0, log={};   // log: { 'YYYY-MM-DD': {ok, no} } answers per day
 let history=[];                 // finished tests, newest first: {at, total, ok, items:[{w, form, ok, prac, typed, s, noEx, due}]}
+let stories=[];                 // user stories: {id, title, text, words:[], entries:{word: card|null}, created, last:{ok,total,at}}
 const cacheKey=()=>'wm.cache.'+user.sub, pendingKey=()=>'wm.pending.'+user.sub;
 
 function api(path,opts={}){
   return fetch(path,{...opts,headers:{'Content-Type':'application/json','Authorization':'Bearer '+session}});
 }
 function save(){
-  if(acct==='guest'){lsSet(GUEST_KEY,JSON.stringify(cards));lsSet(GUEST_SEED,String(seed));lsSet(GUEST_LOG,JSON.stringify(log));lsSet(GUEST_HIST,JSON.stringify(history));return}
+  if(acct==='guest'){lsSet(GUEST_KEY,JSON.stringify(cards));lsSet(GUEST_SEED,String(seed));lsSet(GUEST_LOG,JSON.stringify(log));lsSet(GUEST_HIST,JSON.stringify(history));lsSet(GUEST_STORIES,JSON.stringify(stories));return}
   if(acct!=='cloud') return;
-  lsSet(cacheKey(),JSON.stringify({cards,seed,log,history}));
+  lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories}));
   lsSet(pendingKey(),'1');
   schedulePush();
 }
@@ -395,7 +436,7 @@ async function push(){
   if(pushing){pushTimer=setTimeout(push,500);return}
   pushing=true;dirty=false;
   try{
-    const r=await api('/api/words',{method:'PUT',body:JSON.stringify({cards,seed,log,history})});
+    const r=await api('/api/words',{method:'PUT',body:JSON.stringify({cards,seed,log,history,stories})});
     if(r.status===401){expired();return}
     if(!r.ok) throw new Error('save');
     if(!dirty){lsDel(pendingKey());setSync('saved')}
@@ -433,14 +474,14 @@ function applySeeds(){
 
 function loadGuest(){
   loadSettings();
-  cards=lsJSON(GUEST_KEY);seed=Number(lsGet(GUEST_SEED)||0);log=lsJSON(GUEST_LOG)||{};history=lsJSON(GUEST_HIST)||[];
+  cards=lsJSON(GUEST_KEY);seed=Number(lsGet(GUEST_SEED)||0);log=lsJSON(GUEST_LOG)||{};history=lsJSON(GUEST_HIST)||[];stories=lsJSON(GUEST_STORIES)||[];
   if(applySeeds()|migrate()) save();
   showView('app');renderAll();
 }
 async function loadCloud(){
   loadSettings();
   const cache=lsJSON(cacheKey());
-  if(cache&&Array.isArray(cache.cards)){cards=cache.cards;seed=cache.seed||0;log=cache.log||{};history=cache.history||[];migrate();showView('app');renderAll()}
+  if(cache&&Array.isArray(cache.cards)){cards=cache.cards;seed=cache.seed||0;log=cache.log||{};history=cache.history||[];stories=cache.stories||[];migrate();showView('app');renderAll()}
   else showView('loading','Loading your words…');
   // Changes made offline win: send them up instead of downloading.
   if(cache&&lsGet(pendingKey())==='1'){schedulePush();return}
@@ -450,14 +491,14 @@ async function loadCloud(){
     if(r.status===401){expired();return}
     if(!r.ok) throw new Error('load');
     const d=await r.json();
-    if(Array.isArray(d.cards)){cards=d.cards;seed=d.seed||0;log=d.log||{};history=d.history||[]}
+    if(Array.isArray(d.cards)){cards=d.cards;seed=d.seed||0;log=d.log||{};history=d.history||[];stories=d.stories||[]}
     else{
       // First sign-in on this account: bring over words saved without signing in.
       const g=lsJSON(GUEST_KEY);
-      if(Array.isArray(g)&&g.length){cards=g;seed=Number(lsGet(GUEST_SEED)||0);log=lsJSON(GUEST_LOG)||{};history=lsJSON(GUEST_HIST)||[]}else{cards=null;seed=0;log={};history=[]}
+      if(Array.isArray(g)&&g.length){cards=g;seed=Number(lsGet(GUEST_SEED)||0);log=lsJSON(GUEST_LOG)||{};history=lsJSON(GUEST_HIST)||[];stories=lsJSON(GUEST_STORIES)||[]}else{cards=null;seed=0;log={};history=[];stories=[]}
     }
     const changed=applySeeds()|migrate()||!Array.isArray(d.cards);
-    lsSet(cacheKey(),JSON.stringify({cards,seed,log,history}));
+    lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories}));
     showView('app');renderAll();
     if(changed) save(); else setSync('saved');
   }catch(e){
@@ -561,9 +602,14 @@ function wordRe(word){
 }
 function hasWord(text,word){return !!text&&new RegExp(wordRe(word).source,'i').test(text)}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function plural(n,w){return n+' '+w+(n===1?'':'s')}
+function plural(n,w,many){return n+' '+(n===1?w:(many||w+'s'))}
 function newDef(d,ex){return{d:d||'',ex:ex||'',stage:0,due:today()}}
-function findCard(word){return cards.find(c=>c.word===word)||searchResults.find(r=>r.card&&r.card.word===word)?.card}
+function findCard(word){
+  return cards.find(c=>c.word===word)
+    ||searchResults.find(r=>r.card&&r.card.word===word)?.card
+    ||stories.map(s=>s.entries&&s.entries[word]).find(Boolean)
+    ||stories.flatMap(s=>Object.values(s.entries||{})).find(c=>c&&c.word===word);
+}
 
 // ---------- test items: one per example sentence ----------
 // A word with 3 example sentences gives 3 test items, each with its own schedule.
@@ -712,8 +758,14 @@ document.addEventListener('click',async e=>{
   }
   const add=e.target.closest('[data-add]');
   if(add){
-    const r=searchResults.find(x=>x.card&&x.card.word===add.dataset.add);
-    if(r&&!cards.some(x=>x.word===r.card.word)){cards.unshift(r.card);save();renderSearch(false);renderBadge()}
+    const w=add.dataset.add;
+    if(cards.some(x=>x.word===w)) return;
+    const src=findCard(w);if(!src) return;
+    const c=JSON.parse(JSON.stringify(src));c.added=today();
+    for(const g of c.meanings) for(const d of g.defs) if(d.stage==null){d.stage=0;d.due=today()}
+    cards.unshift(c);save();renderBadge();
+    if(!$('pop').hidden) openPop(c);
+    if(curTab==='dict'&&dictPane==='search') renderSearch(false);
   }
 });
 
@@ -724,7 +776,7 @@ function show(name){
   curTab=name;
   for(const t of TABS){$('tab-'+t).setAttribute('aria-selected',t===name);$('s-'+t).hidden=t!==name}
   if(name==='home') renderHome();
-  if(name==='test'&&!testActive()) testHome();
+  if(name==='test') renderTestTab();
   if(name==='dict') renderDict();
   if(name==='me') renderMe();
 }
@@ -781,7 +833,7 @@ function renderHome(){
 
 // ---------- test ----------
 // Practice rule: a sentence already answered today (and not due) is practice and keeps its schedule.
-let queue=[],cur=null,answered=false,score={ok:0,no:0},total=0,hint={shown:new Set(),used:0},inTest=false,results=[];
+let queue=[],cur=null,answered=false,score={ok:0,no:0},total=0,hint={used:0},inTest=false,results=[];
 const testActive=()=>inTest;
 function fmtWhen(iso){
   const d=new Date(iso);
@@ -801,7 +853,7 @@ function testHome(){
   const pending=set.filter(it=>isDue(it.d)).length;
   if(!set.length){
     const next=allItems().map(it=>it.d.due).sort()[0];
-    $('testBody').innerHTML=`<div class="card empty"><div style="font:600 18px var(--f-ui);color:var(--fg)">All done for today</div>${next?`<div class="note">Next review: ${dueLabel(next).toLowerCase()}</div>`:'<div class="note">Add words in the Dict tab to start.</div>'}</div>${historyHTML()}`;
+    $('testBody').innerHTML=`<div class="card empty"><div style="font:600 18px var(--f-ui);color:var(--fg)">All done for today</div>${next?`<div class="note">Next review: ${dueLabel(next).toLowerCase()}</div>`:'<div class="note">Add words in the Words tab to start.</div>'}</div>${historyHTML()}`;
     return;
   }
   $('testBody').innerHTML=`<div class="card">
@@ -818,6 +870,95 @@ $('testBody').addEventListener('click',e=>{
   const h=e.target.closest('[data-hist]');
   if(h) renderResult(history[+h.dataset.hist],false);
 });
+// ---------- test tab: Schedule / Story ----------
+let testPane='schedule';
+function renderTestTab(){
+  $('tseg-schedule').setAttribute('aria-selected',testPane==='schedule');$('tseg-story').setAttribute('aria-selected',testPane==='story');
+  $('testScroll').hidden=testPane!=='schedule';$('storyTestScroll').hidden=testPane!=='story';
+  if(testPane==='schedule'){$('testSeg').hidden=inTest;if(!inTest) testHome()}
+  else{$('testSeg').hidden=!!storyRun;if(!storyRun) storyTestList()}
+}
+$('tseg-schedule').onclick=()=>{testPane='schedule';renderTestTab()};
+$('tseg-story').onclick=()=>{testPane='story';renderTestTab()};
+
+// ---------- stories: shared helpers ----------
+function storyById(id){return stories.find(s=>s.id===id)}
+// Every place in the text where a study word (or a form of it) appears; overlaps resolved left to right.
+function storyMatches(s){
+  const ms=[];
+  for(const w of s.words){const re=wordRe(w);let m;while((m=re.exec(s.text))) ms.push({i:m.index,len:m[0].length,form:m[0],w})}
+  ms.sort((a,b)=>a.i-b.i||b.len-a.len);
+  const out=[];let end=-1;
+  for(const m of ms) if(m.i>=end){out.push(m);end=m.i+m.len}
+  return out;
+}
+function storyHTML(s,fn){
+  let html='',pos=0;
+  storyMatches(s).forEach((m,k)=>{html+=esc(s.text.slice(pos,m.i))+fn(m,k);pos=m.i+m.len});
+  html+=esc(s.text.slice(pos));
+  return html.split(/\n\s*\n/).map(p=>`<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
+}
+const fmtDay=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+function storyRow(s,extra){
+  return `<button class="si" type="button" data-story="${esc(s.id)}">
+    <span class="t">${esc(s.title)}<span>${esc(fmtDay(s.created))}</span></span>
+    <span class="ws">${s.words.slice(0,5).map(w=>`<i>${esc(w)}</i>`).join('')}${s.words.length>5?`<i style="background:none;color:var(--muted)">+${s.words.length-5}</i>`:''}</span>
+    ${extra||''}</button>`;
+}
+
+// ---------- story test ----------
+let storyRun=null;   // {id, ms}
+function storyTestList(){
+  storyRun=null;$('testSeg').hidden=false;
+  const b=$('storyTestBody');
+  if(!stories.length){b.innerHTML=`<div class="card empty">No stories yet. Add one in the Words tab → Story, then test yourself here.</div>`;return}
+  b.innerHTML=`<p class="note" style="padding:0 4px">Pick a story. Its study words become blanks to fill in.</p>
+    <div class="slist">${stories.map(s=>storyRow(s,`<span class="last">${s.last?`Last: ${s.last.ok} / ${s.last.total} · ${Math.round(s.last.ok/s.last.total*100)}% · ${esc(shortDate(fmt(new Date(s.last.at))))}`:'Not tested yet'}</span>`)).join('')}</div>`;
+}
+$('storyTestBody').addEventListener('click',e=>{const r=e.target.closest('[data-story]');if(r&&!storyRun) startStoryTest(r.dataset.story)});
+function startStoryTest(id){
+  const s=storyById(id);if(!s) return;
+  const ms=storyMatches(s);
+  if(!ms.length){$('storyTestBody').innerHTML=`<button class="linkbtn inlineback" id="stBack" type="button">‹ Stories</button><div class="card empty">None of this story's study words appear in its text.</div>`;$('stBack').onclick=storyTestList;return}
+  testPane='story';storyRun={id,ms};$('testSeg').hidden=true;
+  $('storyTestBody').innerHTML=`
+    <div class="row" style="justify-content:space-between"><span class="label">${plural(ms.length,'blank')}</span></div>
+    <h2 class="stitle">${esc(s.title)}</h2>
+    <p class="note">Tap a blank and type the word. Enter moves to the next blank.</p>
+    <div class="card"><div class="storytext" id="stText">${storyHTML(s,(m,k)=>gapHTML('sg'+k,m.form.length,'sm'))}</div></div>
+    <div class="split"><button class="btn ghost" id="stQuit" type="button">Quit</button><button class="btn" id="stCheck" type="button">Check</button></div>`;
+  ms.forEach((m,k)=>setupGap('sg'+k,m.form.length,()=>{const n=$('sg'+(k+1));if(n) n.focus();else $('stCheck').focus()}));
+  $('stQuit').onclick=storyTestList;
+  $('stCheck').onclick=checkStoryTest;
+  $('storyTestScroll').scrollTop=0;
+  $('sg0').focus({preventScroll:true});
+}
+function checkStoryTest(){
+  const s=storyById(storyRun.id),ms=storyRun.ms;
+  const res=ms.map((m,k)=>{const v=gapValue('sg'+k);return{m,v,ok:!!v&&(v===m.form.toLowerCase()||v===m.w.toLowerCase())}});
+  const ok=res.filter(r=>r.ok).length,total=res.length,pct=Math.round(ok/total*100);
+  s.last={ok,total,at:new Date().toISOString()};save();
+  if(ok===total) chime();
+  const misses=res.filter(r=>!r.ok);
+  $('storyTestBody').innerHTML=`
+    <div class="card">
+      <span class="label">${esc(s.title)}</span>
+      <div class="row" style="justify-content:space-between;align-items:flex-end">
+        <span class="score">${ok}<small> / ${total} correct</small></span>
+        <span style="font:600 22px var(--f-mono);color:${pctColor(pct)}">${pct}%</span>
+      </div>
+      <div class="splitbar"><div class="ok" style="width:${ok/total*100}%"></div><div class="no" style="width:${(total-ok)/total*100}%"></div></div>
+    </div>
+    <div class="card"><div class="storytext">${storyHTML(s,(m,k)=>`<button class="fill ${res[k].ok?'ok':'no'}" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`)}</div></div>
+    ${misses.length?`<div class="label" style="padding-left:4px">Missed · tap to see the word</div>
+      <div class="rlist">${misses.map(r=>`<button class="ri" type="button" data-pop="${esc(r.m.w)}"><span class="mk no">✗</span><span class="top">${esc(r.m.form)}<span>${r.m.form.toLowerCase()!==r.m.w?esc(r.m.w):''}</span></span><span class="sent" style="font-style:normal">${r.v?`You wrote “${esc(r.v)}”`:'Left blank'}</span></button>`).join('')}</div>`:''}
+    <div class="split"><button class="btn ghost" id="stList" type="button">Back to stories</button><button class="btn" id="stAgain" type="button">Try again</button></div>`;
+  const id=storyRun.id;
+  $('stList').onclick=storyTestList;
+  $('stAgain').onclick=()=>startStoryTest(id);
+  $('storyTestScroll').scrollTop=0;
+}
+
 // Shuffle, then avoid the same word twice in a row where possible.
 function spread(list){
   shuffle(list);
@@ -833,8 +974,46 @@ function startTest(){
   const set=todayItems();
   if(!set.length){testHome();return}
   queue=spread(set.slice());total=queue.length;score={ok:0,no:0};results=[];inTest=true;
+  $('testSeg').hidden=true;
   next();
 }
+// ---------- letter-slot blank ----------
+// Shows one "_" per letter; hint letters sit fixed at the front and typing continues after them.
+// A transparent <input> on top takes the keyboard input.
+const gaps={};   // id -> {len, prefix}
+function gapHTML(id,len,cls=''){
+  return `<span class="gapw ${cls}" data-gap="${id}"><span class="gslots"></span><input class="gin" id="${id}" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="Missing word, ${len} letters"></span>`;
+}
+function setupGap(id,len,onEnter){
+  gaps[id]={len,prefix:''};
+  const inp=$(id),w=inp.parentElement;
+  inp.addEventListener('input',()=>{inp.value=inp.value.replace(/\s+/g,'');renderGap(id)});
+  inp.addEventListener('focus',()=>{w.classList.add('focus');renderGap(id)});
+  inp.addEventListener('blur',()=>{w.classList.remove('focus');renderGap(id)});
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();onEnter&&onEnter()}});
+  renderGap(id);
+}
+function renderGap(id){
+  const g=gaps[id],inp=$(id);if(!g||!inp) return;
+  const full=g.prefix+inp.value,focused=document.activeElement===inp;
+  const n=Math.max(g.len,full.length+(focused&&full.length>=g.len?1:0));
+  let h='';
+  for(let i=0;i<n;i++){
+    const cls=(i<g.prefix.length?' h':'')+(focused&&i===full.length?' cur':'');
+    h+=`<span class="gs${cls}">${full[i]?esc(full[i]):'&nbsp;'}</span>`;
+  }
+  inp.parentElement.querySelector('.gslots').innerHTML=h;
+}
+function setGapPrefix(id,prefix){
+  const g=gaps[id],inp=$(id);
+  const full=g.prefix+inp.value;
+  inp.value=full.toLowerCase().startsWith(prefix.toLowerCase())?full.slice(prefix.length):'';
+  g.prefix=prefix;renderGap(id);
+}
+const gapTyped=id=>$(id)?$(id).value.trim():'';
+const gapValue=id=>((gaps[id]?gaps[id].prefix:'')+gapTyped(id)).toLowerCase();
+
+// ---------- schedule test ----------
 // Answer form = the word as it appears in the sentence (e.g. "mitigating"); the base word is accepted too.
 let curForm='',curForms=[],curSay='';
 function maskSentence(text,word){
@@ -842,33 +1021,25 @@ function maskSentence(text,word){
   const html=esc(text).replace(wordRe(word),m=>{forms.push(m);if(first){first=false;return '\u0000GAP\u0000'}return '<span class="blank" data-fill="'+esc(m)+'">&nbsp;</span>'});
   return{html,forms};
 }
-function hintPlaceholder(){
-  return curForm.split('').map((ch,i)=>hint.shown.has(i)?ch:'_').join('');
-}
-// Hint 1: first letter. Hint 2: first 3 letters, up to 30%. Hint 3: first 2 letters kept, up to 50%. Never the whole word.
-const HINT_FORCED=[[0],[0,1,2],[0,1]];
+// Hint 1: first letter. Hint 2: two more (3 total). Hint 3: two more (5 total). Never the whole word.
+const HINT_LEN=[1,3,5];
 function useHint(){
   const n=curForm.length;
   if(hint.used>=3||answered) return;
-  const target=Math.min([1,Math.ceil(n*.3),Math.ceil(n*.5)][hint.used],n-1);
-  const before=hint.shown.size;
-  HINT_FORCED[hint.used].filter(i=>i<n-1).forEach(i=>hint.shown.add(i));
-  let want=Math.max(target,hint.shown.size);
-  if(want<=before&&before<n-1) want=before+1;
-  while(hint.shown.size<want){
-    const hidden=[...Array(n).keys()].filter(i=>!hint.shown.has(i)&&i<n-1);
-    if(!hidden.length) break;
-    hint.shown.add(hidden[Math.floor(Math.random()*hidden.length)]);
-  }
+  const k=Math.min(HINT_LEN[hint.used],n-1);
   hint.used++;
-  const inp=$('ansIn');inp.placeholder=hintPlaceholder();inp.focus();
+  setGapPrefix('ansIn',curForm.slice(0,k));
+  $('ansIn').focus();
   const left=3-hint.used;
   $('hintBtn').textContent=left?`Hint (${left} left)`:'No hints left';
-  $('hintBtn').disabled=!left||hint.shown.size>=n-1;
-  if(hint.used>=2) $('hintNote').hidden=false;
+  $('hintBtn').disabled=!left||k>=n-1;
+}
+function quitTest(){
+  inTest=false;queue=[];cur=null;
+  renderTestTab();
 }
 function next(){
-  cur=queue.shift();answered=false;hint={shown:new Set(),used:0};
+  cur=queue.shift();answered=false;hint={used:0};
   if(!cur){finish();return}
   const prac=!isDue(cur.d);
   const n=total-queue.length;
@@ -884,27 +1055,26 @@ function next(){
     defText=cur.d.d;
   }
   const defMasked=esc(defText).replace(wordRe(cur.c.word),'_____');
-  const w=Math.max(5,curForm.length+2);
-  const gap=`<input class="gap" id="ansIn" style="width:${w}ch" placeholder="${'_'.repeat(curForm.length)}" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="Missing word">`;
   $('testBody').innerHTML=`
     <div class="progress"><span class="count">${n}<small> / ${total}</small></span><div class="pbar"><i style="width:${(n-1)/total*100}%"></i></div>${prac?'<span class="tag prac">Practice</span>':''}</div>
     <div class="card" id="qcard">
-      <div class="qsent" id="qsent">${sentHTML.replace('\u0000GAP\u0000',gap)}</div>
+      <div class="qsent" id="qsent">${sentHTML.replace('\u0000GAP\u0000',gapHTML('ansIn',curForm.length))}</div>
       <div class="qdef"><span class="label">Definition · ${esc(cur.g.pos||'')}</span><div>${defMasked}</div></div>
-      <div class="note" id="hintNote" hidden>You used 2 or more hints, so this sentence comes back tomorrow even if you get it right.</div>
       <div id="afterArea" hidden></div>
     </div>
     <div id="askArea" class="stack" style="gap:8px">
       <button class="btn block" id="checkBtn" type="button">Check</button>
       <div class="split"><button class="btn ghost" id="hintBtn" type="button">Hint (3 left)</button><button class="btn ghost" id="idk" type="button">I don't know</button></div>
+      <button class="linkbtn" id="quitBtn" type="button" style="align-self:center;color:var(--muted)">Quit test</button>
     </div>`;
-  const inp=$('ansIn');
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(inp.value.trim()) grade(inp.value)}});
-  $('checkBtn').onclick=()=>{if(inp.value.trim()) grade(inp.value);else inp.focus()};
+  const check=()=>{if(gapTyped('ansIn')||gaps.ansIn.prefix) grade(gapValue('ansIn'));else $('ansIn').focus()};
+  setupGap('ansIn',curForm.length,check);
+  $('checkBtn').onclick=check;
   $('hintBtn').onclick=useHint;
   $('idk').onclick=()=>grade(null);
+  $('quitBtn').onclick=quitTest;
   $('testScroll').scrollTop=0;
-  inp.focus({preventScroll:true});
+  $('ansIn').focus({preventScroll:true});
 }
 function flash(ok){
   const c=$('qcard');if(!c) return;
@@ -918,7 +1088,7 @@ function grade(ans){
   const d=cur.d,prac=!isDue(d);
   let when;
   if(prac) when='Practice · schedule unchanged';
-  else if(ok&&hint.used>=2){d.due=addDays(1);d.last=today();when='Back tomorrow (2+ hints)'}
+  else if(ok&&hint.used>=2){d.due=addDays(1);d.last=today();when='Back tomorrow'}
   else if(ok){d.due=addDays(INTERVALS[Math.min(d.stage,INTERVALS.length-1)]);d.stage=Math.min(d.stage+1,5);d.last=today();when='Back in '+plural(diffDays(d.due),'day')}
   else{d.stage=0;d.due=addDays(1);d.last=today();when='Back tomorrow'}
   if(!prac){const t=today();log[t]=log[t]||{ok:0,no:0};log[t][ok?'ok':'no']++}
@@ -926,13 +1096,13 @@ function grade(ans){
   results.push({c:cur.c,d,ok,prac,form:curForm,typed:a,noEx:!!cur.noEx});
   save();renderBadge();
   // Fill the blank(s) with the answer: green if right, red if not. Tap it for the word's entry.
-  $('ansIn').outerHTML=`<button class="fill ${ok?'ok':'no'}" type="button" data-pop="${esc(cur.c.word)}" title="Show the word's entry">${esc(curForm)}</button>`;
+  $('ansIn').blur();
+  document.querySelector('[data-gap="ansIn"]').outerHTML=`<button class="fill ${ok?'ok':'no'}" type="button" data-pop="${esc(cur.c.word)}" title="Show the word's entry">${esc(curForm)}</button>`;
   $('qsent').querySelectorAll('[data-fill]').forEach(b=>{b.className='fill '+(ok?'ok':'no');b.textContent=b.dataset.fill;b.dataset.pop=cur.c.word});
   const after=$('afterArea');after.hidden=false;
-  after.innerHTML=`<div class="verdict ${ok?'ok':'no'}">${ok?'Correct':(a?`<s>${esc(ans.trim())}</s>Not quite`:'Answer shown')} · <span style="font-weight:400">${when}</span></div>`;
-  $('hintNote').hidden=true;
-  $('askArea').innerHTML=`<button class="btn block" id="nextBtn" type="button">${queue.length?'Next':'See results'}</button>`;
-  $('nextBtn').onclick=next;
+  after.innerHTML=`<div class="verdict ${ok?'ok':'no'}">${ok?'Correct':(a?`<s>${esc(a)}</s>Not quite`:'Answer shown')} · <span style="font-weight:400">${when}</span></div>`;
+  $('askArea').innerHTML=`<div class="split"><button class="btn ghost" id="quitBtn" type="button">Quit</button><button class="btn" id="nextBtn" type="button">${queue.length?'Next':'See results'}</button></div>`;
+  $('nextBtn').onclick=next;$('quitBtn').onclick=quitTest;
   flash(ok);
   const w=cur.c.word,au=cur.c.audio,say=curSay;
   const reveal=()=>{if(!say||!speak(say)) playWord(w,au)};
@@ -940,7 +1110,7 @@ function grade(ans){
   $('nextBtn').focus({preventScroll:true});
 }
 function finish(){
-  inTest=false;
+  inTest=false;$('testSeg').hidden=false;
   const h={at:new Date().toISOString(),total,ok:score.ok,items:results.map(r=>({
     w:r.c.word,form:r.form,ok:r.ok,prac:r.prac,typed:r.typed||'',s:r.noEx?r.d.d:r.d.ex,noEx:r.noEx,due:r.d.due}))};
   history.unshift(h);if(history.length>60) history.length=60;
@@ -981,9 +1151,10 @@ document.addEventListener('click',e=>{
   if(!p) return;
   const c=findCard(p.dataset.pop);
   if(c) openPop(c);
+  else{$('popTitle').textContent=p.dataset.pop;$('popBody').innerHTML='<div class="card empty">No dictionary entry was found for this word.</div>';$('pop').hidden=false}
 });
 // Quick word entry popup (bottom sheet). Opens above anything else, e.g. on top of "Add words".
-function openPop(c){$('popTitle').textContent=c.word;$('popBody').innerHTML=`<div class="card">${cardHTML(c)}</div>`;$('pop').hidden=false;$('popBody').scrollTop=0}
+function openPop(c){$('popTitle').textContent=c.word;$('popBody').innerHTML=`<div class="card">${cardHTML(c,{add:true})}</div>`;$('pop').hidden=false;$('popBody').scrollTop=0}
 function closePop(){$('pop').hidden=true;$('popBody').innerHTML='';try{speechSynthesis.cancel()}catch(e){}}
 $('popX').onclick=closePop;
 $('pop').addEventListener('click',e=>{if(e.target===$('pop')) closePop()});
@@ -998,12 +1169,91 @@ document.addEventListener('keydown',e=>{if(e.key!=='Escape') return;if(!$('pop')
 // ---------- dict: search ----------
 let dictPane='search',searchResults=[];   // [{q, card} | {q, error}]
 function renderDict(){
-  $('seg-search').setAttribute('aria-selected',dictPane==='search');$('seg-list').setAttribute('aria-selected',dictPane==='list');
-  $('pane-search').hidden=dictPane!=='search';$('pane-list').hidden=dictPane!=='list';
-  if(dictPane==='search') renderSearch(true);else renderList();
+  for(const k of ['search','list','story']){$('seg-'+k).setAttribute('aria-selected',dictPane===k);$('pane-'+k).hidden=dictPane!==k}
+  if(dictPane==='search') renderSearch(true);else if(dictPane==='list') renderList();else renderStories();
 }
 $('seg-search').onclick=()=>{dictPane='search';renderDict()};
 $('seg-list').onclick=()=>{dictPane='list';renderDict()};
+$('seg-story').onclick=()=>{dictPane='story';storyView=null;renderDict()};
+
+// ---------- words tab: stories ----------
+let storyView=null,storyConfirm=false;
+function renderStories(){
+  const b=$('storyBody');
+  if(storyView&&storyById(storyView)){renderStoryView(storyById(storyView));return}
+  storyView=null;
+  b.innerHTML=`<div class="listhead"><span class="label">${plural(stories.length,'story','stories')}</span><button class="plus" id="storyAdd" type="button" aria-label="Add a story">+</button></div>
+    ${stories.length?`<div class="slist">${stories.map(s=>storyRow(s)).join('')}</div>`
+      :`<div class="card empty">No stories yet. Tap + to add an English story and the words you want to learn from it.</div>`}`;
+  $('storyAdd').onclick=openStoryForm;
+}
+$('storyBody').addEventListener('click',e=>{
+  const r=e.target.closest('[data-story]');
+  if(r&&!storyView){storyView=r.dataset.story;storyConfirm=false;try{history.pushState({story:storyView},'')}catch(err){}renderStories();$('storyScroll').scrollTop=0}
+});
+function closeStoryView(){if(history.state&&history.state.story) history.back();else{storyView=null;renderStories()}}
+function renderStoryView(s){
+  $('storyBody').innerHTML=`
+    <button class="linkbtn inlineback" id="svBack" type="button">‹ Stories</button>
+    <h2 class="stitle">${esc(s.title)}</h2>
+    <div class="note">${esc(fmtDay(s.created))} · ${plural(s.words.length,'study word')} · tap a bold word for its entry</div>
+    <div class="card"><div class="storytext">${storyHTML(s,m=>`<button class="sw" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`)}</div></div>
+    <div class="card">
+      <span class="label">Study words</span>
+      <div class="syn">${s.words.map(w=>`<button class="chip" type="button" data-pop="${esc(w)}" style="border:0;cursor:pointer">${esc(w)}</button>`).join('')}</div>
+    </div>
+    <button class="btn block" id="svTest" type="button">Test this story</button>
+    <div class="row" style="justify-content:flex-end">${storyConfirm
+      ?`<span class="note">Delete this story?</span><button class="btn" style="background:var(--bad);border-color:var(--bad)" id="svDelYes" type="button">Delete</button><button class="btn ghost" id="svDelNo" type="button">Cancel</button>`
+      :`<button class="linkbtn" style="color:var(--bad)" id="svDel" type="button">Delete story</button>`}</div>`;
+  $('svBack').onclick=closeStoryView;
+  $('svTest').onclick=()=>{show('test');testPane='story';renderTestTab();startStoryTest(s.id)};
+  if(storyConfirm){
+    $('svDelYes').onclick=()=>{stories=stories.filter(x=>x!==s);save();storyConfirm=false;closeStoryView()};
+    $('svDelNo').onclick=()=>{storyConfirm=false;renderStoryView(s)};
+  }else $('svDel').onclick=()=>{storyConfirm=true;renderStoryView(s);$('storyScroll').scrollTop=$('storyScroll').scrollHeight};
+}
+function openStoryForm(){
+  openSheet('New story',`<div class="card field">
+    <label class="fieldlabel" for="stTitle">Title</label>
+    <input type="text" id="stTitle" placeholder="e.g. The Lost Tire" autocomplete="off">
+    <label class="fieldlabel" for="stText2">Story</label>
+    <textarea id="stText2" rows="9" placeholder="Paste or type an English story…" style="font-family:var(--f-word);font-size:16px"></textarea>
+    <label class="fieldlabel" for="stWords">Words to learn</label>
+    <textarea id="stWords" rows="4" placeholder="One per line, or separated by commas" autocapitalize="none" autocorrect="off" spellcheck="false"></textarea>
+    <p class="note">Each word should appear in the story (any form, like "inflated" for "inflate"). Words not already in your list are looked up in the dictionary so you can tap them for their entry.</p>
+    <button class="btn block" id="stSave" type="button">Save story</button>
+    <div class="msg" id="stMsg"></div>
+  </div>`);
+  $('stSave').onclick=saveStory;
+}
+async function saveStory(){
+  const title=$('stTitle').value.trim(),text=$('stText2').value.replace(/\r/g,'').trim(),msg=$('stMsg');
+  const words=[...new Set($('stWords').value.split(/[\n,]+/).map(w=>w.trim().toLowerCase()).filter(Boolean))];
+  msg.className='msg err';
+  if(!title){msg.textContent='Add a title.';return}
+  if(!text){msg.textContent='Add the story text.';return}
+  if(!words.length){msg.textContent='Add at least one word to learn.';return}
+  const missing=words.filter(w=>!hasWord(text,w));
+  if(missing.length&&!saveStory.confirmed){
+    msg.textContent=`Not found in the story: ${missing.join(', ')}. Fix the spelling, or tap Save again to keep them anyway.`;
+    saveStory.confirmed=true;return;
+  }
+  saveStory.confirmed=false;
+  msg.className='msg';$('stSave').disabled=true;
+  const entries={};let i=0;
+  for(const w of words){
+    i++;
+    if(cards.some(c=>c.word===w)) continue;
+    msg.textContent=`Looking up ${i} of ${words.length}…`;
+    try{entries[w]=await lookup(w)}catch(e){entries[w]=null}
+  }
+  const s={id:'s'+Date.now().toString(36),title,text,words,entries,created:new Date().toISOString()};
+  stories.unshift(s);save();
+  closeSheet();
+  storyView=s.id;try{history.pushState({story:s.id},'')}catch(e){}
+  renderStories();$('storyScroll').scrollTop=0;
+}
 function renderSearch(scrollEnd){
   const b=$('searchBody');
   b.innerHTML=searchResults.length?searchResults.map(r=>r.card?`<div class="card">${cardHTML(r.card,{add:true})}</div>`:r.pending?`<div class="bubble">Looking up "${esc(r.q)}"…</div>`:`<div class="bubble err">${esc(r.error)}</div>`).join('')
@@ -1242,6 +1492,7 @@ document.addEventListener('click',e=>{
 window.addEventListener('popstate',e=>{
   if(!$('pop').hidden){closePop();return}
   if(!$('sheet').hidden){closeSheet();return}
+  if(storyView&&!(e.state&&e.state.story)){storyView=null;storyConfirm=false;if(curTab==='dict') renderStories();return}
   const page=(e.state&&e.state.me)||'main';
   if(curTab==='me'){mePage=page;renderMe()}else mePage=page;
 });
