@@ -336,7 +336,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.5.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.6.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -405,7 +405,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 // Signed in: words live in the server database (Cloudflare KV), cached in this browser.
 // Guest: words live only in this browser.
 const GOOGLE_CLIENT_ID='719116381133-drmp1g433dj5qfnhp7u5ujbichl7d0j2.apps.googleusercontent.com';
-const GUEST_KEY='wordbox.v1', GUEST_SEED='wordbox.seed', GUEST_LOG='wordbox.log', GUEST_HIST='wordbox.history', GUEST_STORIES='wordbox.stories', SEED_VERSION=2;
+const GUEST_KEY='wordbox.v1', GUEST_SEED='wordbox.seed', GUEST_LOG='wordbox.log', GUEST_HIST='wordbox.history', GUEST_STORIES='wordbox.stories', SEED_VERSION=3;
 const INTERVALS=[3,7,14,30,60];
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
@@ -463,13 +463,45 @@ function migrate(){
 }
 // Adds the built-in words once per account. Returns true if anything changed.
 function applySeeds(){
-  if(!Array.isArray(cards)){cards=[...todayWords(),...samples()];seed=SEED_VERSION;return true}
-  if(seed<SEED_VERSION){
+  let changed=false;
+  if(!Array.isArray(cards)){cards=[...todayWords(),...samples()];seed=2;changed=true}
+  if(seed<2){
     const have=new Set(cards.map(c=>c.word.toLowerCase()));
     cards=[...todayWords().filter(c=>!have.has(c.word)),...cards];
-    seed=SEED_VERSION;return true;
+    seed=2;changed=true;
   }
-  return false;
+  // v3: a sample story
+  if(seed<3){
+    if(!Array.isArray(stories)) stories=[];
+    if(!stories.some(x=>x.id===SAMPLE_STORY_ID)) stories.unshift(sampleStory());
+    seed=3;changed=true;
+  }
+  return changed;
+}
+// ---------- sample story (original text) ----------
+const SAMPLE_STORY_ID='sample-lemonade';
+function sampleStory(){
+  const e=(word,pos,d,ex,syn)=>({word,phonetic:'',audio:'',meanings:[{pos,defs:[newDef(d,ex)]}],synonyms:syn,added:today()});
+  return{id:SAMPLE_STORY_ID,sample:true,created:new Date().toISOString(),
+    title:'The Lemonade Stand',
+    text:`Mia wanted to earn more than the pittance her parents gave her each week, so she decided to open a lemonade stand. Her brother was dubious. "Nobody will pay for that," he said, without an iota of doubt.
+
+On the first morning, Mia spent an inordinate amount of time on picayune details, like the exact color of the paper cups. Then she bought a giant balloon. It took ten minutes to inflate, and she tied it to the top of her sign.
+
+The balloon worked. Customers came from every street, and by noon there were coins galore in her jar. Only then did she understand the magnitude of her success. To mitigate the afternoon heat, she moved the stand under a tree and wrote a compelling new sign: "Coldest lemonade in town."`,
+    words:['pittance','dubious','iota','inordinate','picayune','inflate','galore','magnitude','mitigate','compelling'],
+    entries:{
+      pittance:e('pittance','noun','a very small amount of money, especially as pay','The interns worked long hours for a pittance.',['trifle','peanuts']),
+      dubious:e('dubious','adjective','unsure or doubtful about something','I was dubious about our chances of winning.',['doubtful','skeptical','uncertain']),
+      iota:e('iota','noun','a very small amount; the smallest bit','There isn\'t an iota of truth in that rumor.',['bit','jot','trace']),
+      inordinate:e('inordinate','adjective','far more than is usual or reasonable; excessive','She spent an inordinate amount of money on shoes.',['excessive','undue','extreme']),
+      picayune:e('picayune','adjective','small and unimportant; petty','Let\'s not argue over such picayune details.',['petty','trivial','minor']),
+      inflate:e('inflate','verb','to fill something with air or gas so that it gets bigger','He used a pump to inflate the beach ball.',['expand','blow up','puff up']),
+      galore:e('galore','adjective','in large numbers or amounts (used after a noun)','The store promised bargains galore.',['aplenty','abundant','plentiful']),
+      magnitude:e('magnitude','noun','great size or importance','Nobody understood the magnitude of the problem.',['size','scale','importance']),
+      mitigate:e('mitigate','verb','to make something less harmful, serious, or painful','Planting trees can help mitigate flooding.',['reduce','lessen','ease']),
+      compelling:e('compelling','adjective','very interesting or convincing; hard to ignore','She made a compelling case for the new plan.',['convincing','persuasive','gripping']),
+    }};
 }
 
 function loadGuest(){
@@ -1220,8 +1252,8 @@ function openStoryForm(){
     <label class="fieldlabel" for="stText2">Story</label>
     <textarea id="stText2" rows="9" placeholder="Paste or type an English story…" style="font-family:var(--f-word);font-size:16px"></textarea>
     <label class="fieldlabel" for="stWords">Words to learn</label>
-    <textarea id="stWords" rows="4" placeholder="One per line, or separated by commas" autocapitalize="none" autocorrect="off" spellcheck="false"></textarea>
-    <p class="note">Each word should appear in the story (any form, like "inflated" for "inflate"). Words not already in your list are looked up in the dictionary so you can tap them for their entry.</p>
+    <textarea id="stWords" rows="5" placeholder="One per line, or separated by commas&#10;&#10;Or a JSON array, same format as Add words → JSON" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-family:var(--f-mono);font-size:15px"></textarea>
+    <p class="note">Each word should appear in the story (any form, like "inflated" for "inflate"). Plain words are looked up in the dictionary so you can tap them. A JSON array (<code>[{"word","pos","pairs":[{"example","definition"}],"similar"}]</code>) adds those words to your word list with your own definitions, replacing any that are already there.</p>
     <button class="btn block" id="stSave" type="button">Save story</button>
     <div class="msg" id="stMsg"></div>
   </div>`);
@@ -1229,8 +1261,17 @@ function openStoryForm(){
 }
 async function saveStory(){
   const title=$('stTitle').value.trim(),text=$('stText2').value.replace(/\r/g,'').trim(),msg=$('stMsg');
-  const words=[...new Set($('stWords').value.split(/[\n,]+/).map(w=>w.trim().toLowerCase()).filter(Boolean))];
+  const raw=$('stWords').value.trim();
   msg.className='msg err';
+  // Words: a JSON array (words with your own definitions) or plain words
+  let jsonCards=null;
+  if(raw[0]==='['||raw[0]==='{'){
+    try{
+      const items=parseJsonBox(raw).filter(o=>o&&String(o.word||'').trim());
+      jsonCards=items.map(jsonToCard);
+    }catch(e){msg.textContent='Words: '+e.message;return}
+  }
+  const words=jsonCards?[...new Set(jsonCards.map(c=>c.word))]:[...new Set(raw.split(/[\n,]+/).map(w=>w.trim().toLowerCase()).filter(Boolean))];
   if(!title){msg.textContent='Add a title.';return}
   if(!text){msg.textContent='Add the story text.';return}
   if(!words.length){msg.textContent='Add at least one word to learn.';return}
@@ -1242,7 +1283,15 @@ async function saveStory(){
   saveStory.confirmed=false;
   msg.className='msg';$('stSave').disabled=true;
   const entries={};let i=0;
-  for(const w of words){
+  if(jsonCards){
+    // Add (or replace) these words in the word list, and keep a copy for the story
+    for(const c of jsonCards){
+      const old=cards.find(x=>x.word===c.word);
+      if(old) overwriteCard(old,c);else cards.unshift(c);
+      entries[c.word]=JSON.parse(JSON.stringify(old||c));
+    }
+    renderBadge();
+  }else for(const w of words){
     i++;
     if(cards.some(c=>c.word===w)) continue;
     msg.textContent=`Looking up ${i} of ${words.length}…`;
