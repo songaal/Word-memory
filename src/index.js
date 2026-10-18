@@ -5,7 +5,7 @@
 // POST   /api/auth/logout               → ends the session
 // GET    /api/me                        → current user
 // GET    /api/words                     → { cards, seed, updatedAt } for the signed-in user
-// PUT    /api/words        { cards, seed } → replaces the user's word list
+// PUT    /api/words        { cards, seed, log } → replaces the user's word list and answer log
 // GET    /api/lookup?word=              → dictionary entry (no sign-in needed)
 // GET    /api/settings                  → { translateKey } for the signed-in user
 // PUT    /api/settings     { translateKey } → saves the user's settings
@@ -13,7 +13,7 @@
 // Auth: /api/me and /api/words send "Authorization: Bearer <session>".
 // Storage (KV binding WORDS):
 //   wm:sess:<session>  → { sub, email, name, picture }   (expires after 60 days)
-//   wm:words:<sub>     → { cards, seed, updatedAt }
+//   wm:words:<sub>     → { cards, seed, log, updatedAt }
 //   wm:settings:<sub>  → { translateKey }   (the user's own Google Translate API key)
 //   wm:dict2:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
 //
@@ -105,7 +105,7 @@ async function getWords(request, env) {
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'Not signed in' }, 401);
   const data = await env.WORDS.get(`wm:words:${user.sub}`, 'json').catch(() => null);
-  return json(data || { cards: null, seed: 0, updatedAt: null });
+  return json(data || { cards: null, seed: 0, log: {}, updatedAt: null });
 }
 
 async function putWords(request, env) {
@@ -116,7 +116,15 @@ async function putWords(request, env) {
   let body;
   try { body = JSON.parse(text); } catch { return json({ error: 'Invalid JSON' }, 400); }
   if (!body || !Array.isArray(body.cards)) return json({ error: 'cards array required' }, 400);
-  const record = { cards: body.cards, seed: Number(body.seed) || 0, updatedAt: new Date().toISOString() };
+  // log: answers per day for the Home stats, { 'YYYY-MM-DD': { ok, no } }; keep the latest 400 days
+  let log = {};
+  if (body.log && typeof body.log === 'object' && !Array.isArray(body.log)) {
+    for (const k of Object.keys(body.log).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort().slice(-400)) {
+      const v = body.log[k] || {};
+      log[k] = { ok: Math.max(0, Number(v.ok) || 0), no: Math.max(0, Number(v.no) || 0) };
+    }
+  }
+  const record = { cards: body.cards, seed: Number(body.seed) || 0, log, updatedAt: new Date().toISOString() };
   await env.WORDS.put(`wm:words:${user.sub}`, JSON.stringify(record));
   return json({ ok: true, updatedAt: record.updatedAt });
 }
