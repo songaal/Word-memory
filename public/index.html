@@ -213,6 +213,10 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .li[aria-pressed="true"] .ck{background:var(--accent);border-color:var(--accent)}
 .li[aria-pressed="true"] .ck::after{content:"";width:6px;height:11px;border:solid var(--card);border-width:0 2.5px 2.5px 0;transform:translateY(-1px) rotate(45deg)}
 .li[aria-pressed="true"]{background:var(--accent-soft)}
+.rdo{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center}
+.mi[aria-checked="true"] .rdo{border-color:var(--accent)}
+.mi[aria-checked="true"] .rdo::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--accent)}
+.mi.off .t{color:var(--muted)}
 .selbar{padding:10px var(--gutter-r) 10px var(--gutter-l);border-top:1px solid var(--line);background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .selbar .btn{max-width:640px;margin:0 auto;display:block}
 .selbar .btn:disabled{opacity:.45;cursor:default}
@@ -368,7 +372,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.15.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.15.1</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -389,14 +393,17 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
     <div class="mepage" id="me-ai" hidden>
       <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>AI</h2><span class="back-spacer"></span></div>
       <div class="scroll"><div class="stack">
+        <div class="label" style="padding-left:4px">Use for writing stories</div>
+        <div class="menu" id="aiUse" role="radiogroup"></div>
+        <p class="note" id="aiUseMsg" style="padding-left:4px;margin-top:-6px"></p>
         <div class="card">
           <form class="field" id="aiForm" autocomplete="off">
-            <label>AI for writing stories</label>
-            <p class="note">Writes a story from the words you pick (Words → Words → Select). Pick one and add its API key.</p>
-            <div class="seg" role="radiogroup" id="aiSeg" style="margin:4px 0 8px">
-              <button type="button" role="radio" data-ai="gemini">Gemini</button>
-              <button type="button" role="radio" data-ai="openai">ChatGPT</button>
-              <button type="button" role="radio" data-ai="claude">Claude</button>
+            <label>API keys</label>
+            <p class="note">Pick an AI to add or change its key. Only the one checked above is used.</p>
+            <div class="seg" role="tablist" id="aiSeg" style="margin:4px 0 8px">
+              <button type="button" role="tab" data-ai="gemini">Gemini</button>
+              <button type="button" role="tab" data-ai="openai">ChatGPT</button>
+              <button type="button" role="tab" data-ai="claude">Claude</button>
             </div>
             <label for="aiKey"><span id="aiKeyLbl">API key</span></label>
             <p class="note" id="aiWhere"></p>
@@ -1485,7 +1492,7 @@ function openStoryForm(existing,presetWords){
     <label class="fieldlabel" for="stWords">Words to learn</label>
     <textarea id="stWords" rows="5" placeholder="One per line, or separated by commas&#10;&#10;Or a JSON array, same format as Add words → JSON" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-family:var(--f-mono);font-size:15px"></textarea>
     <p class="note">Each word should appear in the story (any form, like "inflated" for "inflate"). Plain words already in your word list are used as they are; the others are looked up in the dictionary and added to your word list. A JSON array (<code>[{"word","pos","pairs":[{"example","definition"}],"similar"}]</code>) adds those words to your word list with your own definitions, replacing any that are already there.</p>
-    <button class="btn ghost block aibtn" id="stGen" type="button">${AI_ICON} Write with AI</button>
+    <button class="btn ghost block aibtn" id="stGen" type="button">${AI_ICON} Write with ${aiKey()?AI[aiProv()].name:'AI'}</button>
     <button class="btn block" id="stSave" type="button">${storyEditing?'Save changes':'Save story'}</button>
     <div class="msg" id="stMsg"></div>
   </div>`);
@@ -1904,7 +1911,12 @@ const AI={
     modelNote:'Leave empty for <b>claude-haiku-5-5</b> (fast and cheapest).',
     how:['Go to <b>platform.claude.com</b> and sign in.','Billing → buy credits (billed separately from a Claude Pro/Max plan). One story with Haiku costs well under a cent.','API keys → <b>Create key</b>, then copy it here.']},
 };
-const aiProv=()=>AI[settings.aiProvider]?settings.aiProvider:(settings.openaiKey?'openai':settings.claudeKey&&!settings.geminiKey?'claude':'gemini');
+const AI_ORDER=['gemini','openai','claude'];
+function aiProv(){
+  const p=settings.aiProvider;
+  if(AI[p]&&settings[AI[p].key]) return p;
+  return AI_ORDER.find(x=>settings[AI[x].key])||(AI[p]?p:'gemini');
+}
 const aiKey=(p=aiProv())=>settings[AI[p].key]||'';
 const aiModel=(p=aiProv())=>settings[AI[p].mdl]||AI[p].model;
 function aiError(p,r,j){
@@ -1954,8 +1966,22 @@ async function aiComplete(system,user){
 // AI settings page
 let aiPage='gemini';
 function renderAi(){
-  aiPage=aiProv();showAiForm();
+  aiPage=aiProv();renderAiUse();showAiForm();
 }
+function renderAiUse(msg){
+  const cur=aiKey()?aiProv():'';
+  $('aiUse').innerHTML=AI_ORDER.map(p=>{const a=AI[p],has=!!settings[a.key],on=p===cur;
+    return `<button class="mi${has?'':' off'}" type="button" role="radio" aria-checked="${on}" data-use="${p}"><span class="rdo"></span>
+      <span class="t">${a.name}<br><span class="note">${has?esc(aiModel(p)):'No key yet'}</span></span><span class="v ${on?'on':''}">${on?'In use':has?'':'Add key'}</span></button>`}).join('');
+  $('aiUseMsg').textContent=msg||(cur?`Stories are written by ${AI[cur].name}.`:'Add a key below to start.');
+}
+$('aiUse').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-use]');if(!b) return;
+  const p=b.dataset.use;
+  if(!settings[AI[p].key]){aiPage=p;showAiForm();renderAiUse(`Add a ${AI[p].name} key below first.`);$('aiKey').focus();return}
+  settings.aiProvider=p;renderAiUse();
+  try{await storeSettings()}catch(_){renderAiUse("Couldn't save the choice. Try again.")}
+});
 function showAiForm(){
   const a=AI[aiPage],active=aiProv()===aiPage;
   document.querySelectorAll('#aiSeg [data-ai]').forEach(b=>{const on=b.dataset.ai===aiPage;b.setAttribute('aria-selected',on);b.setAttribute('aria-checked',on)});
@@ -1966,14 +1992,11 @@ function showAiForm(){
   $('aiWhere').textContent=acct==='cloud'?'Keys are saved to your account, so they work on all your devices.':'Keys are saved in this browser only. Sign in to use them on all your devices.';
   $('aiHow').innerHTML=a.how.map(x=>`<li>${x}</li>`).join('');
   const m=$('aiMsg');m.className='msg';
-  m.textContent=settings[a.key]?(active?`In use: ${a.name} (${aiModel(aiPage)}).`:`A key is saved. Tap Save and test to use ${a.name}.`):'No key saved yet.';
+  m.textContent=settings[a.key]?(active?`Key saved · in use.`:`Key saved · not in use (check ${a.name} above to use it).`):'No key saved yet.';
 }
 $('aiSeg').addEventListener('click',async e=>{
   const b=e.target.closest('[data-ai]');if(!b) return;
-  aiPage=b.dataset.ai;
-  // switching to a provider that already has a key makes it the one in use
-  if(settings[AI[aiPage].key]&&settings.aiProvider!==aiPage){settings.aiProvider=aiPage;try{await storeSettings()}catch(_){}}
-  showAiForm();
+  aiPage=b.dataset.ai;showAiForm();
 });
 $('aiShow').onclick=()=>{const i=$('aiKey');i.type=i.type==='password'?'text':'password';$('aiShow').textContent=i.type==='password'?'Show':'Hide'};
 $('aiForm').addEventListener('submit',async e=>{
@@ -1981,18 +2004,18 @@ $('aiForm').addEventListener('submit',async e=>{
   const a=AI[aiPage],k=$('aiKey').value.trim(),model=$('aiModel').value.trim(),m=$('aiMsg');
   if(!k){m.className='msg err';m.textContent='Paste a key first.';return}
   m.className='msg';m.textContent='Testing the key…';$('aiSave').disabled=true;
-  const prev={...settings};settings[a.key]=k;settings[a.mdl]=model;settings.aiProvider=aiPage;
+  const prev={...settings},first=!aiKey();settings[a.key]=k;settings[a.mdl]=model;if(first) settings.aiProvider=aiPage;
   try{
     await aiTest(aiPage);
     await storeSettings();
-    showAiForm();m.textContent=`Saved. ${a.name} (${aiModel(aiPage)}) will write your stories.`;
+    showAiForm();renderAiUse();m.textContent=aiProv()===aiPage?`Saved. ${a.name} (${aiModel(aiPage)}) writes your stories.`:`Saved. The key works. Check ${a.name} above to use it.`;
   }catch(err){settings=prev;m.className='msg err';m.textContent=err.message}
   finally{$('aiSave').disabled=false}
 });
 $('aiClear').onclick=async()=>{
   const a=AI[aiPage];settings[a.key]='';
   try{await storeSettings()}catch(e){}
-  showAiForm();$('aiMsg').textContent='Key removed.';
+  showAiForm();renderAiUse();$('aiMsg').textContent='Key removed.';
 };
 // words: [{word, def}] → {title, story}
 async function writeStory(words){
@@ -2042,7 +2065,7 @@ async function genStory(){
     saveStory.confirmed=false;
     $('sheetBody').scrollTop=0;
   }catch(e){if($('stMsg')){msg.className='msg err';msg.textContent=e.message}}
-  finally{if($('stGen')){btn.disabled=false;$('stSave').disabled=false;btn.innerHTML=AI_ICON+' Write again'}}
+  finally{if($('stGen')){btn.disabled=false;$('stSave').disabled=false;btn.innerHTML=AI_ICON+' Write again with '+AI[aiProv()].name}}
 }
 
 // ---------- native feel: hide the tab bar while the keyboard is up ----------

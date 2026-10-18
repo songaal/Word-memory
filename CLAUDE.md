@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.15.0</span> · <span class="version-date">2026/10/19</span>
+<span class="version-tag">v2.15.1</span> · <span class="version-date">2026/10/19</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.15.0 — 2026/10/19**
+**Current version: v2.15.1 — 2026/10/19**
 
 ## Architecture
 
@@ -29,7 +29,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
   - Home stats use `log` (answers per day, `{ 'YYYY-MM-DD': {ok, no} }`), saved with the word list.
   - Dictionary: looked up through `GET /api/lookup` on the worker (never directly from the browser).
   - Sound: dictionary audio for words; browser speech (Web Speech API) for sentences and stories. Me → Settings → Voice picks an English voice and speed (Apple novelty/character and Eloquence voices are hidden: `oddVoice`) (per device, localStorage `wm.voice`); `makeUtter` applies it everywhere. Story page **Listen** reads sentence by sentence and highlights the current paragraph (`reader`, stopped on leaving the page/tab or when anything else speaks).
-  - **AI story writer**: Me → Settings → AI picks one of **Gemini / ChatGPT / Claude** (`aiProvider`) and stores that provider's key and optional model (`geminiKey/geminiModel`, `openaiKey/openaiModel`, `claudeKey/claudeModel`; defaults `gemini-flash-latest`, `gpt-4.1-mini`, `claude-haiku-5-5`; table `AI` in the script). "Save and test" checks the model endpoint (free) and makes that provider the one in use; tapping a provider that already has a key switches to it. All calls go from the browser (`aiComplete`; Claude uses `anthropic-dangerous-direct-browser-access`). Words → Words has **Select** (`listSel`, up to 20): tapping words checks them and a bottom bar "Make a story with these N words" opens the story form with those words and runs `genStory` → `writeStory` (each word's first definition is sent so the sense matches). The form also has a **Write with AI / Write again** button that uses the "Words to learn" box (plain words or JSON). The story is only filled in; the user reviews and taps Save.
+  - **AI story writer**: Me → Settings → AI picks one of **Gemini / ChatGPT / Claude** (`aiProvider`) and stores that provider's key and optional model (`geminiKey/geminiModel`, `openaiKey/openaiModel`, `claudeKey/claudeModel`; defaults `gemini-flash-latest`, `gpt-4.1-mini`, `claude-haiku-5-5`; table `AI` in the script). "Use for writing stories" (`#aiUse`, radio list) is the only place that picks the provider in use (`aiProvider`; falls back to the first provider with a key if its key is removed). The key card's Gemini/ChatGPT/Claude tabs only choose which key to edit; "Save and test" checks the model endpoint (free) and makes it the one in use only when none is set yet. The story form button names the AI in use. All calls go from the browser (`aiComplete`; Claude uses `anthropic-dangerous-direct-browser-access`). Words → Words has **Select** (`listSel`, up to 20): tapping words checks them and a bottom bar "Make a story with these N words" opens the story form with those words and runs `genStory` → `writeStory` (each word's first definition is sent so the sense matches). The form also has a **Write with AI / Write again** button that uses the "Words to learn" box (plain words or JSON). The story is only filled in; the user reviews and taps Save.
   - Translation: toggle button next to each example sentence → Korean via Google Cloud Translation v2, called from the browser with the user's own API key (Me → Settings → Google Translate). Translations are saved on the card (`exKo`).
 - **Backend**: `src/index.js` — Cloudflare Worker
   - `POST /api/auth/login` — verifies a Google ID token, creates a session (KV, 60 days)
