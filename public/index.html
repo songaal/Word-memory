@@ -46,6 +46,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:4px var(--gutter-r) 24px var(--gutter-l)}
 .stack{display:flex;flex-direction:column;gap:14px;max-width:640px;margin:0 auto}
 .stack .stack{margin:0;max-width:none;width:100%}
+.kb .tabbar{display:none}
 .tabbar{display:flex;background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 6px) var(--gutter-l)}
 .tabbar button{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;color:var(--muted);font:500 11px var(--f-ui);cursor:pointer;position:relative}
 .tabbar svg{width:25px;height:25px}
@@ -177,6 +178,9 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .inlineback{align-self:flex-start;margin-left:-4px}
 .fieldlabel{font-weight:600;font-size:14px}
 
+/* tappable story words */
+.tw{cursor:pointer;border-radius:4px}
+.tw:active{background:var(--accent-soft)}
 /* story translation */
 .pko{font:400 15px/1.65 var(--f-ui);color:var(--muted);margin:-6px 0 16px;padding-left:10px;border-left:2px solid var(--accent-soft)}
 .storytext .pko:last-child{margin-bottom:0}
@@ -345,7 +349,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.9.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.10.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -645,8 +649,10 @@ function hasWord(text,word){return !!text&&new RegExp(wordRe(word).source,'i').t
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function plural(n,w,many){return n+' '+(n===1?w:(many||w+'s'))}
 function newDef(d,ex){return{d:d||'',ex:ex||'',stage:0,due:today()}}
+const tapCache={};   // words looked up by tapping them in a story: word -> card | null
 function findCard(word){
   return cards.find(c=>c.word===word)
+    ||(tapCache[word]||null)
     ||searchResults.find(r=>r.card&&r.card.word===word)?.card
     ||stories.map(s=>s.entries&&s.entries[word]).find(Boolean)
     ||stories.flatMap(s=>Object.values(s.entries||{})).find(c=>c&&c.word===word);
@@ -950,10 +956,17 @@ function storyMatches(s){
   return out;
 }
 // afterPara(i) can add something after paragraph i (used for translations)
-function storyHTML(s,fn,afterPara){
+// tapWords: every other English word becomes tappable (shows its dictionary entry)
+function tapWordsHTML(text){
+  let out='',pos=0;const re=/[A-Za-z]+(?:['’][A-Za-z]+)*/g;let m;
+  while((m=re.exec(text))){out+=esc(text.slice(pos,m.index))+`<span class="tw" data-tw="${esc(m[0])}">${esc(m[0])}</span>`;pos=m.index+m[0].length}
+  return out+esc(text.slice(pos));
+}
+function storyHTML(s,fn,afterPara,tapWords){
+  const seg=t=>tapWords?tapWordsHTML(t):esc(t);
   let html='',pos=0;
-  storyMatches(s).forEach((m,k)=>{html+=esc(s.text.slice(pos,m.i))+fn(m,k);pos=m.i+m.len});
-  html+=esc(s.text.slice(pos));
+  storyMatches(s).forEach((m,k)=>{html+=seg(s.text.slice(pos,m.i))+fn(m,k);pos=m.i+m.len});
+  html+=seg(s.text.slice(pos));
   return html.split(/\n\s*\n/).map((p,i)=>`<p>${p.replace(/\n/g,'<br>')}</p>${afterPara?afterPara(i):''}`).join('');
 }
 const storyParas=s=>s.text.split(/\n\s*\n/).map(p=>p.replace(/\s+/g,' ').trim());
@@ -1207,6 +1220,23 @@ function renderResult(h,fresh){
   if(fresh) $('again').onclick=startTest;else $('resBack').onclick=testHome;
   $('testScroll').scrollTop=0;
 }
+// Tap any word in a story: show its entry (word list first, then the dictionary)
+function normWord(w){return w.toLowerCase().replace(/['’]s$/,'').replace(/['’]/g,'')}
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('[data-tw]');
+  if(!t) return;
+  const w=normWord(t.dataset.tw);
+  const known=findCard(w);
+  if(known){openPop(known);return}
+  $('popTitle').textContent=w;$('popBody').innerHTML='<div class="card empty">Looking it up…</div>';$('pop').hidden=false;
+  if(tapCache[w]===undefined){
+    try{tapCache[w]=await lookup(w)}catch(err){tapCache[w]=err.message==='notfound'?null:undefined;
+      if($('popTitle').textContent===w) $('popBody').innerHTML=`<div class="card empty">${esc(lookupErr(err.message,w))}</div>`;return}
+  }
+  if($('pop').hidden||$('popTitle').textContent!==w) return;   // closed or another word tapped meanwhile
+  if(tapCache[w]) openPop(tapCache[w]);
+  else $('popBody').innerHTML=`<div class="card empty">"${esc(w)}" isn't in the dictionary.</div>`;
+});
 // Tap a filled-in answer (or a word in lists) to see its entry
 document.addEventListener('click',e=>{
   const p=e.target.closest('[data-pop]');
@@ -1280,12 +1310,12 @@ function renderStoryView(s){
       <span class="row"><button class="btn ghost" id="svDelNo" type="button">Cancel</button><button class="btn" style="background:var(--bad);border-color:var(--bad)" id="svDelYes" type="button">Delete</button></span></div>`:''}
     <h2 class="stitle">${esc(s.title)}</h2>
     <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:nowrap">
-      <div class="note">${esc(fmtDay(s.created))} · ${plural(s.words.length,'study word')} · tap a bold word for its entry</div>
+      <div class="note">${esc(fmtDay(s.created))} · ${plural(s.words.length,'study word')} · tap any word for its entry</div>
       <button class="hintbtn trbtn" id="svTr" type="button" aria-pressed="${storyTr}">${TR_ICON}<span>Translate</span></button>
     </div>
     ${storyTrMsg?`<div class="msg${storyTrErr?' err':''}">${esc(storyTrMsg)}</div>`:''}
     <div class="card"><div class="storytext">${storyHTML(s,m=>`<button class="sw" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`,
-      storyTr&&s.ko&&s.koSrc===s.text?i=>s.ko[i]?`<div class="pko">${esc(s.ko[i])}</div>`:'':null)}</div></div>
+      storyTr&&s.ko&&s.koSrc===s.text?i=>s.ko[i]?`<div class="pko">${esc(s.ko[i])}</div>`:'':null,true)}</div></div>
     <div class="card">
       <span class="label">Study words</span>
       <div class="syn">${s.words.map(w=>`<button class="chip" type="button" data-pop="${esc(w)}" style="border:0;cursor:pointer">${esc(w)}</button>`).join('')}</div>
@@ -1667,6 +1697,10 @@ $('trClear').onclick=async()=>{
   renderSettings();$('setMsg').textContent='Key removed.';
 };
 
+// ---------- native feel: hide the tab bar while the keyboard is up ----------
+let kbTimer=null;
+document.addEventListener('focusin',e=>{if(e.target.matches('input,textarea')){clearTimeout(kbTimer);document.body.classList.add('kb')}});
+document.addEventListener('focusout',e=>{if(e.target.matches('input,textarea')){clearTimeout(kbTimer);kbTimer=setTimeout(()=>{const a=document.activeElement;if(!a||!a.matches('input,textarea')) document.body.classList.remove('kb')},150)}});
 // ---------- native feel: no pinch/double-tap zoom ----------
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('touchmove',e=>{if(e.touches.length>1) e.preventDefault()},{passive:false});
