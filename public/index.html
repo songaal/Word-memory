@@ -177,6 +177,12 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .inlineback{align-self:flex-start;margin-left:-4px}
 .fieldlabel{font-weight:600;font-size:14px}
 
+/* story translation */
+.pko{font:400 15px/1.65 var(--f-ui);color:var(--muted);margin:-6px 0 16px;padding-left:10px;border-left:2px solid var(--accent-soft)}
+.storytext .pko:last-child{margin-bottom:0}
+.trbtn{display:inline-flex;align-items:center;gap:5px;flex:none}
+.trbtn svg{width:16px;height:16px}
+
 /* ---- dict ---- */
 .seg{display:flex;background:var(--line);border-radius:10px;padding:3px;margin:0 var(--gutter-r) 8px var(--gutter-l)}
 .seg button{flex:1;border:0;background:none;border-radius:8px;padding:7px 0;font:600 14px var(--f-ui);color:var(--muted);cursor:pointer}
@@ -339,7 +345,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.8.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.9.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -740,6 +746,20 @@ function chime(){
 // Google Cloud Translation, called from the browser with the user's own API key.
 const TR_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h8M8 3v2M5.5 5c.8 3 3.2 5.6 6 7M10.5 5c-.9 3.6-3.3 6.5-6.5 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/></svg>';
 let settings={translateKey:''};
+// Several texts in one request (keeps order)
+async function translateManyKo(texts){
+  const k=settings.translateKey;
+  if(!k) throw new Error('nokey');
+  let r;
+  try{
+    r=await fetch('https://translation.googleapis.com/language/translate/v2?key='+encodeURIComponent(k),{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({q:texts,source:'en',target:'ko',format:'text'})});
+  }catch(e){throw new Error('Could not reach Google Translate. Check your connection.')}
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error((j.error&&j.error.message)||('Google Translate error (HTTP '+r.status+').'));
+  return j.data.translations.map(t=>t.translatedText);
+}
 async function translateKo(text){
   const k=settings.translateKey;
   if(!k) throw new Error('nokey');
@@ -929,12 +949,14 @@ function storyMatches(s){
   for(const m of ms) if(m.i>=end){out.push(m);end=m.i+m.len}
   return out;
 }
-function storyHTML(s,fn){
+// afterPara(i) can add something after paragraph i (used for translations)
+function storyHTML(s,fn,afterPara){
   let html='',pos=0;
   storyMatches(s).forEach((m,k)=>{html+=esc(s.text.slice(pos,m.i))+fn(m,k);pos=m.i+m.len});
   html+=esc(s.text.slice(pos));
-  return html.split(/\n\s*\n/).map(p=>`<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
+  return html.split(/\n\s*\n/).map((p,i)=>`<p>${p.replace(/\n/g,'<br>')}</p>${afterPara?afterPara(i):''}`).join('');
 }
+const storyParas=s=>s.text.split(/\n\s*\n/).map(p=>p.replace(/\s+/g,' ').trim());
 const fmtDay=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 function storyRow(s,extra){
   return `<button class="si" type="button" data-story="${esc(s.id)}">
@@ -1217,7 +1239,22 @@ $('seg-list').onclick=()=>{dictPane='list';renderDict()};
 $('seg-story').onclick=()=>{dictPane='story';storyView=null;renderDict()};
 
 // ---------- words tab: stories ----------
-let storyView=null,storyConfirm=false;
+let storyView=null,storyConfirm=false,storyTr=false,storyTrMsg='',storyTrErr=false;
+// Korean translation under each paragraph. Saved on the story (ko, koSrc) so it is fetched once.
+async function toggleStoryTr(s){
+  storyTrMsg='';storyTrErr=false;
+  if(storyTr){storyTr=false;renderStoryView(s);return}
+  storyTr=true;
+  if(s.ko&&s.koSrc===s.text){renderStoryView(s);return}
+  if(!settings.translateKey){storyTr=false;storyTrErr=true;storyTrMsg='Add your Google Translate API key in Me → Settings to see translations.';renderStoryView(s);return}
+  storyTrMsg='Translating…';renderStoryView(s);
+  try{
+    const paras=storyParas(s);
+    s.ko=await translateManyKo(paras);s.koSrc=s.text;save();
+    storyTrMsg='';
+  }catch(err){storyTr=false;storyTrErr=true;storyTrMsg=err.message}
+  if(storyView===s.id) renderStoryView(s);
+}
 function renderStories(){
   const b=$('storyBody');
   if(storyView&&storyById(storyView)){renderStoryView(storyById(storyView));return}
@@ -1229,7 +1266,7 @@ function renderStories(){
 }
 $('storyBody').addEventListener('click',e=>{
   const r=e.target.closest('[data-story]');
-  if(r&&!storyView){storyView=r.dataset.story;storyConfirm=false;try{history.pushState({story:storyView},'')}catch(err){}renderStories();$('storyScroll').scrollTop=0}
+  if(r&&!storyView){storyView=r.dataset.story;storyConfirm=false;storyTr=false;storyTrMsg='';try{history.pushState({story:storyView},'')}catch(err){}renderStories();$('storyScroll').scrollTop=0}
 });
 function closeStoryView(){if(history.state&&history.state.story) history.back();else{storyView=null;renderStories()}}
 function renderStoryView(s){
@@ -1242,8 +1279,13 @@ function renderStoryView(s){
       <span>Delete "${esc(s.title)}"?</span>
       <span class="row"><button class="btn ghost" id="svDelNo" type="button">Cancel</button><button class="btn" style="background:var(--bad);border-color:var(--bad)" id="svDelYes" type="button">Delete</button></span></div>`:''}
     <h2 class="stitle">${esc(s.title)}</h2>
-    <div class="note">${esc(fmtDay(s.created))} · ${plural(s.words.length,'study word')} · tap a bold word for its entry</div>
-    <div class="card"><div class="storytext">${storyHTML(s,m=>`<button class="sw" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`)}</div></div>
+    <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:nowrap">
+      <div class="note">${esc(fmtDay(s.created))} · ${plural(s.words.length,'study word')} · tap a bold word for its entry</div>
+      <button class="hintbtn trbtn" id="svTr" type="button" aria-pressed="${storyTr}">${TR_ICON}<span>Translate</span></button>
+    </div>
+    ${storyTrMsg?`<div class="msg${storyTrErr?' err':''}">${esc(storyTrMsg)}</div>`:''}
+    <div class="card"><div class="storytext">${storyHTML(s,m=>`<button class="sw" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`,
+      storyTr&&s.ko&&s.koSrc===s.text?i=>s.ko[i]?`<div class="pko">${esc(s.ko[i])}</div>`:'':null)}</div></div>
     <div class="card">
       <span class="label">Study words</span>
       <div class="syn">${s.words.map(w=>`<button class="chip" type="button" data-pop="${esc(w)}" style="border:0;cursor:pointer">${esc(w)}</button>`).join('')}</div>
@@ -1252,6 +1294,7 @@ function renderStoryView(s){
   $('svBack').onclick=closeStoryView;
   $('svTest').onclick=()=>{show('test');testPane='story';renderTestTab();startStoryTest(s.id)};
   $('svEdit').onclick=()=>openStoryForm(s);
+  $('svTr').onclick=()=>toggleStoryTr(s);
   $('svDelTop').onclick=()=>{storyConfirm=!storyConfirm;renderStoryView(s);$('storyScroll').scrollTop=0};
   if(storyConfirm){
     $('svDelYes').onclick=()=>{stories=stories.filter(x=>x!==s);save();storyConfirm=false;closeStoryView()};
