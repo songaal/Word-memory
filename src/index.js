@@ -1,4 +1,4 @@
-// Cloudflare Worker entry point for Spaced Word Box.
+// Cloudflare Worker entry point for Word Story.
 // Static files in public/ are served first; anything else reaches this worker.
 //
 // POST   /api/auth/login   { idToken }  → verifies a Google ID token, returns { session, user }
@@ -164,7 +164,7 @@ async function putSettings(request, env) {
 // ── Dictionary lookup ────────────────────────────
 const DICT_TTL = 60 * 60 * 24 * 90;
 const MISS_TTL = 60 * 60 * 24;
-const UA = 'SpacedWordBox/1.0 (https://word-memory.songaal.workers.dev)';
+const UA = 'WordStory/1.0 (https://word-memory.songaal.workers.dev)';
 
 async function lookup(url, env) {
   const word = (url.searchParams.get('word') || '').trim().toLowerCase();

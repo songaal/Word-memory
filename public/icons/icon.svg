@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b5ff0"/><stop offset="1" stop-color="#6a3fd8"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="256" cy="250" r="170" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffe9a8" stop-opacity=".55"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="250" r="170" fill="url(#glow)"/>
+  <!-- rising sparkles -->
+  <path d="M256 118 L270 166 L318 180 L270 194 L256 242 L242 194 L194 180 L242 166 Z" fill="#ffd25e"/>
+  <path d="M338 210 L345 232 L367 239 L345 246 L338 268 L331 246 L309 239 L331 232 Z" fill="#fff3c4"/>
+  <path d="M176 222 L182 240 L200 246 L182 252 L176 270 L170 252 L152 246 L170 240 Z" fill="#fff3c4"/>
+  <circle cx="314" cy="140" r="7" fill="#fff3c4"/>
+  <circle cx="200" cy="150" r="5" fill="#fff3c4"/>
+  <!-- open book -->
+  <path d="M256 300 C220 278 170 272 118 282 L118 384 C170 374 220 380 256 402 Z" fill="#ffffff"/>
+  <path d="M256 300 C292 278 342 272 394 282 L394 384 C342 374 292 380 256 402 Z" fill="#eef1ff"/>
+  <path d="M256 300 L256 402" stroke="#c9d1f5" stroke-width="4"/>
+  <!-- text lines -->
+  <g stroke="#b7c2ef" stroke-width="7" stroke-linecap="round">
+    <path d="M146 312 C176 306 206 308 232 318"/><path d="M146 336 C176 330 206 332 232 342"/><path d="M146 360 C170 355 190 356 210 362"/>
+    <path d="M280 318 C306 308 336 306 366 312"/><path d="M280 342 C306 332 336 330 366 336"/>
+  </g>
+  <!-- cover edge -->
+  <path d="M108 290 L108 394 C166 382 220 388 256 410 C292 388 346 382 404 394 L404 290" fill="none" stroke="#ffd25e" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

@@ -1,11 +1,11 @@
-# Spaced Word Box — Project Rules
+# Word Story — Project Rules
 
 ## Versioning (MANDATORY — apply on every change)
 
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.16.1</span> · <span class="version-date">2026/10/19</span>
+<span class="version-tag">v2.17.0</span> · <span class="version-date">2026/10/19</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,11 +13,11 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.16.1 — 2026/10/19**
+**Current version: v2.17.0 — 2026/10/19**
 
 ## Architecture
 
-- **Frontend**: `public/index.html` — single-file app, no build step. All UI text is English.
+- **Frontend**: `public/index.html` — single-file app, no build step. All UI text is English. App name **Word Story** (title, `manifest.json`); icon = open storybook with rising sparkles (`public/icons/icon.svg` → 192/512 PNG + `apple-touch-icon.png`).
   - Native-app shell: fixed full screen, no zoom (viewport + gesture blocking), no pull-to-refresh, one scroll area per tab, bottom tab bar: **Home** (stats), **Test** (Schedule / Story), **Words** (Dictionary / Words / Story), **Me** (profile + settings menu). Internally the Words tab still uses `dict` ids. Text can't be selected by dragging (inputs excepted). The tab bar hides while an input has focus (keyboard up), via `body.kb`, and during a running test, via `body.intest` (set by `setQuit`). On the Words tab's three panes it slides down while scrolling down and back up on scrolling up (`setTabbarHidden` → `body.tbhide`; shown again near the top and whenever the screen changes — tab, pane (also when code switches it, e.g. Select → story form), or story list ↔ story page (`tbScreenIs`)). Popups use a bottom sheet. The selected tab's icon is filled.
   - Me → Settings is a list menu (`SETTINGS_MENU` in the script); each item opens its own page with a ‹ back button, and the phone/browser back gesture also returns. Add future settings to that list.
   - When a test ends, a results screen shows the score and every answer (misses first, tap for the word). Each finished test is saved to `history` (newest first, max 60) and listed under the Start button on the Test tab; tapping one opens the same results page.
