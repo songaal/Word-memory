@@ -181,6 +181,10 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 /* tappable story words */
 .tw{cursor:pointer;border-radius:4px}
 .tw:active{background:var(--accent-soft)}
+/* story read-aloud: the paragraph being read */
+.storytext > p{transition:background .2s}
+.storytext > p.reading{background:var(--accent-soft);border-radius:6px;box-shadow:0 0 0 6px var(--accent-soft)}
+#vRate{width:100%;accent-color:var(--accent)}
 /* story translation */
 .pko{font:400 15px/1.65 var(--f-ui);color:var(--muted);margin:-6px 0 16px;padding-left:10px;border-left:2px solid var(--accent-soft)}
 .storytext .pko:last-child{margin-bottom:0}
@@ -350,8 +354,21 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.11.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.12.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
+      </div></div>
+    </div>
+    <!-- Me: Voice settings page -->
+    <div class="mepage" id="me-voice" hidden>
+      <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>Voice</h2><span class="back-spacer"></span></div>
+      <div class="scroll"><div class="stack">
+        <p class="note" style="padding:0 4px">Used for reading sentences and stories aloud. Voices come from this device, so the list is different on your phone and your computer, and the choice is saved on this device only.</p>
+        <div class="card field">
+          <div class="row" style="justify-content:space-between"><label class="fieldlabel" for="vRate">Speed</label><span class="note" id="vRateLbl"></span></div>
+          <input type="range" id="vRate" min="0.6" max="1.3" step="0.05">
+        </div>
+        <div class="label" style="padding-left:4px">English voices · tap to hear and choose</div>
+        <div class="menu" id="voiceList"></div>
       </div></div>
     </div>
     <!-- Me: Google Translate settings page -->
@@ -721,14 +738,58 @@ const LOOKUP_ERR={
 const lookupErr=(code,w)=>(LOOKUP_ERR[code]||(()=>'Something went wrong. Please try again.'))(w);
 
 // ---------- sound ----------
+// Voice choice is per device (voices come from the phone/browser): localStorage 'wm.voice' = {uri, rate}
+let voicePref=lsJSON('wm.voice')||{uri:'',rate:.9};
+const enVoices=()=>{try{return speechSynthesis.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang))}catch(e){return []}};
+function pickVoice(){
+  const vs=enVoices();
+  return vs.find(v=>v.voiceURI===voicePref.uri)||vs.find(v=>/^en[-_]US/i.test(v.lang)&&v.default)||vs.find(v=>/^en[-_]US/i.test(v.lang))||vs[0]||null;
+}
+function makeUtter(text){
+  const u=new SpeechSynthesisUtterance(text);
+  const v=pickVoice();
+  u.lang=v?v.lang:'en-US';if(v) u.voice=v;
+  u.rate=voicePref.rate||.9;
+  return u;
+}
 function speak(text){
   try{
     if(!('speechSynthesis' in window)) return false;
+    stopReading();
     speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.9;
-    const v=speechSynthesis.getVoices().find(v=>/^en(-|_)US/i.test(v.lang));if(v) u.voice=v;
-    speechSynthesis.speak(u);return true;
+    speechSynthesis.speak(makeUtter(text));return true;
   }catch(e){return false}
+}
+// ---------- story reader: reads sentence by sentence, highlighting the paragraph ----------
+let reader=null;   // {id, parts:[{p, t}], i, token}
+const splitSentences=p=>p.match(/[^.!?]+[.!?]+["'”’)\]]*|[^.!?]+$/g)?.map(x=>x.trim()).filter(Boolean)||[p];
+function markReading(){
+  const pi=reader&&reader.parts[reader.i]?reader.parts[reader.i].p:-1;
+  document.querySelectorAll('#storyBody .storytext > p').forEach((el,i)=>el.classList.toggle('reading',i===pi));
+  const b=$('svRead');
+  if(b){b.setAttribute('aria-pressed',!!reader);b.querySelector('span').textContent=reader?'Stop':'Listen'}
+}
+function stopReading(){
+  if(!reader) return;
+  reader=null;
+  try{speechSynthesis.cancel()}catch(e){}
+  markReading();
+}
+function startReading(s){
+  if(!('speechSynthesis' in window)) return;
+  stopReading();speechSynthesis.cancel();
+  const parts=[];
+  storyParas(s).forEach((p,pi)=>splitSentences(p).forEach(t=>parts.push({p:pi,t})));
+  reader={id:s.id,parts,i:0,token:Math.random()};
+  readNext(reader.token);
+}
+function readNext(token){
+  if(!reader||reader.token!==token) return;
+  if(reader.i>=reader.parts.length){reader=null;markReading();return}
+  markReading();
+  const u=makeUtter(reader.parts[reader.i].t);
+  u.onend=u.onerror=()=>{if(!reader||reader.token!==token) return;reader.i++;readNext(token)};
+  speechSynthesis.speak(u);
 }
 function playWord(word,audio){
   if(audio){try{const a=new Audio(audio);a.play().catch(()=>speak(word));return}catch(e){}}
@@ -752,6 +813,7 @@ function chime(){
 // ---------- translation ----------
 // Google Cloud Translation, called from the browser with the user's own API key.
 const TR_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h8M8 3v2M5.5 5c.8 3 3.2 5.6 6 7M10.5 5c-.9 3.6-3.3 6.5-6.5 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/></svg>';
+const SPK_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
 let settings={translateKey:''};
 // Several texts in one request (keeps order)
 async function translateManyKo(texts){
@@ -835,6 +897,7 @@ document.addEventListener('click',async e=>{
 const TABS=['home','test','dict','me'];
 let curTab='home';
 function show(name){
+  if(name!==curTab) stopReading();
   curTab=name;
   for(const t of TABS){$('tab-'+t).setAttribute('aria-selected',t===name);$('s-'+t).hidden=t!==name}
   if(name==='home') renderHome();
@@ -1267,7 +1330,7 @@ function renderDict(){
 }
 $('seg-search').onclick=()=>{dictPane='search';renderDict();$('searchIn').focus()};
 $('seg-list').onclick=()=>{dictPane='list';renderDict()};
-$('seg-story').onclick=()=>{dictPane='story';storyView=null;renderDict()};
+$('seg-story').onclick=()=>{dictPane='story';stopReading();storyView=null;renderDict()};
 
 // ---------- words tab: stories ----------
 let storyView=null,storyConfirm=false,storyTr=false,storyTrMsg='',storyTrErr=false;
@@ -1299,7 +1362,7 @@ $('storyBody').addEventListener('click',e=>{
   const r=e.target.closest('[data-story]');
   if(r&&!storyView){storyView=r.dataset.story;storyConfirm=false;storyTr=false;storyTrMsg='';try{history.pushState({story:storyView},'')}catch(err){}renderStories();$('storyScroll').scrollTop=0}
 });
-function closeStoryView(){if(history.state&&history.state.story) history.back();else{storyView=null;renderStories()}}
+function closeStoryView(){stopReading();if(history.state&&history.state.story) history.back();else{storyView=null;renderStories()}}
 function renderStoryView(s){
   $('storyBody').innerHTML=`
     <div class="row" style="justify-content:space-between">
@@ -1310,8 +1373,9 @@ function renderStoryView(s){
       <span>Delete "${esc(s.title)}"?</span>
       <span class="row"><button class="btn ghost" id="svDelNo" type="button">Cancel</button><button class="btn" style="background:var(--bad);border-color:var(--bad)" id="svDelYes" type="button">Delete</button></span></div>`:''}
     <h2 class="stitle">${esc(s.title)}</h2>
-    <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:nowrap">
-      <div class="note">${esc(fmtDay(s.created))} · ${plural(s.words.length,'study word')} · tap any word for its entry</div>
+    <div class="note">${esc(fmtDay(s.created))} · ${plural(s.words.length,'study word')} · tap any word for its entry</div>
+    <div class="row" style="gap:8px">
+      <button class="hintbtn trbtn" id="svRead" type="button" aria-pressed="false">${SPK_ICON}<span>Listen</span></button>
       <button class="hintbtn trbtn" id="svTr" type="button" aria-pressed="${storyTr}">${TR_ICON}<span>Translate</span></button>
     </div>
     ${storyTrMsg?`<div class="msg${storyTrErr?' err':''}">${esc(storyTrMsg)}</div>`:''}
@@ -1326,6 +1390,9 @@ function renderStoryView(s){
   $('svTest').onclick=()=>{show('test');testPane='story';renderTestTab();startStoryTest(s.id)};
   $('svEdit').onclick=()=>openStoryForm(s);
   $('svTr').onclick=()=>toggleStoryTr(s);
+  $('svRead').onclick=()=>{if(reader&&reader.id===s.id) stopReading();else startReading(s)};
+  if(reader&&reader.id!==s.id) stopReading();
+  markReading();
   $('svDelTop').onclick=()=>{storyConfirm=!storyConfirm;renderStoryView(s);$('storyScroll').scrollTop=0};
   if(storyConfirm){
     $('svDelYes').onclick=()=>{stories=stories.filter(x=>x!==s);save();storyConfirm=false;closeStoryView()};
@@ -1620,6 +1687,7 @@ function bulkResult(added,skipped,failed,updated=[]){
 // Settings menu: add new settings here; each opens its own page with a back button.
 const SETTINGS_MENU=[
   {id:'translate',title:'Google Translate',icon:TR_ICON,value:()=>settings.translateKey?['On','on']:['Not set',''],render:()=>renderSettings()},
+  {id:'voice',title:'Voice',icon:SPK_ICON,value:()=>{const v=pickVoice();return [v?v.name.replace(/\s*\(.*\)$/,'').slice(0,18):'Default','']},render:()=>renderVoice()},
 ];
 let mePage='main';
 function renderMe(){
@@ -1651,11 +1719,34 @@ document.addEventListener('click',e=>{
     if(history.state&&history.state.me) history.back();else{openMePage('main',false);renderMe()}
   }
 });
+// Voice page
+const VOICE_SAMPLE='Reading every day is the best way to learn new words.';
+function saveVoicePref(){lsSet('wm.voice',JSON.stringify(voicePref))}
+function renderVoice(){
+  const vs=enVoices(),cur=pickVoice();
+  $('vRate').value=voicePref.rate||.9;$('vRateLbl').textContent=(+(voicePref.rate||.9)).toFixed(2)+'×';
+  if(!('speechSynthesis' in window)){$('voiceList').innerHTML='<div class="mi"><span class="t">This browser can\'t read text aloud.</span></div>';return}
+  if(!vs.length){$('voiceList').innerHTML='<div class="mi"><span class="t">Loading voices…</span></div>';return}
+  // US first, then other regions; each group by name
+  const sorted=[...vs].sort((a,b)=>(/^en[-_]US/i.test(b.lang)-/^en[-_]US/i.test(a.lang))||a.lang.localeCompare(b.lang)||a.name.localeCompare(b.name));
+  $('voiceList').innerHTML=sorted.map(v=>`<button class="mi" type="button" data-voice="${esc(v.voiceURI)}">
+    <span class="ic">${cur&&cur.voiceURI===v.voiceURI?'✓':SPK_ICON}</span>
+    <span class="t">${esc(v.name)}<br><span class="note">${esc(v.lang)}${v.localService===false?' · online':''}</span></span>
+    <span class="v ${cur&&cur.voiceURI===v.voiceURI?'on':''}">${cur&&cur.voiceURI===v.voiceURI?'Selected':'▶'}</span></button>`).join('');
+}
+$('voiceList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-voice]');if(!b) return;
+  voicePref.uri=b.dataset.voice;saveVoicePref();renderVoice();speak(VOICE_SAMPLE);
+});
+$('vRate').addEventListener('input',()=>{voicePref.rate=+$('vRate').value;$('vRateLbl').textContent=voicePref.rate.toFixed(2)+'×'});
+$('vRate').addEventListener('change',()=>{saveVoicePref();speak(VOICE_SAMPLE)});
+try{speechSynthesis.addEventListener('voiceschanged',()=>{if(curTab==='me'){if(mePage==='voice') renderVoice();else renderMe()}})}catch(e){}
+
 // Phone back gesture / browser back closes a settings page instead of leaving the app
 window.addEventListener('popstate',e=>{
   if(!$('pop').hidden){closePop();return}
   if(!$('sheet').hidden){closeSheet();return}
-  if(storyView&&!(e.state&&e.state.story)){storyView=null;storyConfirm=false;if(curTab==='dict') renderStories();return}
+  if(storyView&&!(e.state&&e.state.story)){stopReading();storyView=null;storyConfirm=false;if(curTab==='dict') renderStories();return}
   const page=(e.state&&e.state.me)||'main';
   if(curTab==='me'){mePage=page;renderMe()}else mePage=page;
 });
