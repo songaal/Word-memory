@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.17.1</span> · <span class="version-date">2026/10/19</span>
+<span class="version-tag">v2.17.2</span> · <span class="version-date">2026/10/19</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.17.1 — 2026/10/19**
+**Current version: v2.17.2 — 2026/10/19**
 
 ## Architecture
 
@@ -26,6 +26,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
   - **Stories** (`stories`, saved with the word list): `{id, title, text, words, entries:{word: card|null}, created, last}`. Words → Story lists them (title, first 5 words, date); a story page bolds the study words (any form) and every other word is tappable too (`tapWordsHTML`; looked up on demand and cached in `tapCache`, with + Add in the popup); a Translate toggle shows Korean under each paragraph (one batched Google request; saved on the story as `ko`/`koSrc`, refetched when the text changes); Edit / Delete sit at its top right (editing reuses the form, keeps date and entries, and clears the last score if the text or words changed). Test → Story turns every study-word occurrence into a blank (a Hint toggle shows the story's words alphabetically); Check shows the score and filled story; Quit returns to the list. Story tests don't touch the schedule. The story form's "Words to learn" takes plain words (existing word-list entries are used; others are looked up and added to the word list) or a JSON array in the Add-words format, which also adds/replaces those words in the word list. Seed v3 adds a sample story (`sample-lemonade`, original text).
   - Words → Dictionary: search box at the top (auto-focused when the tab opens), results below with the newest first; looks words up without adding them (+ Add button). Words → Words has a + button for bulk add with two modes: **Words** (one per line, looked up in the dictionary) and **JSON** (prefilled template `[{word, pos, pairs:[{example, definition}], similar:[]}]`; one array per line also accepted). After adding, a results screen lists the new words. JSON import **overwrites** a word already in the list (sentences with unchanged example text keep their schedule and translation); Words mode skips existing words.
   - Any `data-pop="<word>"` element opens that word's entry in the quick popup (`#pop`), a bottom sheet that layers above the main sheet (`#sheet`).
+  - **Sync between devices**: data loads once at start, then `refreshCloud` pulls `/api/words` again when the app returns to the foreground (`visibilitychange`/`focus`) and on tab or sub-tab taps (at most every 15 s), and redraws the current screen (`rerenderCurrent`, no focus change). It skips while local changes are unsent (`dirty`/pending), during a test, or with a sheet/popup open; `saveGen` drops a pull that raced a local change. Settings reload on foreground too.
   - Home stats use `log` (answers per day, `{ 'YYYY-MM-DD': {ok, no} }`), saved with the word list.
   - Dictionary: looked up through `GET /api/lookup` on the worker (never directly from the browser).
   - Sound: dictionary audio for words; browser speech (Web Speech API) for sentences and stories. Me → Settings → Voice picks an English voice and speed (Apple novelty/character and Eloquence voices are hidden: `oddVoice`) (per device, localStorage `wm.voice`); `makeUtter` applies it everywhere. Story page **Listen** reads sentence by sentence and highlights the current paragraph (`reader`, stopped on leaving the page/tab or when anything else speaks).

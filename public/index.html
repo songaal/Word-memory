@@ -375,7 +375,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.17.1</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.17.2</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -509,7 +509,9 @@ const cacheKey=()=>'wm.cache.'+user.sub, pendingKey=()=>'wm.pending.'+user.sub;
 function api(path,opts={}){
   return fetch(path,{...opts,headers:{'Content-Type':'application/json','Authorization':'Bearer '+session}});
 }
+let saveGen=0;   // bumps on every local change, so a refresh that raced a change is thrown away
 function save(){
+  saveGen++;
   if(acct==='guest'){lsSet(GUEST_KEY,JSON.stringify(cards));lsSet(GUEST_SEED,String(seed));lsSet(GUEST_LOG,JSON.stringify(log));lsSet(GUEST_HIST,JSON.stringify(history));lsSet(GUEST_STORIES,JSON.stringify(stories));return}
   if(acct!=='cloud') return;
   lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories}));
@@ -625,6 +627,41 @@ async function loadCloud(){
     else showView('loading',"Couldn't load your words. Check your internet connection.",true);
   }
 }
+
+// ---------- keep in step with other devices ----------
+// The PWA has no reload button, so pull the latest data when the app comes back to the
+// foreground and when the user moves between tabs (at most every 15 s). Never overwrite
+// local changes that haven't reached the server, a running test, or an open form/popup.
+let lastPull=0,pulling=false;
+async function refreshCloud(minGap){
+  if(acct!=='cloud'||pulling||pushing||dirty||lsGet(pendingKey())==='1') return;
+  if(Date.now()-lastPull<minGap) return;
+  if(document.body.classList.contains('intest')||storyRun||!$('sheet').hidden||!$('pop').hidden) return;
+  pulling=true;lastPull=Date.now();const gen=saveGen;
+  try{
+    const r=await api('/api/words');
+    if(r.status===401){expired();return}
+    if(!r.ok) return;
+    const d=await r.json();
+    if(!Array.isArray(d.cards)||gen!==saveGen||dirty||lsGet(pendingKey())==='1') return;
+    const next={cards:d.cards,seed:d.seed||0,log:d.log||{},history:d.history||[],stories:d.stories||[]};
+    if(JSON.stringify(next)===JSON.stringify({cards,seed,log,history,stories})) return;
+    ({cards,seed,log,history,stories}=next);migrate();
+    lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories}));
+    rerenderCurrent();
+  }catch(e){}finally{pulling=false}
+}
+// Redraw what's on screen without moving focus or resetting the page
+function rerenderCurrent(){
+  renderBadge();
+  if(document.body.classList.contains('intest')||storyRun) return;
+  if(curTab==='home') renderHome();
+  else if(curTab==='test') renderTestTab();
+  else if(curTab==='dict'){if(dictPane==='search') renderSearch(false);else if(dictPane==='list') renderList();else renderStories()}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){refreshCloud(3000);if(acct==='cloud') loadSettings()}});
+window.addEventListener('focus',()=>refreshCloud(3000));
+document.addEventListener('click',e=>{if(e.target.closest('.tabbar button,.seg [role="tab"]')) setTimeout(()=>refreshCloud(15000),0)});
 
 // ---------- sign-in ----------
 let gsiReady=false;
