@@ -339,7 +339,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.7.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.7.1</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -1028,7 +1028,8 @@ function gapHTML(id,len,cls=''){
 function setupGap(id,len,onEnter){
   gaps[id]={len,prefix:''};
   const inp=$(id),w=inp.parentElement;
-  inp.addEventListener('input',()=>{inp.value=inp.value.replace(/\s+/g,'');renderGap(id)});
+  inp.maxLength=len;
+  inp.addEventListener('input',()=>{inp.value=inp.value.replace(/\s+/g,'').slice(0,gaps[id].len-gaps[id].prefix.length);renderGap(id)});
   inp.addEventListener('focus',()=>{w.classList.add('focus');renderGap(id)});
   inp.addEventListener('blur',()=>{w.classList.remove('focus');renderGap(id)});
   inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();onEnter&&onEnter()}});
@@ -1037,7 +1038,7 @@ function setupGap(id,len,onEnter){
 function renderGap(id){
   const g=gaps[id],inp=$(id);if(!g||!inp) return;
   const full=g.prefix+inp.value,focused=document.activeElement===inp;
-  const n=Math.max(g.len,full.length+(focused&&full.length>=g.len?1:0));
+  const n=g.len;   // exactly as many slots as the answer has letters
   let h='';
   for(let i=0;i<n;i++){
     const cls=(i<g.prefix.length?' h':'')+(focused&&i===full.length?' cur':'');
@@ -1049,7 +1050,7 @@ function setGapPrefix(id,prefix){
   const g=gaps[id],inp=$(id);
   const full=g.prefix+inp.value;
   inp.value=full.toLowerCase().startsWith(prefix.toLowerCase())?full.slice(prefix.length):'';
-  g.prefix=prefix;renderGap(id);
+  g.prefix=prefix;inp.maxLength=g.len-prefix.length;inp.value=inp.value.slice(0,inp.maxLength);renderGap(id);
 }
 const gapTyped=id=>$(id)?$(id).value.trim():'';
 const gapValue=id=>((gaps[id]?gaps[id].prefix:'')+gapTyped(id)).toLowerCase();
