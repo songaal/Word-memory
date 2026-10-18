@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.13.0</span> · <span class="version-date">2026/10/19</span>
+<span class="version-tag">v2.14.0</span> · <span class="version-date">2026/10/19</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.13.0 — 2026/10/19**
+**Current version: v2.14.0 — 2026/10/19**
 
 ## Architecture
 
@@ -29,12 +29,13 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
   - Home stats use `log` (answers per day, `{ 'YYYY-MM-DD': {ok, no} }`), saved with the word list.
   - Dictionary: looked up through `GET /api/lookup` on the worker (never directly from the browser).
   - Sound: dictionary audio for words; browser speech (Web Speech API) for sentences and stories. Me → Settings → Voice picks an English voice and speed (Apple novelty/character and Eloquence voices are hidden: `oddVoice`) (per device, localStorage `wm.voice`); `makeUtter` applies it everywhere. Story page **Listen** reads sentence by sentence and highlights the current paragraph (`reader`, stopped on leaving the page/tab or when anything else speaks).
+  - **ChatGPT story writer**: Me → Settings → ChatGPT stores the user's OpenAI API key and optional model (`openaiKey`, `openaiModel`; default `gpt-4.1-mini`; "Save and test" checks `GET /v1/models/<model>`). Words → Words has **Select** (`listSel`, up to 20): tapping words checks them and a bottom bar "Make a story with these N words" opens the story form with those words and runs `genStory` → `writeStoryGPT` (Chat Completions, JSON mode, called from the browser; each word's first definition is sent so the sense matches). The form also has a **Write with ChatGPT / Write again** button that uses the "Words to learn" box (plain words or JSON). The story is only filled in; the user reviews and taps Save.
   - Translation: toggle button next to each example sentence → Korean via Google Cloud Translation v2, called from the browser with the user's own API key (Me → Settings → Google Translate). Translations are saved on the card (`exKo`).
 - **Backend**: `src/index.js` — Cloudflare Worker
   - `POST /api/auth/login` — verifies a Google ID token, creates a session (KV, 60 days)
   - `POST /api/auth/logout`, `GET /api/me`
   - `GET/PUT /api/words` — the signed-in user's whole word list and answer log (`wm:words:<google sub>` → `{cards, seed, log, history, stories}`)
-  - `GET/PUT /api/settings` — the signed-in user's settings, e.g. Google Translate API key (`wm:settings:<google sub>`). Guests keep settings in localStorage.
+  - `GET/PUT /api/settings` — the signed-in user's settings, Google Translate API key, OpenAI API key and model (`wm:settings:<google sub>` → `{translateKey, openaiKey, openaiModel}`). Guests keep settings in localStorage.
   - `GET /api/lookup?word=` — Merriam-Webster Learner's (definition, examples, pronunciation) + Merriam-Webster Thesaurus (similar words), asked together. Cached in KV (`wm:dict2:<word>`, 90 days) once the Thesaurus has answered. `&fresh=1` skips the cache; `&debug=1` adds a `sources` report.
   - The browser tops up similar words from Datamuse when the Thesaurus gives fewer than 4 (Datamuse returns HTTP 403 to Cloudflare Workers).
 - **Secrets** (Cloudflare dashboard → Worker → Settings → Variables and Secrets, never in the repo): `MW_LEARNER_KEY`, `MW_THESAURUS_KEY`. Without the Learner's key, lookups return "unavailable"; without the Thesaurus key, similar words come only from Datamuse.

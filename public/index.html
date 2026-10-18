@@ -208,6 +208,17 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
 .li{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:13px 14px;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;width:100%}
 .li:first-child{border-top:0}
+.li.sel{grid-template-columns:auto 1fr auto auto}
+.ck{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none;transition:background .15s,border-color .15s}
+.li[aria-pressed="true"] .ck{background:var(--accent);border-color:var(--accent)}
+.li[aria-pressed="true"] .ck::after{content:"";width:6px;height:11px;border:solid var(--card);border-width:0 2.5px 2.5px 0;transform:translateY(-1px) rotate(45deg)}
+.li[aria-pressed="true"]{background:var(--accent-soft)}
+.selbar{padding:10px var(--gutter-r) 10px var(--gutter-l);border-top:1px solid var(--line);background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.selbar .btn{max-width:640px;margin:0 auto;display:block}
+.selbar .btn:disabled{opacity:.45;cursor:default}
+.aibtn{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+.aibtn svg{width:18px;height:18px}
+.aibtn:disabled{opacity:.6;cursor:default}
 .li .w{font:600 17px var(--f-word);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li .d{font:400 12px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
 .st{font:500 11px var(--f-mono);padding:2px 8px;border-radius:10px;background:var(--accent-soft)}
@@ -336,6 +347,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
     </div>
     <div class="pane" id="pane-list" hidden>
       <div class="scroll"><div class="stack" id="listBody"></div></div>
+      <div class="selbar" id="selBar" hidden><button class="btn block" id="selGo" type="button">Make a story with these words</button></div>
     </div>
     <div class="pane" id="pane-story" hidden>
       <div class="scroll" id="storyScroll"><div class="stack" id="storyBody"></div></div>
@@ -356,7 +368,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.13.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.14.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -371,6 +383,36 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         </div>
         <div class="label" style="padding-left:4px">English voices · tap to hear and choose</div>
         <div class="menu" id="voiceList"></div>
+      </div></div>
+    </div>
+    <!-- Me: ChatGPT settings page -->
+    <div class="mepage" id="me-gpt" hidden>
+      <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>ChatGPT</h2><span class="back-spacer"></span></div>
+      <div class="scroll"><div class="stack">
+        <div class="card">
+          <form class="field" id="gptForm" autocomplete="off">
+            <label for="gptKey">OpenAI API key</label>
+            <p class="note">Used to write stories from the words you pick (Words → Words → Select). <span id="gptWhere"></span></p>
+            <div class="row" style="flex-wrap:nowrap">
+              <input type="password" id="gptKey" placeholder="sk-…" spellcheck="false" autocapitalize="none" style="flex:1">
+              <button class="btn ghost" id="gptShow" type="button">Show</button>
+            </div>
+            <label for="gptModel" style="margin-top:6px">Model</label>
+            <input type="text" id="gptModel" placeholder="gpt-4.1-mini" spellcheck="false" autocapitalize="none" autocorrect="off">
+            <p class="note">Leave empty for <b>gpt-4.1-mini</b> (fast and cheap). Any chat model name from your account works, e.g. gpt-5-mini.</p>
+            <div class="row"><button class="btn" type="submit" id="gptSave">Save and test</button><button class="btn ghost" type="button" id="gptClear">Remove key</button></div>
+            <div class="msg" id="gptMsg"></div>
+          </form>
+        </div>
+        <div class="card">
+          <span class="label">How to get a key</span>
+          <ol class="steps">
+            <li>Go to <b>platform.openai.com</b> and sign in.</li>
+            <li>Billing → add a small credit. The API is billed separately from a ChatGPT Plus subscription.</li>
+            <li>API keys → <b>Create new secret key</b>, then copy it here.</li>
+            <li>One story with gpt-4.1-mini costs roughly a tenth of a cent.</li>
+          </ol>
+        </div>
       </div></div>
     </div>
     <!-- Me: Google Translate settings page -->
@@ -817,9 +859,11 @@ function chime(){
 
 // ---------- translation ----------
 // Google Cloud Translation, called from the browser with the user's own API key.
+const AI_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>';
 const TR_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h8M8 3v2M5.5 5c.8 3 3.2 5.6 6 7M10.5 5c-.9 3.6-3.3 6.5-6.5 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/></svg>';
 const SPK_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
-let settings={translateKey:''};
+const SETTINGS0={translateKey:'',openaiKey:'',openaiModel:''};
+let settings={...SETTINGS0};
 // Several texts in one request (keeps order)
 async function translateManyKo(texts){
   const k=settings.translateKey;
@@ -923,6 +967,7 @@ document.querySelectorAll('#s-dict .scroll').forEach(el=>{
 function show(name){
   if(name!==curTab) stopReading();
   setTabbarHidden(false);
+  if(name!=='dict') listSel=null;
   curTab=name;
   for(const t of TABS){$('tab-'+t).setAttribute('aria-selected',t===name);$('s-'+t).hidden=t!==name}
   if(name==='home') renderHome();
@@ -1350,6 +1395,7 @@ document.addEventListener('keydown',e=>{if(e.key!=='Escape') return;if(!$('pop')
 // ---------- dict: search ----------
 let dictPane='search',searchResults=[];   // [{q, card} | {q, error}]
 function renderDict(){
+  if(dictPane!=='list') listSel=null;
   for(const k of ['search','list','story']){$('seg-'+k).setAttribute('aria-selected',dictPane===k);$('pane-'+k).hidden=dictPane!==k}
   if(dictPane==='search') renderSearch(true);else if(dictPane==='list') renderList();else renderStories();
 }
@@ -1426,7 +1472,7 @@ function renderStoryView(s){
 }
 // New story, or edit an existing one (editing keeps its date, entries, and last score)
 let storyEditing=null;
-function openStoryForm(existing){
+function openStoryForm(existing,presetWords){
   storyEditing=existing&&existing.id?existing:null;
   openSheet(storyEditing?'Edit story':'New story',`<div class="card field">
     <label class="fieldlabel" for="stTitle">Title</label>
@@ -1436,6 +1482,7 @@ function openStoryForm(existing){
     <label class="fieldlabel" for="stWords">Words to learn</label>
     <textarea id="stWords" rows="5" placeholder="One per line, or separated by commas&#10;&#10;Or a JSON array, same format as Add words → JSON" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-family:var(--f-mono);font-size:15px"></textarea>
     <p class="note">Each word should appear in the story (any form, like "inflated" for "inflate"). Plain words already in your word list are used as they are; the others are looked up in the dictionary and added to your word list. A JSON array (<code>[{"word","pos","pairs":[{"example","definition"}],"similar"}]</code>) adds those words to your word list with your own definitions, replacing any that are already there.</p>
+    <button class="btn ghost block aibtn" id="stGen" type="button">${AI_ICON} Write with ChatGPT</button>
     <button class="btn block" id="stSave" type="button">${storyEditing?'Save changes':'Save story'}</button>
     <div class="msg" id="stMsg"></div>
   </div>`);
@@ -1446,6 +1493,8 @@ function openStoryForm(existing){
   }
   saveStory.confirmed=false;
   $('stSave').onclick=saveStory;
+  $('stGen').onclick=genStory;
+  if(presetWords&&presetWords.length){$('stWords').value=presetWords.join('\n');genStory()}
 }
 async function saveStory(){
   const title=$('stTitle').value.trim(),text=$('stText2').value.replace(/\r/g,'').trim(),msg=$('stMsg');
@@ -1533,15 +1582,40 @@ $('searchForm').addEventListener('submit',async e=>{
 });
 
 // ---------- dict: word list ----------
+// Select mode: pick words, then make a story from them with ChatGPT
+let listSel=null;const SEL_MAX=20;
 function renderList(){
   const sorted=[...cards].map(c=>({c,s:wordSummary(c)})).sort((a,b)=>a.s.due<b.s.due?-1:a.s.due>b.s.due?1:a.c.word.localeCompare(b.c.word));
-  $('listBody').innerHTML=`
-    <div class="listhead"><span class="label">${plural(cards.length,'word')} · ${plural(allItems().length,'sentence')}</span><button class="plus" id="bulkBtn" type="button" aria-label="Add words">+</button></div>
-    ${cards.length?`<div class="list">${sorted.map(({c,s})=>`<button class="li" type="button" data-open="${esc(c.word)}"><span class="w">${esc(c.word)}${c.sample?' <span class="tag">Sample</span>':''}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${dueLabel(s.due)}</span></button>`).join('')}</div>`
+  if(listSel) for(const w of [...listSel]) if(!cards.some(c=>c.word===w)) listSel.delete(w);
+  const head=listSel
+    ?`<div class="listhead"><span class="label">${listSel.size?listSel.size+' selected':'Tap words to pick them'}</span><button class="linkbtn" id="selCancel" type="button">Cancel</button></div>`
+    :`<div class="listhead"><span class="label">${plural(cards.length,'word')} · ${plural(allItems().length,'sentence')}</span><span class="row" style="gap:12px;flex-wrap:nowrap">${cards.length?'<button class="linkbtn" id="selBtn" type="button">Select</button>':''}<button class="plus" id="bulkBtn" type="button" aria-label="Add words">+</button></span></div>`;
+  $('listBody').innerHTML=`${head}
+    ${cards.length?`<div class="list">${sorted.map(({c,s})=>listSel
+        ?`<button class="li sel" type="button" data-pick="${esc(c.word)}" aria-pressed="${listSel.has(c.word)}"><span class="ck"></span><span class="w">${esc(c.word)}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${dueLabel(s.due)}</span></button>`
+        :`<button class="li" type="button" data-open="${esc(c.word)}"><span class="w">${esc(c.word)}${c.sample?' <span class="tag">Sample</span>':''}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${dueLabel(s.due)}</span></button>`).join('')}</div>`
       :`<div class="card empty">No words yet. Tap + to add some, or search in the Search tab.</div>`}`;
-  $('bulkBtn').onclick=openBulk;
+  if(listSel) $('selCancel').onclick=()=>{listSel=null;renderList()};
+  else{$('bulkBtn').onclick=openBulk;if($('selBtn')) $('selBtn').onclick=()=>{listSel=new Set();renderList()}}
+  renderSelBar();
 }
+function renderSelBar(){
+  const bar=$('selBar');bar.hidden=!listSel||dictPane!=='list';if(bar.hidden) return;
+  const n=listSel.size,b=$('selGo');
+  b.disabled=!n;
+  b.textContent=!n?'Pick words for a story':n>SEL_MAX?`Pick ${SEL_MAX} words or fewer`:`Make a story with ${n===1?'this word':'these '+n+' words'}`;
+  if(n>SEL_MAX) b.disabled=true;
+}
+$('selGo').onclick=()=>{
+  if(!listSel||!listSel.size) return;
+  const order=[...cards].map(c=>c.word).filter(w=>listSel.has(w));
+  listSel=null;dictPane='story';storyView=null;renderDict();
+  openStoryForm(null,order);
+};
 $('listBody').addEventListener('click',e=>{
+  const pk=e.target.closest('[data-pick]');
+  if(pk&&listSel){const w=pk.dataset.pick;listSel.has(w)?listSel.delete(w):listSel.add(w);pk.setAttribute('aria-pressed',listSel.has(w));
+    const l=$('listBody').querySelector('.listhead .label');if(l) l.textContent=listSel.size?listSel.size+' selected':'Tap words to pick them';renderSelBar();return}
   const o=e.target.closest('[data-open]');
   if(o) openWord(o.dataset.open);
 });
@@ -1712,6 +1786,7 @@ function bulkResult(added,skipped,failed,updated=[]){
 // Settings menu: add new settings here; each opens its own page with a back button.
 const SETTINGS_MENU=[
   {id:'translate',title:'Google Translate',icon:TR_ICON,value:()=>settings.translateKey?['On','on']:['Not set',''],render:()=>renderSettings()},
+  {id:'gpt',title:'ChatGPT',icon:AI_ICON,value:()=>settings.openaiKey?['On','on']:['Not set',''],render:()=>renderGpt()},
   {id:'voice',title:'Voice',icon:SPK_ICON,value:()=>{const v=pickVoice();return [v?v.name.replace(/\s*\(.*\)$/,'').slice(0,18):'Default','']},render:()=>renderVoice()},
 ];
 let mePage='main';
@@ -1777,9 +1852,9 @@ window.addEventListener('popstate',e=>{
 });
 async function loadSettings(){
   if(acct==='cloud'){
-    try{const r=await api('/api/settings');if(r.ok){const j=await r.json();settings={translateKey:j.translateKey||''};return}}catch(e){}
-    settings=lsJSON('wm.settings.'+user.sub)||{translateKey:''};
-  }else settings=lsJSON('wm.settings')||{translateKey:''};
+    try{const r=await api('/api/settings');if(r.ok){const j=await r.json();settings={...SETTINGS0,translateKey:j.translateKey||'',openaiKey:j.openaiKey||'',openaiModel:j.openaiModel||''};return}}catch(e){}
+    settings={...SETTINGS0,...(lsJSON('wm.settings.'+user.sub)||{})};
+  }else settings={...SETTINGS0,...(lsJSON('wm.settings')||{})};
 }
 async function storeSettings(){
   if(acct==='cloud'){
@@ -1813,6 +1888,105 @@ $('trClear').onclick=async()=>{
   try{await storeSettings()}catch(e){}
   renderSettings();$('setMsg').textContent='Key removed.';
 };
+
+// ---------- ChatGPT: settings page + story writer ----------
+const GPT_DEFAULT='gpt-4.1-mini';
+const gptModel=()=>settings.openaiModel||GPT_DEFAULT;
+function gptError(r,j){
+  const m=(j&&j.error&&j.error.message)||('HTTP '+r.status);
+  if(r.status===401) return new Error('The API key was rejected. Check it in Me → Settings → ChatGPT.');
+  if(r.status===404) return new Error('Model "'+gptModel()+'" isn\'t available for this key. '+m);
+  if(r.status===429) return new Error('OpenAI says: '+m+' (check your billing credit or try again in a minute)');
+  return new Error('OpenAI says: '+m);
+}
+function renderGpt(){
+  $('gptKey').value=settings.openaiKey||'';$('gptKey').type='password';$('gptShow').textContent='Show';
+  $('gptModel').value=settings.openaiModel||'';
+  $('gptWhere').textContent=acct==='cloud'?'Saved to your account, so it works on all your devices.':'Saved in this browser only. Sign in to use it on all your devices.';
+  $('gptMsg').className='msg';$('gptMsg').textContent=settings.openaiKey?'A key is saved.':'No key saved yet.';
+}
+$('gptShow').onclick=()=>{const i=$('gptKey');i.type=i.type==='password'?'text':'password';$('gptShow').textContent=i.type==='password'?'Show':'Hide'};
+$('gptForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const k=$('gptKey').value.trim(),model=$('gptModel').value.trim(),m=$('gptMsg');
+  if(!k){m.className='msg err';m.textContent='Paste a key first.';return}
+  m.className='msg';m.textContent='Testing the key…';$('gptSave').disabled=true;
+  const prev={...settings};settings.openaiKey=k;settings.openaiModel=model;
+  try{
+    // Checking the model costs nothing and proves the key works
+    const r=await fetch('https://api.openai.com/v1/models/'+encodeURIComponent(gptModel()),{headers:{Authorization:'Bearer '+k}});
+    if(!r.ok){let j=null;try{j=await r.json()}catch(_){};throw gptError(r,j)}
+    await storeSettings();
+    m.textContent='Saved. The key works with '+gptModel()+'.';
+  }catch(err){settings=prev;m.className='msg err';m.textContent=err.message}
+  finally{$('gptSave').disabled=false}
+});
+$('gptClear').onclick=async()=>{
+  settings.openaiKey='';
+  try{await storeSettings()}catch(e){}
+  renderGpt();$('gptMsg').textContent='Key removed.';
+};
+// words: [{word, def}] → {title, story}
+async function writeStoryGPT(words){
+  const list=words.map(w=>w.def?`- ${w.word}: ${w.def}`:`- ${w.word}`).join('\n');
+  const len=words.length<=6?'150-220':words.length<=10?'200-300':'260-360';
+  const prompt=`Write an original short story of ${len} words in 2-4 paragraphs for an adult learner of English (about B2 level).
+Use every word below at least once, each in the sense given and in a context that makes its meaning clear. A different form of the word (plural, past tense, -ing) is fine. Keep the rest of the vocabulary fairly simple, and give the story a small twist or a warm ending.
+
+Words:
+${list}
+
+Reply with JSON only: {"title": "a short title", "story": "the story, with paragraphs separated by a blank line"}`;
+  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),90000);
+  let r,j=null;
+  try{
+    r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',signal:ctl.signal,
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+settings.openaiKey},
+      body:JSON.stringify({model:gptModel(),response_format:{type:'json_object'},messages:[
+        {role:'system',content:'You write short, original, natural-sounding stories that help people learn English vocabulary.'},
+        {role:'user',content:prompt}]})});
+    try{j=await r.json()}catch(_){}
+  }catch(e){throw new Error(e.name==='AbortError'?'ChatGPT took too long. Try again.':"Couldn't reach OpenAI. Check your connection.")}
+  finally{clearTimeout(timer)}
+  if(!r.ok) throw gptError(r,j);
+  let out;
+  try{out=JSON.parse(j.choices[0].message.content)}catch(e){throw new Error('ChatGPT sent back something unexpected. Try again.')}
+  const story=String(out.story||out.text||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim();
+  if(!story) throw new Error('ChatGPT sent back an empty story. Try again.');
+  return {title:String(out.title||'').trim(),story};
+}
+// Words for the writer, from the story form's "Words to learn" box (plain words or JSON)
+function wordsForWriter(raw){
+  raw=raw.trim();
+  const defOf=c=>{const d=c&&c.meanings.flatMap(g=>g.defs).find(d=>d.d);return d?d.d:''};
+  if(raw[0]==='['||raw[0]==='{') return parseJsonBox(raw).filter(o=>o&&String(o.word||'').trim()).map(jsonToCard).map(c=>({word:c.word,def:defOf(c)}));
+  return [...new Set(raw.split(/[\n,]+/).map(w=>w.trim().toLowerCase()).filter(Boolean))].map(w=>({word:w,def:defOf(cards.find(c=>c.word===w))}));
+}
+async function genStory(){
+  const msg=$('stMsg'),btn=$('stGen');
+  msg.className='msg err';
+  if(!settings.openaiKey){
+    msg.innerHTML='Add your OpenAI API key first. <button class="linkbtn" type="button" id="stGoGpt">Open ChatGPT settings</button>';
+    $('stGoGpt').onclick=()=>{closeSheet();show('me');openMePage('gpt',true)};return;
+  }
+  let words;
+  try{words=wordsForWriter($('stWords').value)}catch(e){msg.textContent='Words: '+e.message;return}
+  if(!words.length){msg.textContent='Add the words to learn first.';return}
+  if(words.length>20){msg.textContent='Pick 20 words or fewer for one story.';return}
+  msg.className='msg';msg.textContent=`Writing a story with ${plural(words.length,'word')}… (usually 5–20 seconds)`;
+  btn.disabled=true;$('stSave').disabled=true;btn.textContent='Writing…';
+  try{
+    const g=await writeStoryGPT(words);
+    if(!$('stGen')) return;   // the form was closed meanwhile
+    $('stTitle').value=g.title;$('stText2').value=g.story;
+    const missing=words.map(w=>w.word).filter(w=>!hasWord(g.story,w));
+    msg.className=missing.length?'msg err':'msg';
+    msg.textContent=missing.length?`Not used in the story: ${missing.join(', ')}. Tap Write again, or edit the story.`:'Done. Review the story, change anything you like, then tap Save story.';
+    saveStory.confirmed=false;
+    $('sheetBody').scrollTop=0;
+  }catch(e){if($('stMsg')){msg.className='msg err';msg.textContent=e.message}}
+  finally{if($('stGen')){btn.disabled=false;$('stSave').disabled=false;btn.innerHTML=AI_ICON+' Write again'}}
+}
 
 // ---------- native feel: hide the tab bar while the keyboard is up ----------
 let kbTimer=null;
