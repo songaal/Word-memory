@@ -7,14 +7,14 @@
 // GET    /api/words                     → { cards, seed, updatedAt } for the signed-in user
 // PUT    /api/words        { cards, seed, log, history, stories } → replaces the user's word list, answer log, test history, and stories
 // GET    /api/lookup?word=              → dictionary entry (no sign-in needed)
-// GET    /api/settings                  → { translateKey, openaiKey, openaiModel } for the signed-in user
-// PUT    /api/settings     { translateKey, openaiKey, openaiModel } → saves the user's settings
+// GET    /api/settings                  → { translateKey, aiProvider, openaiKey/Model, geminiKey/Model, claudeKey/Model } for the signed-in user
+// PUT    /api/settings     { translateKey, aiProvider, openaiKey/Model, geminiKey/Model, claudeKey/Model } → saves the user's settings
 //
 // Auth: /api/me and /api/words send "Authorization: Bearer <session>".
 // Storage (KV binding WORDS):
 //   wm:sess:<session>  → { sub, email, name, picture }   (expires after 60 days)
 //   wm:words:<sub>     → { cards, seed, log, history, stories, updatedAt }
-//   wm:settings:<sub>  → { translateKey, openaiKey, openaiModel }   (the user's own Google Translate / OpenAI keys)
+//   wm:settings:<sub>  → { translateKey, aiProvider, openaiKey/Model, geminiKey/Model, claudeKey/Model }   (the user's own Google Translate / OpenAI keys)
 //   wm:dict2:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
 //
 // Dictionary: Merriam-Webster only (keys are Worker secrets, never in the repo).
@@ -134,11 +134,16 @@ async function putWords(request, env) {
 }
 
 // ── Settings ─────────────────────────────────────
+// [field, max length] — the user's own API keys and AI choice
+const SETTING_FIELDS = [['translateKey', 200], ['aiProvider', 20], ['openaiKey', 400], ['openaiModel', 80],
+  ['geminiKey', 200], ['geminiModel', 80], ['claudeKey', 400], ['claudeModel', 80]];
 async function getSettings(request, env) {
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'Not signed in' }, 401);
   const s = await env.WORDS.get(`wm:settings:${user.sub}`, 'json').catch(() => null);
-  return json({ translateKey: (s && s.translateKey) || '', openaiKey: (s && s.openaiKey) || '', openaiModel: (s && s.openaiModel) || '' });
+  const out = {};
+  for (const [k] of SETTING_FIELDS) out[k] = (s && s[k]) || '';
+  return json(out);
 }
 
 async function putSettings(request, env) {
@@ -146,11 +151,13 @@ async function putSettings(request, env) {
   if (!user) return json({ error: 'Not signed in' }, 401);
   let body;
   try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
-  const field = (k, max) => String((body && body[k]) || '').trim().slice(0, max + 1);
-  const translateKey = field('translateKey', 200), openaiKey = field('openaiKey', 400), openaiModel = field('openaiModel', 60);
-  for (const [v, max] of [[translateKey, 200], [openaiKey, 400], [openaiModel, 60]])
-    if (v.length > max || /\s/.test(v)) return json({ error: 'Invalid key' }, 400);
-  await env.WORDS.put(`wm:settings:${user.sub}`, JSON.stringify({ translateKey, openaiKey, openaiModel }));
+  const out = {};
+  for (const [k, max] of SETTING_FIELDS) {
+    const v = String((body && body[k]) || '').trim();
+    if (v.length > max || /\s/.test(v)) return json({ error: 'Invalid ' + k }, 400);
+    out[k] = v;
+  }
+  await env.WORDS.put(`wm:settings:${user.sub}`, JSON.stringify(out));
   return json({ ok: true });
 }
 

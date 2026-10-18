@@ -368,7 +368,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.14.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.15.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -385,33 +385,35 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="menu" id="voiceList"></div>
       </div></div>
     </div>
-    <!-- Me: ChatGPT settings page -->
-    <div class="mepage" id="me-gpt" hidden>
-      <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>ChatGPT</h2><span class="back-spacer"></span></div>
+    <!-- Me: AI settings page -->
+    <div class="mepage" id="me-ai" hidden>
+      <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>AI</h2><span class="back-spacer"></span></div>
       <div class="scroll"><div class="stack">
         <div class="card">
-          <form class="field" id="gptForm" autocomplete="off">
-            <label for="gptKey">OpenAI API key</label>
-            <p class="note">Used to write stories from the words you pick (Words → Words → Select). <span id="gptWhere"></span></p>
-            <div class="row" style="flex-wrap:nowrap">
-              <input type="password" id="gptKey" placeholder="sk-…" spellcheck="false" autocapitalize="none" style="flex:1">
-              <button class="btn ghost" id="gptShow" type="button">Show</button>
+          <form class="field" id="aiForm" autocomplete="off">
+            <label>AI for writing stories</label>
+            <p class="note">Writes a story from the words you pick (Words → Words → Select). Pick one and add its API key.</p>
+            <div class="seg" role="radiogroup" id="aiSeg" style="margin:4px 0 8px">
+              <button type="button" role="radio" data-ai="gemini">Gemini</button>
+              <button type="button" role="radio" data-ai="openai">ChatGPT</button>
+              <button type="button" role="radio" data-ai="claude">Claude</button>
             </div>
-            <label for="gptModel" style="margin-top:6px">Model</label>
-            <input type="text" id="gptModel" placeholder="gpt-4.1-mini" spellcheck="false" autocapitalize="none" autocorrect="off">
-            <p class="note">Leave empty for <b>gpt-4.1-mini</b> (fast and cheap). Any chat model name from your account works, e.g. gpt-5-mini.</p>
-            <div class="row"><button class="btn" type="submit" id="gptSave">Save and test</button><button class="btn ghost" type="button" id="gptClear">Remove key</button></div>
-            <div class="msg" id="gptMsg"></div>
+            <label for="aiKey"><span id="aiKeyLbl">API key</span></label>
+            <p class="note" id="aiWhere"></p>
+            <div class="row" style="flex-wrap:nowrap">
+              <input type="password" id="aiKey" placeholder="Paste your API key" spellcheck="false" autocapitalize="none" style="flex:1">
+              <button class="btn ghost" id="aiShow" type="button">Show</button>
+            </div>
+            <label for="aiModel" style="margin-top:6px">Model</label>
+            <input type="text" id="aiModel" spellcheck="false" autocapitalize="none" autocorrect="off">
+            <p class="note" id="aiModelNote"></p>
+            <div class="row"><button class="btn" type="submit" id="aiSave">Save and test</button><button class="btn ghost" type="button" id="aiClear">Remove key</button></div>
+            <div class="msg" id="aiMsg"></div>
           </form>
         </div>
         <div class="card">
           <span class="label">How to get a key</span>
-          <ol class="steps">
-            <li>Go to <b>platform.openai.com</b> and sign in.</li>
-            <li>Billing → add a small credit. The API is billed separately from a ChatGPT Plus subscription.</li>
-            <li>API keys → <b>Create new secret key</b>, then copy it here.</li>
-            <li>One story with gpt-4.1-mini costs roughly a tenth of a cent.</li>
-          </ol>
+          <ol class="steps" id="aiHow"></ol>
         </div>
       </div></div>
     </div>
@@ -862,7 +864,8 @@ function chime(){
 const AI_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>';
 const TR_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h8M8 3v2M5.5 5c.8 3 3.2 5.6 6 7M10.5 5c-.9 3.6-3.3 6.5-6.5 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/></svg>';
 const SPK_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
-const SETTINGS0={translateKey:'',openaiKey:'',openaiModel:''};
+const AI_FIELDS=['aiProvider','openaiKey','openaiModel','geminiKey','geminiModel','claudeKey','claudeModel'];
+const SETTINGS0={translateKey:'',aiProvider:'',openaiKey:'',openaiModel:'',geminiKey:'',geminiModel:'',claudeKey:'',claudeModel:''};
 let settings={...SETTINGS0};
 // Several texts in one request (keeps order)
 async function translateManyKo(texts){
@@ -1482,7 +1485,7 @@ function openStoryForm(existing,presetWords){
     <label class="fieldlabel" for="stWords">Words to learn</label>
     <textarea id="stWords" rows="5" placeholder="One per line, or separated by commas&#10;&#10;Or a JSON array, same format as Add words → JSON" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-family:var(--f-mono);font-size:15px"></textarea>
     <p class="note">Each word should appear in the story (any form, like "inflated" for "inflate"). Plain words already in your word list are used as they are; the others are looked up in the dictionary and added to your word list. A JSON array (<code>[{"word","pos","pairs":[{"example","definition"}],"similar"}]</code>) adds those words to your word list with your own definitions, replacing any that are already there.</p>
-    <button class="btn ghost block aibtn" id="stGen" type="button">${AI_ICON} Write with ChatGPT</button>
+    <button class="btn ghost block aibtn" id="stGen" type="button">${AI_ICON} Write with AI</button>
     <button class="btn block" id="stSave" type="button">${storyEditing?'Save changes':'Save story'}</button>
     <div class="msg" id="stMsg"></div>
   </div>`);
@@ -1786,7 +1789,7 @@ function bulkResult(added,skipped,failed,updated=[]){
 // Settings menu: add new settings here; each opens its own page with a back button.
 const SETTINGS_MENU=[
   {id:'translate',title:'Google Translate',icon:TR_ICON,value:()=>settings.translateKey?['On','on']:['Not set',''],render:()=>renderSettings()},
-  {id:'gpt',title:'ChatGPT',icon:AI_ICON,value:()=>settings.openaiKey?['On','on']:['Not set',''],render:()=>renderGpt()},
+  {id:'ai',title:'AI',icon:AI_ICON,value:()=>aiKey()?[AI[aiProv()].name,'on']:['Not set',''],render:()=>renderAi()},
   {id:'voice',title:'Voice',icon:SPK_ICON,value:()=>{const v=pickVoice();return [v?v.name.replace(/\s*\(.*\)$/,'').slice(0,18):'Default','']},render:()=>renderVoice()},
 ];
 let mePage='main';
@@ -1852,7 +1855,7 @@ window.addEventListener('popstate',e=>{
 });
 async function loadSettings(){
   if(acct==='cloud'){
-    try{const r=await api('/api/settings');if(r.ok){const j=await r.json();settings={...SETTINGS0,translateKey:j.translateKey||'',openaiKey:j.openaiKey||'',openaiModel:j.openaiModel||''};return}}catch(e){}
+    try{const r=await api('/api/settings');if(r.ok){const j=await r.json();settings={...SETTINGS0};for(const k of Object.keys(SETTINGS0)) settings[k]=j[k]||'';return}}catch(e){}
     settings={...SETTINGS0,...(lsJSON('wm.settings.'+user.sub)||{})};
   }else settings={...SETTINGS0,...(lsJSON('wm.settings')||{})};
 }
@@ -1889,45 +1892,110 @@ $('trClear').onclick=async()=>{
   renderSettings();$('setMsg').textContent='Key removed.';
 };
 
-// ---------- ChatGPT: settings page + story writer ----------
-const GPT_DEFAULT='gpt-4.1-mini';
-const gptModel=()=>settings.openaiModel||GPT_DEFAULT;
-function gptError(r,j){
-  const m=(j&&j.error&&j.error.message)||('HTTP '+r.status);
-  if(r.status===401) return new Error('The API key was rejected. Check it in Me → Settings → ChatGPT.');
-  if(r.status===404) return new Error('Model "'+gptModel()+'" isn\'t available for this key. '+m);
-  if(r.status===429) return new Error('OpenAI says: '+m+' (check your billing credit or try again in a minute)');
-  return new Error('OpenAI says: '+m);
+// ---------- AI story writer: Gemini / ChatGPT / Claude, the user's own key ----------
+const AI={
+  gemini:{name:'Gemini',keyName:'Gemini API key',model:'gemini-flash-latest',key:'geminiKey',mdl:'geminiModel',ph:'AIza…',
+    modelNote:'Leave empty for <b>gemini-flash-latest</b> (Google\'s current Flash model, free tier).',
+    how:['Go to <b>aistudio.google.com</b> and sign in with your Google account.','Tap <b>Get API key</b> → Create API key.','Copy it here. No billing needed: the free tier is enough for a few stories a day (free-tier text may be used by Google to improve its products).']},
+  openai:{name:'ChatGPT',keyName:'OpenAI API key',model:'gpt-4.1-mini',key:'openaiKey',mdl:'openaiModel',ph:'sk-…',
+    modelNote:'Leave empty for <b>gpt-4.1-mini</b>.',
+    how:['Go to <b>platform.openai.com</b> and sign in.','Billing → add credit (billed separately from ChatGPT Plus). With data sharing on (Settings → Data controls), mini models get free daily tokens.','API keys → <b>Create new secret key</b>, then copy it here.']},
+  claude:{name:'Claude',keyName:'Claude API key',model:'claude-haiku-5-5',key:'claudeKey',mdl:'claudeModel',ph:'sk-ant-…',
+    modelNote:'Leave empty for <b>claude-haiku-5-5</b> (fast and cheapest).',
+    how:['Go to <b>platform.claude.com</b> and sign in.','Billing → buy credits (billed separately from a Claude Pro/Max plan). One story with Haiku costs well under a cent.','API keys → <b>Create key</b>, then copy it here.']},
+};
+const aiProv=()=>AI[settings.aiProvider]?settings.aiProvider:(settings.openaiKey?'openai':settings.claudeKey&&!settings.geminiKey?'claude':'gemini');
+const aiKey=(p=aiProv())=>settings[AI[p].key]||'';
+const aiModel=(p=aiProv())=>settings[AI[p].mdl]||AI[p].model;
+function aiError(p,r,j){
+  const m=(j&&j.error&&(j.error.message||j.error.type))||('HTTP '+r.status);
+  const n=AI[p].name;
+  if(r.status===401||r.status===403||/API key not valid|invalid x-api-key|API_KEY_INVALID/i.test(m)) return new Error(`The ${n} API key was rejected. Check it in Me → Settings → AI.`);
+  if(r.status===404) return new Error(`Model "${aiModel(p)}" isn't available for this key. ${m}`);
+  if(r.status===429) return new Error(`${n} says: ${m} (free limit or credit reached; try again later)`);
+  if(r.status===400&&/credit|balance/i.test(m)) return new Error(`${n} says: ${m} (add credit to your account)`);
+  return new Error(`${n} says: ${m}`);
 }
-function renderGpt(){
-  $('gptKey').value=settings.openaiKey||'';$('gptKey').type='password';$('gptShow').textContent='Show';
-  $('gptModel').value=settings.openaiModel||'';
-  $('gptWhere').textContent=acct==='cloud'?'Saved to your account, so it works on all your devices.':'Saved in this browser only. Sign in to use it on all your devices.';
-  $('gptMsg').className='msg';$('gptMsg').textContent=settings.openaiKey?'A key is saved.':'No key saved yet.';
+async function aiFetch(p,url,opt,timeout=90000){
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),timeout);let r,j=null;
+  try{r=await fetch(url,{...opt,signal:ctl.signal});try{j=await r.json()}catch(_){}}
+  catch(e){throw new Error(e.name==='AbortError'?`${AI[p].name} took too long. Try again.`:`Couldn't reach ${AI[p].name}. Check your connection.`)}
+  finally{clearTimeout(t)}
+  if(!r.ok) throw aiError(p,r,j);
+  return j;
 }
-$('gptShow').onclick=()=>{const i=$('gptKey');i.type=i.type==='password'?'text':'password';$('gptShow').textContent=i.type==='password'?'Show':'Hide'};
-$('gptForm').addEventListener('submit',async e=>{
-  e.preventDefault();
-  const k=$('gptKey').value.trim(),model=$('gptModel').value.trim(),m=$('gptMsg');
-  if(!k){m.className='msg err';m.textContent='Paste a key first.';return}
-  m.className='msg';m.textContent='Testing the key…';$('gptSave').disabled=true;
-  const prev={...settings};settings.openaiKey=k;settings.openaiModel=model;
-  try{
-    // Checking the model costs nothing and proves the key works
-    const r=await fetch('https://api.openai.com/v1/models/'+encodeURIComponent(gptModel()),{headers:{Authorization:'Bearer '+k}});
-    if(!r.ok){let j=null;try{j=await r.json()}catch(_){};throw gptError(r,j)}
-    await storeSettings();
-    m.textContent='Saved. The key works with '+gptModel()+'.';
-  }catch(err){settings=prev;m.className='msg err';m.textContent=err.message}
-  finally{$('gptSave').disabled=false}
+const claudeHeaders=k=>({'x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'});
+// Checking the model is free and proves the key works
+function aiTest(p){
+  const k=aiKey(p),m=encodeURIComponent(aiModel(p));
+  if(p==='gemini') return aiFetch(p,`https://generativelanguage.googleapis.com/v1beta/models/${m}?key=${encodeURIComponent(k)}`,{},20000);
+  if(p==='openai') return aiFetch(p,'https://api.openai.com/v1/models/'+m,{headers:{Authorization:'Bearer '+k}},20000);
+  return aiFetch(p,'https://api.anthropic.com/v1/models/'+m,{headers:claudeHeaders(k)},20000);
+}
+// system + user prompt → reply text
+async function aiComplete(system,user){
+  const p=aiProv(),k=aiKey(p),model=aiModel(p);
+  if(p==='gemini'){
+    const j=await aiFetch(p,`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(k)}`,{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{responseMimeType:'application/json'}})});
+    const c=j&&j.candidates&&j.candidates[0];
+    if(!c||!c.content) throw new Error('Gemini sent nothing back'+(c&&c.finishReason?` (${c.finishReason})`:'')+'. Try again.');
+    return c.content.parts.map(x=>x.text||'').join('');
+  }
+  if(p==='openai'){
+    const j=await aiFetch(p,'https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',Authorization:'Bearer '+k},
+      body:JSON.stringify({model,response_format:{type:'json_object'},messages:[{role:'system',content:system},{role:'user',content:user}]})});
+    return j.choices[0].message.content;
+  }
+  const j=await aiFetch(p,'https://api.anthropic.com/v1/messages',{method:'POST',headers:claudeHeaders(k),
+    body:JSON.stringify({model,max_tokens:2000,system,messages:[{role:'user',content:user}]})});
+  return (j.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('');
+}
+// AI settings page
+let aiPage='gemini';
+function renderAi(){
+  aiPage=aiProv();showAiForm();
+}
+function showAiForm(){
+  const a=AI[aiPage],active=aiProv()===aiPage;
+  document.querySelectorAll('#aiSeg [data-ai]').forEach(b=>{const on=b.dataset.ai===aiPage;b.setAttribute('aria-selected',on);b.setAttribute('aria-checked',on)});
+  $('aiKeyLbl').textContent=a.keyName;
+  $('aiKey').value=settings[a.key]||'';$('aiKey').type='password';$('aiKey').placeholder=a.ph;$('aiShow').textContent='Show';
+  $('aiModel').value=settings[a.mdl]||'';$('aiModel').placeholder=a.model;
+  $('aiModelNote').innerHTML=a.modelNote+' You can type any other model name from your account.';
+  $('aiWhere').textContent=acct==='cloud'?'Keys are saved to your account, so they work on all your devices.':'Keys are saved in this browser only. Sign in to use them on all your devices.';
+  $('aiHow').innerHTML=a.how.map(x=>`<li>${x}</li>`).join('');
+  const m=$('aiMsg');m.className='msg';
+  m.textContent=settings[a.key]?(active?`In use: ${a.name} (${aiModel(aiPage)}).`:`A key is saved. Tap Save and test to use ${a.name}.`):'No key saved yet.';
+}
+$('aiSeg').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-ai]');if(!b) return;
+  aiPage=b.dataset.ai;
+  // switching to a provider that already has a key makes it the one in use
+  if(settings[AI[aiPage].key]&&settings.aiProvider!==aiPage){settings.aiProvider=aiPage;try{await storeSettings()}catch(_){}}
+  showAiForm();
 });
-$('gptClear').onclick=async()=>{
-  settings.openaiKey='';
+$('aiShow').onclick=()=>{const i=$('aiKey');i.type=i.type==='password'?'text':'password';$('aiShow').textContent=i.type==='password'?'Show':'Hide'};
+$('aiForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const a=AI[aiPage],k=$('aiKey').value.trim(),model=$('aiModel').value.trim(),m=$('aiMsg');
+  if(!k){m.className='msg err';m.textContent='Paste a key first.';return}
+  m.className='msg';m.textContent='Testing the key…';$('aiSave').disabled=true;
+  const prev={...settings};settings[a.key]=k;settings[a.mdl]=model;settings.aiProvider=aiPage;
+  try{
+    await aiTest(aiPage);
+    await storeSettings();
+    showAiForm();m.textContent=`Saved. ${a.name} (${aiModel(aiPage)}) will write your stories.`;
+  }catch(err){settings=prev;m.className='msg err';m.textContent=err.message}
+  finally{$('aiSave').disabled=false}
+});
+$('aiClear').onclick=async()=>{
+  const a=AI[aiPage];settings[a.key]='';
   try{await storeSettings()}catch(e){}
-  renderGpt();$('gptMsg').textContent='Key removed.';
+  showAiForm();$('aiMsg').textContent='Key removed.';
 };
 // words: [{word, def}] → {title, story}
-async function writeStoryGPT(words){
+async function writeStory(words){
   const list=words.map(w=>w.def?`- ${w.word}: ${w.def}`:`- ${w.word}`).join('\n');
   const len=words.length<=6?'150-220':words.length<=10?'200-300':'260-360';
   const prompt=`Write an original short story of ${len} words in 2-4 paragraphs for an adult learner of English (about B2 level).
@@ -1936,23 +2004,12 @@ Use every word below at least once, each in the sense given and in a context tha
 Words:
 ${list}
 
-Reply with JSON only: {"title": "a short title", "story": "the story, with paragraphs separated by a blank line"}`;
-  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),90000);
-  let r,j=null;
-  try{
-    r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',signal:ctl.signal,
-      headers:{'Content-Type':'application/json',Authorization:'Bearer '+settings.openaiKey},
-      body:JSON.stringify({model:gptModel(),response_format:{type:'json_object'},messages:[
-        {role:'system',content:'You write short, original, natural-sounding stories that help people learn English vocabulary.'},
-        {role:'user',content:prompt}]})});
-    try{j=await r.json()}catch(_){}
-  }catch(e){throw new Error(e.name==='AbortError'?'ChatGPT took too long. Try again.':"Couldn't reach OpenAI. Check your connection.")}
-  finally{clearTimeout(timer)}
-  if(!r.ok) throw gptError(r,j);
+Reply with JSON only, no other text: {"title": "a short title", "story": "the story, with paragraphs separated by a blank line"}`;
+  const txt=await aiComplete('You write short, original, natural-sounding stories that help people learn English vocabulary.',prompt);
   let out;
-  try{out=JSON.parse(j.choices[0].message.content)}catch(e){throw new Error('ChatGPT sent back something unexpected. Try again.')}
+  try{const m=String(txt).match(/\{[\s\S]*\}/);out=JSON.parse(m?m[0]:txt)}catch(e){throw new Error(AI[aiProv()].name+' sent back something unexpected. Try again.')}
   const story=String(out.story||out.text||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim();
-  if(!story) throw new Error('ChatGPT sent back an empty story. Try again.');
+  if(!story) throw new Error(AI[aiProv()].name+' sent back an empty story. Try again.');
   return {title:String(out.title||'').trim(),story};
 }
 // Words for the writer, from the story form's "Words to learn" box (plain words or JSON)
@@ -1965,18 +2022,18 @@ function wordsForWriter(raw){
 async function genStory(){
   const msg=$('stMsg'),btn=$('stGen');
   msg.className='msg err';
-  if(!settings.openaiKey){
-    msg.innerHTML='Add your OpenAI API key first. <button class="linkbtn" type="button" id="stGoGpt">Open ChatGPT settings</button>';
-    $('stGoGpt').onclick=()=>{closeSheet();show('me');openMePage('gpt',true)};return;
+  if(!aiKey()){
+    msg.innerHTML=`Pick an AI and add its API key first. <button class="linkbtn" type="button" id="stGoAi">Open AI settings</button>`;
+    $('stGoAi').onclick=()=>{closeSheet();show('me');openMePage('ai',true)};return;
   }
   let words;
   try{words=wordsForWriter($('stWords').value)}catch(e){msg.textContent='Words: '+e.message;return}
   if(!words.length){msg.textContent='Add the words to learn first.';return}
   if(words.length>20){msg.textContent='Pick 20 words or fewer for one story.';return}
-  msg.className='msg';msg.textContent=`Writing a story with ${plural(words.length,'word')}… (usually 5–20 seconds)`;
+  msg.className='msg';msg.textContent=`${AI[aiProv()].name} is writing a story with ${plural(words.length,'word')}… (usually 5–20 seconds)`;
   btn.disabled=true;$('stSave').disabled=true;btn.textContent='Writing…';
   try{
-    const g=await writeStoryGPT(words);
+    const g=await writeStory(words);
     if(!$('stGen')) return;   // the form was closed meanwhile
     $('stTitle').value=g.title;$('stText2').value=g.story;
     const missing=words.map(w=>w.word).filter(w=>!hasWord(g.story,w));
