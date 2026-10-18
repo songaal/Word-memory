@@ -296,7 +296,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.3.0</span> · <span class="version-date">2026/10/18</span></p>
+          <p class="note"><span class="version-tag">v2.4.0</span> · <span class="version-date">2026/10/18</span></p>
         </div>
       </div></div>
     </div>
@@ -1015,6 +1015,7 @@ $('searchForm').addEventListener('submit',async e=>{
   const q=$('searchIn').value.trim().toLowerCase();
   if(!q) return;
   $('searchIn').value='';
+  searchResults=searchResults.filter(r=>r.card);   // drop old 'not found' warnings
   const entry={q,pending:true};searchResults.push(entry);
   if(searchResults.length>20) searchResults.shift();
   renderSearch(true);
@@ -1086,13 +1087,26 @@ function openBulk(){
     $('bulkIn').placeholder=m==='words'?'meticulous\nexonerate\nserendipity':'';
     $('bulkHelp').innerHTML=m==='words'
       ?'One word per line. Each word is looked up in the dictionary and filled in for you.'
-      :'A JSON array of words with your own sentences. Copy the object inside the array for each word. <code>pairs</code> is a list of example + definition; <code>similar</code> is a list of words. One array per line also works.';
+      :'A JSON array of words with your own sentences. Copy the object inside the array for each word. <code>pairs</code> is a list of example + definition; <code>similar</code> is a list of words. One array per line also works. A word that is already in your list is replaced with what you enter here.';
     $('bulkMsg').textContent='';$('bulkRes').innerHTML='';
   };
   $('bulkIn').value=bulkDraft[bulkMode];
   $('bm-words').onclick=()=>set('words');$('bm-json').onclick=()=>set('json');
   bulkMode=bulkMode;set(bulkMode);
   $('bulkGo').onclick=runBulk;
+}
+// Replaces a word's content with imported JSON. A sentence whose example text is unchanged
+// keeps its review schedule and saved translation; new sentences start fresh.
+function overwriteCard(old,c){
+  const prev=new Map();
+  for(const g of old.meanings||[]) for(const d of g.defs||[]) if(d.ex) prev.set(d.ex.trim().toLowerCase(),d);
+  for(const g of c.meanings) g.defs=g.defs.map(d=>{
+    const p=d.ex&&prev.get(d.ex.trim().toLowerCase());
+    return p?{...d,stage:p.stage,due:p.due,last:p.last,exKo:p.exKo}:d;
+  });
+  old.meanings=c.meanings;old.synonyms=c.synonyms;
+  if(c.phonetic) old.phonetic=c.phonetic;
+  delete old.sample;
 }
 // Reads the JSON box: one array/object for the whole box, or one per line.
 function parseJsonBox(text){
@@ -1124,7 +1138,7 @@ async function runBulk(){
   bulkDraft[bulkMode]=$('bulkIn').value;
   res.innerHTML='';msg.className='msg';
   const line=(cls,t)=>{res.insertAdjacentHTML('beforeend',`<div class="${cls}">${t}</div>`)};
-  const added=[],skipped=[],failed=[];
+  const added=[],skipped=[],failed=[],updated=[];
   if(bulkMode==='json'){
     let data;
     try{data=parseJsonBox(text)}catch(e){msg.className='msg err';msg.textContent=e.message;return}
@@ -1133,11 +1147,12 @@ async function runBulk(){
     for(const o of filled){
       try{
         const c=jsonToCard(o);
-        if(cards.some(x=>x.word===c.word)){skipped.push(c.word);continue}
+        const old=cards.find(x=>x.word===c.word);
+        if(old){overwriteCard(old,c);updated.push(old);continue}
         cards.unshift(c);added.push(c);
       }catch(err){failed.push(err.message)}
     }
-    if(added.length) bulkDraft.json=JSON_TEMPLATE;
+    if(added.length||updated.length) bulkDraft.json=JSON_TEMPLATE;
   }else{
     if(!text){msg.className='msg err';msg.textContent='Type at least one word.';return}
     if(text[0]==='['||text[0]==='{'){msg.className='msg err';msg.textContent='That looks like JSON. Switch to the JSON tab to add it.';return}
@@ -1155,7 +1170,7 @@ async function runBulk(){
     $('bulkGo').disabled=false;
     if(added.length) bulkDraft.words='';
   }
-  if(added.length){save();renderList();renderBadge();bulkResult(added,skipped,failed);return}
+  if(added.length||updated.length){save();renderList();renderBadge();bulkResult(added,skipped,failed,updated);return}
   // Nothing added: stay on the form and explain why
   res.innerHTML='';
   skipped.forEach(w=>line('skip',`– ${esc(w)}: already in your list`));
@@ -1163,18 +1178,20 @@ async function runBulk(){
   msg.textContent='No new words added.';
 }
 // Results after adding: the new words (tap one for its entry), then anything skipped or not found.
-function bulkResult(added,skipped,failed){
-  const nSent=added.reduce((n,c)=>n+itemsOf(c).length,0);
-  $('sheetTitle').textContent='Words added';
+function bulkResult(added,skipped,failed,updated=[]){
+  const all=[...added.map(c=>({c,u:false})),...updated.map(c=>({c,u:true}))];
+  const nSent=all.reduce((n,x)=>n+itemsOf(x.c).length,0);
+  const head=[added.length?plural(added.length,'word')+' added':'',updated.length?plural(updated.length,'word')+' updated':''].filter(Boolean).join(' · ');
+  $('sheetTitle').textContent=added.length?'Words added':'Words updated';
   $('sheetBody').innerHTML=`<div class="stack" style="gap:12px">
     <div class="card" style="flex-direction:row;align-items:center;gap:14px">
       <span style="width:44px;height:44px;border-radius:50%;background:var(--good-soft);color:var(--good);display:grid;place-items:center;font:700 22px var(--f-ui);flex:none">✓</span>
-      <div><div style="font:600 18px var(--f-ui)">${plural(added.length,'word')} added</div><div class="note">${plural(nSent,'sentence')} ready for today's test</div></div>
+      <div><div style="font:600 18px var(--f-ui)">${head}</div><div class="note">${plural(nSent,'sentence')} in these words</div></div>
     </div>
     <div class="label" style="padding-left:4px">Tap a word to see its entry</div>
-    <div class="rlist">${added.map(c=>{const g=c.meanings[0]||{};const first=(g.defs||[])[0]||{};
-      return `<button class="ri" type="button" data-pop="${esc(c.word)}"><span class="mk ok">✓</span>
-        <span class="top">${esc(c.word)}<span>${esc(g.pos||'')} · ${plural(itemsOf(c).length,'sentence')}</span></span>
+    <div class="rlist">${all.map(({c,u})=>{const g=c.meanings[0]||{};const first=(g.defs||[])[0]||{};
+      return `<button class="ri" type="button" data-pop="${esc(c.word)}"><span class="mk ok">${u?'↻':'✓'}</span>
+        <span class="top">${esc(c.word)}<span>${u?'Updated · ':''}${esc(g.pos||'')} · ${plural(itemsOf(c).length,'sentence')}</span></span>
         <span class="sent">${esc(first.ex||first.d||'')}</span></button>`}).join('')}</div>
     ${skipped.length||failed.length?`<div class="card results">
       ${skipped.map(w=>`<div class="skip">– ${esc(w)}: already in your list</div>`).join('')}

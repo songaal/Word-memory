@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.3.0</span> · <span class="version-date">2026/10/18</span>
+<span class="version-tag">v2.4.0</span> · <span class="version-date">2026/10/18</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.3.0 — 2026/10/18**
+**Current version: v2.4.0 — 2026/10/18**
 
 ## Architecture
 
@@ -23,7 +23,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
   - When a test ends, a results screen shows the score and every answer (misses first, tap for the word). Each finished test is saved to `history` (newest first, max 60) and listed under the Start button on the Test tab; tapping one opens the same results page.
   - Learning is example-first: each word card lists numbered example sentences, each with its definition underneath (no number); similar words come last.
   - **Test items are example sentences, not words.** Each definition with an example (`meanings[].defs[]`) has its own schedule: `stage`, `due`, `last`. A word with no example gives one item from its first definition. The answer is typed into the blank inside the sentence; on reveal the blank is filled (green right / red wrong) and tapping it opens the word's entry.
-  - Dict → Search looks words up without adding them (+ Add button). Dict → Word list has a + button for bulk add with two modes: **Words** (one per line, looked up in the dictionary) and **JSON** (prefilled template `[{word, pos, pairs:[{example, definition}], similar:[]}]`; one array per line also accepted). After adding, a results screen lists the new words.
+  - Dict → Search looks words up without adding them (+ Add button). Dict → Word list has a + button for bulk add with two modes: **Words** (one per line, looked up in the dictionary) and **JSON** (prefilled template `[{word, pos, pairs:[{example, definition}], similar:[]}]`; one array per line also accepted). After adding, a results screen lists the new words. JSON import **overwrites** a word already in the list (sentences with unchanged example text keep their schedule and translation); Words mode skips existing words.
   - Any `data-pop="<word>"` element opens that word's entry in the quick popup (`#pop`), a bottom sheet that layers above the main sheet (`#sheet`).
   - Home stats use `log` (answers per day, `{ 'YYYY-MM-DD': {ok, no} }`), saved with the word list.
   - Dictionary: looked up through `GET /api/lookup` on the worker (never directly from the browser).
