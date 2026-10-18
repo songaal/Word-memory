@@ -339,7 +339,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.7.1</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.8.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -1234,7 +1234,13 @@ $('storyBody').addEventListener('click',e=>{
 function closeStoryView(){if(history.state&&history.state.story) history.back();else{storyView=null;renderStories()}}
 function renderStoryView(s){
   $('storyBody').innerHTML=`
-    <button class="linkbtn inlineback" id="svBack" type="button">‹ Stories</button>
+    <div class="row" style="justify-content:space-between">
+      <button class="linkbtn inlineback" id="svBack" type="button">‹ Stories</button>
+      <span class="row" style="gap:14px"><button class="linkbtn" id="svEdit" type="button">Edit</button><button class="linkbtn" style="color:var(--bad)" id="svDelTop" type="button">Delete</button></span>
+    </div>
+    ${storyConfirm?`<div class="card" style="flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-color:var(--bad)">
+      <span>Delete "${esc(s.title)}"?</span>
+      <span class="row"><button class="btn ghost" id="svDelNo" type="button">Cancel</button><button class="btn" style="background:var(--bad);border-color:var(--bad)" id="svDelYes" type="button">Delete</button></span></div>`:''}
     <h2 class="stitle">${esc(s.title)}</h2>
     <div class="note">${esc(fmtDay(s.created))} · ${plural(s.words.length,'study word')} · tap a bold word for its entry</div>
     <div class="card"><div class="storytext">${storyHTML(s,m=>`<button class="sw" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`)}</div></div>
@@ -1242,19 +1248,21 @@ function renderStoryView(s){
       <span class="label">Study words</span>
       <div class="syn">${s.words.map(w=>`<button class="chip" type="button" data-pop="${esc(w)}" style="border:0;cursor:pointer">${esc(w)}</button>`).join('')}</div>
     </div>
-    <button class="btn block" id="svTest" type="button">Test this story</button>
-    <div class="row" style="justify-content:flex-end">${storyConfirm
-      ?`<span class="note">Delete this story?</span><button class="btn" style="background:var(--bad);border-color:var(--bad)" id="svDelYes" type="button">Delete</button><button class="btn ghost" id="svDelNo" type="button">Cancel</button>`
-      :`<button class="linkbtn" style="color:var(--bad)" id="svDel" type="button">Delete story</button>`}</div>`;
+    <button class="btn block" id="svTest" type="button">Test this story</button>`;
   $('svBack').onclick=closeStoryView;
   $('svTest').onclick=()=>{show('test');testPane='story';renderTestTab();startStoryTest(s.id)};
+  $('svEdit').onclick=()=>openStoryForm(s);
+  $('svDelTop').onclick=()=>{storyConfirm=!storyConfirm;renderStoryView(s);$('storyScroll').scrollTop=0};
   if(storyConfirm){
     $('svDelYes').onclick=()=>{stories=stories.filter(x=>x!==s);save();storyConfirm=false;closeStoryView()};
     $('svDelNo').onclick=()=>{storyConfirm=false;renderStoryView(s)};
-  }else $('svDel').onclick=()=>{storyConfirm=true;renderStoryView(s);$('storyScroll').scrollTop=$('storyScroll').scrollHeight};
+  }
 }
-function openStoryForm(){
-  openSheet('New story',`<div class="card field">
+// New story, or edit an existing one (editing keeps its date, entries, and last score)
+let storyEditing=null;
+function openStoryForm(existing){
+  storyEditing=existing&&existing.id?existing:null;
+  openSheet(storyEditing?'Edit story':'New story',`<div class="card field">
     <label class="fieldlabel" for="stTitle">Title</label>
     <input type="text" id="stTitle" placeholder="e.g. The Lost Tire" autocomplete="off">
     <label class="fieldlabel" for="stText2">Story</label>
@@ -1262,9 +1270,15 @@ function openStoryForm(){
     <label class="fieldlabel" for="stWords">Words to learn</label>
     <textarea id="stWords" rows="5" placeholder="One per line, or separated by commas&#10;&#10;Or a JSON array, same format as Add words → JSON" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-family:var(--f-mono);font-size:15px"></textarea>
     <p class="note">Each word should appear in the story (any form, like "inflated" for "inflate"). Plain words already in your word list are used as they are; the others are looked up in the dictionary and added to your word list. A JSON array (<code>[{"word","pos","pairs":[{"example","definition"}],"similar"}]</code>) adds those words to your word list with your own definitions, replacing any that are already there.</p>
-    <button class="btn block" id="stSave" type="button">Save story</button>
+    <button class="btn block" id="stSave" type="button">${storyEditing?'Save changes':'Save story'}</button>
     <div class="msg" id="stMsg"></div>
   </div>`);
+  if(storyEditing){
+    $('stTitle').value=storyEditing.title;
+    $('stText2').value=storyEditing.text;
+    $('stWords').value=storyEditing.words.join('\n');
+  }
+  saveStory.confirmed=false;
   $('stSave').onclick=saveStory;
 }
 async function saveStory(){
@@ -1285,12 +1299,12 @@ async function saveStory(){
   if(!words.length){msg.textContent='Add at least one word to learn.';return}
   const missing=words.filter(w=>!hasWord(text,w));
   if(missing.length&&!saveStory.confirmed){
-    msg.textContent=`Not found in the story: ${missing.join(', ')}. Fix the spelling, or tap Save again to keep them anyway.`;
+    msg.textContent=`Not found in the story text: ${missing.join(', ')}. Check the story above, or tap Save again to keep them anyway.`;
     saveStory.confirmed=true;return;
   }
   saveStory.confirmed=false;
   msg.className='msg';$('stSave').disabled=true;
-  const entries={};let i=0;
+  const entries=storyEditing?{...(storyEditing.entries||{})}:{};let i=0;
   if(jsonCards){
     // Add (or replace) these words in the word list, and keep a copy for the story
     for(const c of jsonCards){
@@ -1303,7 +1317,7 @@ async function saveStory(){
     // Plain words: use the word list first; look up the rest and add them to the word list
     for(const w of words){
       i++;
-      if(cards.some(c=>c.word===w)) continue;
+      if(cards.some(c=>c.word===w)||entries[w]) continue;
       msg.textContent=`Looking up ${i} of ${words.length}…`;
       try{
         const c=await lookup(w);
@@ -1312,6 +1326,16 @@ async function saveStory(){
       }catch(e){entries[w]=null}
     }
     renderBadge();
+  }
+  for(const k of Object.keys(entries)) if(!words.includes(k)) delete entries[k];   // drop words removed in an edit
+  if(storyEditing){
+    const s=storyEditing;
+    if(s.text!==text||s.words.join('|')!==words.join('|')) delete s.last;   // old score no longer matches the blanks
+    Object.assign(s,{title,text,words,entries,edited:new Date().toISOString()});
+    delete s.sample;
+    save();closeSheet();storyEditing=null;storyConfirm=false;
+    renderStories();$('storyScroll').scrollTop=0;
+    return;
   }
   const s={id:'s'+Date.now().toString(36),title,text,words,entries,created:new Date().toISOString()};
   stories.unshift(s);save();
