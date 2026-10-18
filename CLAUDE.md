@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.12.0</span> · <span class="version-date">2026/10/19</span>
+<span class="version-tag">v2.12.1</span> · <span class="version-date">2026/10/19</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.12.0 — 2026/10/19**
+**Current version: v2.12.1 — 2026/10/19**
 
 ## Architecture
 
@@ -28,7 +28,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
   - Any `data-pop="<word>"` element opens that word's entry in the quick popup (`#pop`), a bottom sheet that layers above the main sheet (`#sheet`).
   - Home stats use `log` (answers per day, `{ 'YYYY-MM-DD': {ok, no} }`), saved with the word list.
   - Dictionary: looked up through `GET /api/lookup` on the worker (never directly from the browser).
-  - Sound: dictionary audio for words; browser speech (Web Speech API) for sentences and stories. Me → Settings → Voice picks an English voice and speed (per device, localStorage `wm.voice`); `makeUtter` applies it everywhere. Story page **Listen** reads sentence by sentence and highlights the current paragraph (`reader`, stopped on leaving the page/tab or when anything else speaks).
+  - Sound: dictionary audio for words; browser speech (Web Speech API) for sentences and stories. Me → Settings → Voice picks an English voice and speed (Apple novelty/character and Eloquence voices are hidden: `oddVoice`) (per device, localStorage `wm.voice`); `makeUtter` applies it everywhere. Story page **Listen** reads sentence by sentence and highlights the current paragraph (`reader`, stopped on leaving the page/tab or when anything else speaks).
   - Translation: toggle button next to each example sentence → Korean via Google Cloud Translation v2, called from the browser with the user's own API key (Me → Settings → Google Translate). Translations are saved on the card (`exKo`).
 - **Backend**: `src/index.js` — Cloudflare Worker
   - `POST /api/auth/login` — verifies a Google ID token, creates a session (KV, 60 days)

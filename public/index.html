@@ -354,7 +354,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.12.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.12.1</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -740,7 +740,10 @@ const lookupErr=(code,w)=>(LOOKUP_ERR[code]||(()=>'Something went wrong. Please 
 // ---------- sound ----------
 // Voice choice is per device (voices come from the phone/browser): localStorage 'wm.voice' = {uri, rate}
 let voicePref=lsJSON('wm.voice')||{uri:'',rate:.9};
-const enVoices=()=>{try{return speechSynthesis.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang))}catch(e){return []}};
+// Apple novelty / character voices (sound effects, singing, robots) and the retro Eloquence set — hidden from the list
+const ODD_VOICES=new Set(['albert','bad news','bahh','bells','boing','bubbles','cellos','good news','jester','organ','pipe organ','superstar','trinoids','whisper','wobble','zarvox','deranged','hysterical','princess','fred','junior','ralph','kathy','eddy','flo','grandma','grandpa','reed','rocko','sandy','shelley']);
+const oddVoice=v=>/eloquence|speech\.synthesis\.voice\.(?!alex)/i.test(v.voiceURI||'')&&!/samantha|victoria|daniel|karen|moira|tessa|fiona|veena|rishi/i.test(v.name)||ODD_VOICES.has(v.name.replace(/\s*\(.*\)$/,'').trim().toLowerCase());
+const enVoices=()=>{try{return speechSynthesis.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang)&&!oddVoice(v))}catch(e){return []}};
 function pickVoice(){
   const vs=enVoices();
   return vs.find(v=>v.voiceURI===voicePref.uri)||vs.find(v=>/^en[-_]US/i.test(v.lang)&&v.default)||vs.find(v=>/^en[-_]US/i.test(v.lang))||vs[0]||null;
