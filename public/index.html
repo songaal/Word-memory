@@ -4,24 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover,interactive-widget=resizes-content">
 <title>Word Story</title>
-<meta name="theme-color" content="#f4bf4f">
+<meta name="theme-color" content="#58cc02">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Word Story">
-<link rel="manifest" href="/manifest.json?v=6">
-<link rel="icon" href="/icons/icon.svg?v=6" type="image/svg+xml">
-<link rel="icon" href="/icons/icon-192.png?v=6" sizes="192x192">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=6">
+<link rel="manifest" href="/manifest.json?v=7">
+<link rel="icon" href="/icons/icon.svg?v=7" type="image/svg+xml">
+<link rel="icon" href="/icons/icon-192.png?v=7" sizes="192x192">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=7">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400;1,7..72,700&family=Nunito:wght@500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: native-style app shell. Fixed full-screen, one scrolling area per tab, bottom tab bar. */
 :root{
-  --bg:#fbf8f1; --card:#ffffff; --fg:#3d3a33; --muted:#7a7468; --line:#ece5d6; --line-d:#dcd2bd;
-  --brand:#f4bf4f; --brand-d:#d49a2a; --brand-soft:#fff3d6; --on-brand:#3f2d0c;
-  --accent:#a3630a; --accent-soft:#fff3d6; --good:#15803d; --good-soft:#dcfce7; --bad:#e02424; --bad-soft:#ffdfe0;
-  --green:#22c55e; --green-d:#16a34a; --coral:#ff7a59; --coral-d:#e2583a; --coral-soft:#ffece6; --blue:#1cb0f6; --blue-d:#1899d6; --orange:#ff9600; --orange-d:#e08600; --orange-soft:#fff1dc;
+  --bg:#f7f7f7; --card:#ffffff; --fg:#3c3c3c; --muted:#777777; --line:#e5e5e5; --line-d:#d0d0d0;
+  --brand:#58cc02; --brand-d:#58a700; --brand-soft:#d7ffb8; --on-brand:#ffffff;
+  --accent:#1286c4; --accent-soft:#ddf4ff; --good:#46a302; --good-soft:#d7ffb8; --bad:#e02424; --bad-soft:#ffdfe0;
+  --green:#58cc02; --green-d:#58a700; --coral:#ff7a59; --coral-d:#e2583a; --coral-soft:#ffece6; --blue:#1cb0f6; --blue-d:#1899d6; --orange:#ff9600; --orange-d:#e08600; --orange-soft:#fff1dc;
   --gold:#ffc800; --gold-d:#e5a800; --gold-soft:#fff6d1; --purple:#ce82ff; --purple-d:#a568cc; --purple-soft:#f6e9ff; --red:#ff4b4b; --red-d:#ea2b2b;
   --bar:#ffffffee;
   --f-word:"Literata",Georgia,serif; --f-ui:"Nunito",system-ui,-apple-system,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
@@ -29,9 +29,9 @@
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#181612; --card:#24211b; --fg:#f5f0e6; --muted:#b3aa98; --line:#3b362c; --line-d:#2e2a22;
-  --brand:#e8b44c; --brand-d:#b98522; --brand-soft:#3a2f17; --on-brand:#2e2008;
-  --accent:#f3c56a; --accent-soft:#3a2f17; --good:#4ade80; --good-soft:#14321f; --bad:#ff6b6b; --bad-soft:#4a1f22; --coral-soft:#3f2219;
+  --bg:#131f24; --card:#1d2b32; --fg:#f1f7fb; --muted:#9db0bb; --line:#37464f; --line-d:#2a383f;
+  --brand:#58cc02; --brand-d:#58a700; --brand-soft:#203a12; --on-brand:#ffffff;
+  --accent:#49c0f8; --accent-soft:#1b3a4a; --good:#79d634; --good-soft:#203a12; --bad:#ff6b6b; --bad-soft:#4a1f22; --coral-soft:#3f2219;
   --orange-soft:#3d2a10; --gold-soft:#3a3010; --purple-soft:#33224a;
   --bar:#1a212bee; color-scheme:dark}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -58,7 +58,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .tabbar{display:flex;background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 6px) var(--gutter-l)}
 .tabbar button{flex:1;background:none;border:2px solid transparent;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:3px 0;color:var(--muted);font:800 11px var(--f-ui);cursor:pointer;position:relative;margin:0 3px}
 .tabbar svg{width:25px;height:25px}
-.tabbar button[aria-selected="true"]{color:var(--accent);border-color:var(--brand);background:var(--brand-soft)}
+.tabbar button[aria-selected="true"]{color:var(--blue-d);border-color:#84d8ff;background:var(--accent-soft)}
 .tabbar button[aria-selected="true"] .f{fill:currentColor}
 .tabbar button[aria-selected="true"] .cut{stroke:var(--card);stroke-width:2.2}
 .tabbar .n{position:absolute;top:-2px;left:calc(50% + 6px);min-width:20px;padding:0 6px;border-radius:10px;background:var(--red);color:#fff;font:900 11px/20px var(--f-ui);border:2px solid var(--card)}
@@ -140,15 +140,15 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .pill{display:inline-flex;align-items:center;gap:5px;font:900 17px var(--f-ui);padding:5px 12px;border-radius:14px;border:2px solid var(--line);background:var(--card)}
 .pill.fire{color:var(--orange)}
 .pill.fire.off{color:var(--muted);filter:grayscale(1)}
-.hero{background:linear-gradient(135deg,#f7cb64,#f2ad57);color:var(--on-brand);border:0;box-shadow:0 5px 0 var(--brand-d);margin-bottom:5px}
-.hero.done{background:linear-gradient(135deg,#34d17a,#1fb36a);box-shadow:0 5px 0 var(--green-d);color:#fff}
+.hero{background:var(--green);color:#fff;border:0;box-shadow:0 5px 0 var(--green-d);margin-bottom:5px}
+.hero.done{background:var(--gold);box-shadow:0 5px 0 var(--gold-d);color:#4b3800}
 .hero .label{color:inherit;opacity:.85}
 .hero .msg-big{font:900 24px/1.25 var(--f-ui)}
 .hero .gbar{height:18px;border-radius:9px;background:#0002;overflow:hidden}
 .hero .gbar i{display:block;height:100%;border-radius:9px;background:#fff;box-shadow:inset 0 -4px 0 #0001}
 .hero .gnum{font:800 14px var(--f-ui);opacity:.9}
-.hero .btn{background:#fff;color:#a3630a;box-shadow:0 4px 0 #0003}
-.hero.done .btn{color:var(--green-d)}
+.hero .btn{background:#fff;color:var(--green-d);box-shadow:0 4px 0 #0003}
+.hero.done .btn{color:var(--gold-d)}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .tcard{border-radius:18px;border:2px solid var(--line);background:var(--card);padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .tcard .ti{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:24px}
@@ -176,13 +176,13 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .wk .ok{background:var(--green)}
 .wk .no{background:var(--red)}
 .wk small{font:800 12px var(--f-ui);color:var(--muted)}
-.wk.today small:last-child{color:var(--on-brand);background:var(--brand);border-radius:8px;padding:0 6px}
+.wk.today small:last-child{color:#fff;background:var(--blue);border-radius:8px;padding:0 6px}
 .legend{display:flex;gap:14px;font:700 12px var(--f-ui);color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 
 /* ---- test ---- */
 .progress{display:flex;align-items:center;gap:14px}
-.count{font:900 28px/1 var(--f-ui);color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+.count{font:900 28px/1 var(--f-ui);color:var(--green-d);font-variant-numeric:tabular-nums;white-space:nowrap}
 .count small{font-size:18px;color:var(--muted);font-weight:500}
 .pbar{flex:1;height:16px;border-radius:8px;background:var(--line);overflow:hidden}
 .pbar i{display:block;height:100%;background:var(--brand);border-radius:8px;transition:width .3s;box-shadow:inset 0 -4px 0 #0001,inset 0 4px 0 #fff4}
@@ -234,7 +234,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .si .meta b{font-weight:900}
 .si.g-new .sic{background:var(--line);color:var(--muted)}
 .si.g-perfect{border-color:var(--gold);background:var(--gold-soft)} .si.g-perfect .sic{background:var(--gold);box-shadow:0 3px 0 var(--gold-d)} .si.g-perfect .sc{background:var(--gold);color:#4b3800} .si.g-perfect .meta b{color:var(--gold-d)}
-.si.g-good{border-color:#86efac} .si.g-good .sic{background:var(--green);box-shadow:0 3px 0 var(--green-d)} .si.g-good .sc{background:var(--good-soft);color:var(--good)} .si.g-good .meta b{color:var(--good)}
+.si.g-good{border-color:#a5ed6e} .si.g-good .sic{background:var(--green);box-shadow:0 3px 0 var(--green-d)} .si.g-good .sc{background:var(--good-soft);color:var(--good)} .si.g-good .meta b{color:var(--good)}
 .si.g-low{border-color:#ffc27a} .si.g-low .sic{background:var(--orange);box-shadow:0 3px 0 var(--orange-d)} .si.g-low .sc{background:var(--orange-soft);color:var(--orange-d)} .si.g-low .meta b{color:var(--orange-d)}
 .sstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .sstats div{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 4px;text-align:center}
@@ -444,7 +444,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.21.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.21.1</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
