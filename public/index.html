@@ -290,7 +290,8 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .mi[aria-checked="true"] .rdo::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--accent)}
 .mi.off .t{color:var(--muted)}
 .selbar{padding:10px var(--gutter-r) 10px var(--gutter-l);border-top:1px solid var(--line);background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.selbar .btn{max-width:640px;margin:0 auto;display:block}
+.selbar .selbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:640px;margin:0 auto}
+.selbar .selcount{text-align:center;font:800 13px var(--f-ui);color:var(--muted);margin-bottom:6px}
 .selbar .btn:disabled{opacity:.45;cursor:default}
 #stHint{font-size:15px;resize:vertical;min-height:52px}
 .aibtn{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0 10px}
@@ -429,7 +430,10 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
     </div>
     <div class="pane" id="pane-list" hidden>
       <div class="scroll"><div class="stack" id="listBody"></div></div>
-      <div class="selbar" id="selBar" hidden><button class="btn block" id="selGo" type="button">Make a story with these words</button></div>
+      <div class="selbar" id="selBar" hidden>
+        <div class="selcount" id="selCount"></div>
+        <div class="selbtns"><button class="btn blue" id="selTest" type="button">Test</button><button class="btn" id="selGo" type="button">Make a story</button></div>
+      </div>
     </div>
     <div class="pane" id="pane-story" hidden>
       <div class="scroll" id="storyScroll"><div class="stack" id="storyBody"></div></div>
@@ -450,7 +454,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.22.2</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.23.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -1375,7 +1379,7 @@ function historyHTML(){
   if(!history.length) return `<div class="label" style="padding-left:4px">History</div><div class="card empty">No tests yet. Your results will appear here.</div>`;
   return `<div class="label" style="padding-left:4px">History</div>
     <div class="hlist">${history.slice(0,30).map((h,i)=>{const p=h.total?Math.round(h.ok/h.total*100):0;
-      return `<button class="hi" type="button" data-hist="${i}"><span class="when">${esc(agoOrTime(h.at))}${h.quit?'<span class="stop">Stopped</span>':''}<span class="meta">${h.secs!=null?'⏱ '+durText(h.secs)+' · ':''}${h.quit&&h.planned?`${h.total} of ${h.planned} answered`:plural(h.total,'question')}</span></span><span class="res">${h.ok} / ${h.total}<b style="color:${pctColor(p)}">${p}%</b></span><span class="chev">›</span></button>`}).join('')}</div>`;
+      return `<button class="hi" type="button" data-hist="${i}"><span class="when">${esc(agoOrTime(h.at))}${h.quit?'<span class="stop">Stopped</span>':''}${h.kind?`<span class="stop" style="color:var(--blue-d);background:var(--accent-soft)">${esc(h.kind)}</span>`:''}<span class="meta">${h.secs!=null?'⏱ '+durText(h.secs)+' · ':''}${h.quit&&h.planned?`${h.total} of ${h.planned} answered`:plural(h.total,'question')}</span></span><span class="res">${h.ok} / ${h.total}<b style="color:${pctColor(p)}">${p}%</b></span><span class="chev">›</span></button>`}).join('')}</div>`;
 }
 function testHome(){
   inTest=false;
@@ -1601,9 +1605,15 @@ function spread(list){
   }
   return list;
 }
-function startTest(){
-  const all=todayItems(),dueNow=all.filter(it=>isDue(it.d));
-  const set=dueNow.length?dueNow:all;   // remaining due sentences; practice only when nothing is due
+let testCustom=null;   // {set, label} when testing chosen words or retesting a past test
+function startTest(customSet,label){
+  let set;
+  if(Array.isArray(customSet)){set=customSet;testCustom={set:customSet.slice(),label:label||'Custom'}}
+  else{
+    testCustom=null;
+    const all=todayItems(),dueNow=all.filter(it=>isDue(it.d));
+    set=dueNow.length?dueNow:all;   // remaining due sentences; practice only when nothing is due
+  }
   if(!set.length){testHome();return}
   queue=spread(set.slice());total=queue.length;score={ok:0,no:0};results=[];inTest=true;testStartedAt=new Date().toISOString();
   $('testSeg').hidden=true;setQuit(askQuitTest,null);tmrStart();
@@ -1679,7 +1689,7 @@ function quitTest(){
   renderTestTab();
 }
 function saveHistory(secs,quit){
-  const h={at:testStartedAt||new Date().toISOString(),secs,total:results.length,planned:total,ok:score.ok,quit:!!quit,items:results.map(r=>({
+  const h={at:testStartedAt||new Date().toISOString(),secs,total:results.length,planned:total,ok:score.ok,quit:!!quit,kind:testCustom?testCustom.label:'',items:results.map(r=>({
     w:r.c.word,form:r.form,ok:r.ok,prac:r.prac,typed:r.typed||'',s:r.noEx?r.d.d:r.d.ex,noEx:r.noEx,due:r.d.due}))};
   history.unshift(h);if(history.length>60) history.length=60;
   save();
@@ -1775,6 +1785,15 @@ function finish(){
   inTest=false;$('testSeg').hidden=false;setQuit(null);
   renderResult(saveHistory(secs,false),true);
 }
+// The sentences a past test used, found again in the word list
+function itemsFromHistory(h){
+  const all=allItems(),out=[],seen=new Set();
+  for(const r of h.items||[]){
+    const it=all.find(it=>it.c.word===r.w&&(r.noEx?it.d.d===r.s:it.d.ex===r.s))||all.find(it=>it.c.word===r.w&&!seen.has(it));
+    if(it&&!seen.has(it)){seen.add(it);out.push(it)}
+  }
+  return out;
+}
 // Results page. fresh = just finished (offers Retake); otherwise opened from History (offers Back).
 function renderResult(h,fresh){
   if(!h) return;
@@ -1792,7 +1811,8 @@ function renderResult(h,fresh){
       </div>
       <div class="splitbar"><div class="ok" style="width:${h.total?h.ok/h.total*100:0}%"></div><div class="no" style="width:${h.total?(h.total-h.ok)/h.total*100:0}%"></div></div>
       <div class="note">${again?`${plural(again,'sentence')} came back for the next day.`:'Every sentence moved to a longer review interval.'}${h.items.some(r=>r.prac)?' Practice answers did not change the schedule.':''}</div>
-      ${fresh?'<button class="btn block" id="again" type="button">Retake test</button>':''}
+      <button class="btn block${fresh?'':' blue'}" id="again" type="button">${fresh&&!testCustom?'Retake test':'Test these again'}</button>
+      <div class="msg" id="againMsg" style="min-height:0"></div>
     </div>
     <div class="label" style="padding-left:4px">Answers · tap to see the word</div>
     <div class="rlist">${order.map(r=>`<button class="ri" type="button" ${cards.some(c=>c.word===r.w)?`data-pop="${esc(r.w)}"`:''}>
@@ -1800,7 +1820,14 @@ function renderResult(h,fresh){
       <span class="top">${esc(r.form)}<span>${r.prac?'Practice':fresh?dueLabel(r.due):'Next: '+shortDate(r.due)}</span></span>
       <span class="sent">${sent(r)}${!r.ok&&r.typed?` <span style="font-style:normal;color:var(--bad)">· you wrote “${esc(r.typed)}”</span>`:''}</span>
     </button>`).join('')}</div>`;
-  if(fresh) $('again').onclick=startTest;else $('resBack').onclick=testHome;
+  if(!fresh) $('resBack').onclick=testHome;
+  // the same sentences as this test (practice unless they are due)
+  $('again').onclick=()=>{
+    if(fresh&&!testCustom){startTest();return}
+    const set=itemsFromHistory(h);
+    if(!set.length){$('againMsg').className='msg err';$('againMsg').textContent='These sentences are no longer in your word list.';return}
+    startTest(set,'Retest');
+  };
   $('testScroll').scrollTop=0;
 }
 // Tap any word in a story: show its entry (word list first, then the dictionary)
@@ -2062,11 +2089,19 @@ function renderList(){
 }
 function renderSelBar(){
   const bar=$('selBar');bar.hidden=!listSel||dictPane!=='list';if(bar.hidden) return;
-  const n=listSel.size,b=$('selGo');
-  b.disabled=!n;
-  b.textContent=!n?'Pick words for a story':n>SEL_MAX?`Pick ${SEL_MAX} words or fewer`:`Make a story with ${n===1?'this word':'these '+n+' words'}`;
-  if(n>SEL_MAX) b.disabled=true;
+  const n=listSel.size,b=$('selGo'),t=$('selTest');
+  $('selCount').textContent=!n?'Pick words to test or to make a story':n>SEL_MAX?`${n} selected · a story takes ${SEL_MAX} words or fewer`:`${n===1?'1 word':n+' words'} selected`;
+  t.disabled=!n;b.disabled=!n||n>SEL_MAX;
+  t.textContent=n?`Test ${n===1?'it':'these'}`:'Test';b.textContent='Make a story';
 }
+// Test just the picked words: every example sentence of each one (due ones count, the rest are practice)
+$('selTest').onclick=()=>{
+  if(!listSel||!listSel.size) return;
+  const set=allItems().filter(it=>listSel.has(it.c.word));
+  listSel=null;renderList();
+  show('test');testPane='schedule';renderTestTab();
+  startTest(set,'Selected words');
+};
 $('selGo').onclick=()=>{
   if(!listSel||!listSel.size) return;
   const order=[...cards].map(c=>c.word).filter(w=>listSel.has(w));
