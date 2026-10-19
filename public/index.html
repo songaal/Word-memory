@@ -14,25 +14,28 @@
 <link rel="icon" href="/icons/icon-192.png?v=2" sizes="192x192">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400;1,7..72,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400;1,7..72,700&family=Nunito:wght@500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: native-style app shell. Fixed full-screen, one scrolling area per tab, bottom tab bar. */
 :root{
-  --bg:#f3f5f7; --card:#ffffff; --fg:#17202b; --muted:#5d6876; --line:#d9dee5;
-  --accent:#2c4fd6; --accent-soft:#e6ebfc; --good:#1f8a4c; --good-soft:#e2f4ea; --bad:#c23b32; --bad-soft:#fbe6e4;
+  --bg:#f7f7f7; --card:#ffffff; --fg:#3c3c3c; --muted:#777777; --line:#e5e5e5; --line-d:#d0d0d0;
+  --accent:#1286c4; --accent-soft:#ddf4ff; --good:#46a302; --good-soft:#d7ffb8; --bad:#e02424; --bad-soft:#ffdfe0;
+  --green:#58cc02; --green-d:#58a700; --blue:#1cb0f6; --blue-d:#1899d6; --orange:#ff9600; --orange-d:#e08600; --orange-soft:#fff1dc;
+  --gold:#ffc800; --gold-d:#e5a800; --gold-soft:#fff6d1; --purple:#ce82ff; --purple-d:#a568cc; --purple-soft:#f6e9ff; --red:#ff4b4b; --red-d:#ea2b2b;
   --bar:#ffffffee;
-  --f-word:"Literata",Georgia,serif; --f-ui:"IBM Plex Sans",system-ui,-apple-system,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  --f-word:"Literata",Georgia,serif; --f-ui:"Nunito",system-ui,-apple-system,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
   --gutter-l:max(16px,env(safe-area-inset-left,0px)); --gutter-r:max(16px,env(safe-area-inset-right,0px));
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#11161d; --card:#1a212b; --fg:#e7ebf0; --muted:#97a2b0; --line:#2c3541;
-  --accent:#8aa2ff; --accent-soft:#232d4d; --good:#5fd08f; --good-soft:#18352a; --bad:#ff8378; --bad-soft:#3d1f1d;
+  --bg:#131f24; --card:#1d2b32; --fg:#f1f7fb; --muted:#9db0bb; --line:#37464f; --line-d:#2a383f;
+  --accent:#49c0f8; --accent-soft:#1b3a4a; --good:#79d634; --good-soft:#203a12; --bad:#ff6b6b; --bad-soft:#4a1f22;
+  --orange-soft:#3d2a10; --gold-soft:#3a3010; --purple-soft:#33224a;
   --bar:#1a212bee; color-scheme:dark}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
-body{position:fixed;inset:0;background:var(--bg);color:var(--fg);font:15px/1.6 var(--f-ui);touch-action:manipulation;-webkit-text-size-adjust:100%}
+body{position:fixed;inset:0;background:var(--bg);color:var(--fg);font:600 15px/1.6 var(--f-ui);touch-action:manipulation;-webkit-text-size-adjust:100%}
 button{font:inherit;color:inherit}
 /* App feel: no text selection by dragging (inputs still work) */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -43,7 +46,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .view{position:fixed;left:0;right:0;top:var(--vvtop,0px);height:var(--vvh,100%);display:flex;flex-direction:column}
 .screen{flex:1;min-height:0;display:flex;flex-direction:column}
 .bar{padding:calc(env(safe-area-inset-top,0px) + 14px) var(--gutter-r) 10px var(--gutter-l);background:var(--bg);display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
-.bar h1{font:700 28px/1.15 var(--f-word);margin:0}
+.bar h1{font:900 28px/1.15 var(--f-ui);margin:0;letter-spacing:-.01em}
 .scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:4px var(--gutter-r) 24px var(--gutter-l)}
 .stack{display:flex;flex-direction:column;gap:14px;max-width:640px;margin:0 auto}
 .stack .stack{margin:0;max-width:none;width:100%}
@@ -51,37 +54,51 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .tabbar{transition:transform .28s ease,margin-bottom .28s ease;will-change:transform}
 .tbhide .tabbar{transform:translateY(100%);margin-bottom:calc(-1 * var(--tbh,64px))}
 .tabbar{display:flex;background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 6px) var(--gutter-l)}
-.tabbar button{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;color:var(--muted);font:500 11px var(--f-ui);cursor:pointer;position:relative}
+.tabbar button{flex:1;background:none;border:2px solid transparent;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:3px 0;color:var(--muted);font:800 11px var(--f-ui);cursor:pointer;position:relative;margin:0 3px}
 .tabbar svg{width:25px;height:25px}
-.tabbar button[aria-selected="true"]{color:var(--accent);font-weight:600}
+.tabbar button[aria-selected="true"]{color:var(--blue-d);border-color:#84d8ff;background:var(--accent-soft)}
 .tabbar button[aria-selected="true"] .f{fill:currentColor}
 .tabbar button[aria-selected="true"] .cut{stroke:var(--card);stroke-width:2.2}
-.tabbar .n{position:absolute;top:0;left:calc(50% + 6px);min-width:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font:600 11px/18px var(--f-mono)}
+.tabbar .n{position:absolute;top:-2px;left:calc(50% + 6px);min-width:20px;padding:0 6px;border-radius:10px;background:var(--red);color:#fff;font:900 11px/20px var(--f-ui);border:2px solid var(--card)}
 
 /* ---- common ---- */
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.btn{font:600 15px var(--f-ui);padding:12px 16px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:var(--card);cursor:pointer;white-space:nowrap}
-.btn.ghost{background:transparent;color:var(--accent)}
+.btn{font:800 15px var(--f-ui);letter-spacing:.04em;text-transform:uppercase;padding:13px 16px;border-radius:16px;border:0;background:var(--green);color:#fff;cursor:pointer;white-space:nowrap;box-shadow:0 4px 0 var(--green-d);margin-bottom:4px;transition:transform .05s,box-shadow .05s}
+.btn:active:not(:disabled){transform:translateY(4px);box-shadow:none}
+.btn.ghost{background:var(--card);color:var(--blue-d);border:2px solid var(--line);box-shadow:0 4px 0 var(--line);padding:11px 14px}
+.btn.blue{background:var(--blue);box-shadow:0 4px 0 var(--blue-d)}
+.btn.orange{background:var(--orange);box-shadow:0 4px 0 var(--orange-d)}
+.btn.purple{background:var(--purple);box-shadow:0 4px 0 var(--purple-d)}
+.btn.danger{background:var(--red);box-shadow:0 4px 0 var(--red-d)}
 .btn.block{width:100%}
 .btn:disabled{opacity:.5;cursor:default}
-.linkbtn{background:none;border:0;padding:6px 2px;color:var(--accent);font:500 14px var(--f-ui);cursor:pointer}
+.linkbtn{background:none;border:0;padding:6px 2px;color:var(--blue-d);font:800 14px var(--f-ui);cursor:pointer}
 .linkbtn.quit{color:var(--muted);font-size:15px;padding:6px 4px}
-.hintbtn{border:1px solid var(--line);background:none;color:var(--muted);border-radius:16px;padding:4px 12px;font:500 13px var(--f-ui);cursor:pointer}
+.tbar{display:flex;align-items:center;gap:8px}
+.ttime{font:900 15px var(--f-ui);font-variant-numeric:tabular-nums;color:var(--blue-d);background:var(--accent-soft);border-radius:12px;padding:4px 10px;min-width:4.6em;text-align:center}
+.ttime.paused{color:var(--muted);background:var(--line)}
+#testHint:disabled{opacity:.45}
+.hi .meta{display:block;font:700 12px var(--f-ui);color:var(--muted)}
+.hi .stop{font:800 10px var(--f-ui);color:var(--orange-d);background:var(--orange-soft);border-radius:8px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.thome .stat b{font-size:30px}
+.qconfirm{display:flex;flex-direction:column;gap:10px}
+.qconfirm p{margin:0;font:700 16px/1.5 var(--f-ui)}
+.hintbtn{border:2px solid var(--line);background:var(--card);color:var(--muted);border-radius:14px;padding:4px 12px;font:800 13px var(--f-ui);cursor:pointer;box-shadow:0 2px 0 var(--line)}
 .hintbtn[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
-input[type=text],input[type=password],input[type=search],textarea{font:500 17px var(--f-ui);padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg);min-width:0}
+input[type=text],input[type=password],input[type=search],textarea{font:600 17px var(--f-ui);padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:var(--card);color:var(--fg);min-width:0}
 textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 .msg{font-size:13px;color:var(--muted);min-height:20px}
 .msg.err{color:var(--bad)}
 .note{font-size:12px;color:var(--muted);margin:0}
-.label{font:500 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.tag{font:500 11px var(--f-mono);padding:1px 8px;border-radius:10px;background:var(--line);color:var(--muted)}
+.label{font:800 12px var(--f-ui);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.tag{font:800 11px var(--f-ui);padding:2px 9px;border-radius:10px;background:var(--line);color:var(--muted)}
 .tag.prac{background:var(--accent-soft);color:var(--accent)}
 .empty{text-align:center;color:var(--muted);padding:28px 12px}
 
 /* ---- word card ---- */
 .word{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.word h2{font:700 30px/1.1 var(--f-word);margin:0}
+.word h2{font:900 30px/1.1 var(--f-ui);margin:0}
 .word .addw{margin-left:auto}
 .ph{font:400 14px var(--f-mono);color:var(--muted)}
 .play{border:1px solid var(--line);background:none;color:var(--fg);border-radius:20px;padding:3px 12px;font:500 12px var(--f-ui);cursor:pointer}
@@ -105,34 +122,58 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .chip{font:500 17px/1.3 var(--f-ui);padding:5px 14px;border-radius:16px;background:var(--accent-soft);color:var(--fg)}
 
 /* ---- home ---- */
-.hero{background:var(--accent);color:var(--card);border:0}
-.hero .big{font:700 52px/1 var(--f-mono);font-variant-numeric:tabular-nums}
-.hero .sub{opacity:.85}
-.hero .btn{background:var(--card);color:var(--accent);border-color:var(--card)}
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.stat b{display:block;font:600 24px/1.2 var(--f-mono);font-variant-numeric:tabular-nums}
-.stat span{font-size:12px;color:var(--muted)}
+.hhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hhead .hi-name{font:900 22px/1.2 var(--f-ui)}
+.hhead .hi-sub{font:700 14px var(--f-ui);color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:5px;font:900 17px var(--f-ui);padding:5px 12px;border-radius:14px;border:2px solid var(--line);background:var(--card)}
+.pill.fire{color:var(--orange)}
+.pill.fire.off{color:var(--muted);filter:grayscale(1)}
+.hero{background:var(--green);color:#fff;border:0;box-shadow:0 5px 0 var(--green-d);margin-bottom:5px}
+.hero.done{background:var(--gold);box-shadow:0 5px 0 var(--gold-d);color:#4b3800}
+.hero .label{color:inherit;opacity:.85}
+.hero .msg-big{font:900 24px/1.25 var(--f-ui)}
+.hero .gbar{height:18px;border-radius:9px;background:#0002;overflow:hidden}
+.hero .gbar i{display:block;height:100%;border-radius:9px;background:#fff;box-shadow:inset 0 -4px 0 #0001}
+.hero .gnum{font:800 14px var(--f-ui);opacity:.9}
+.hero .btn{background:#fff;color:var(--green-d);box-shadow:0 4px 0 #0003}
+.hero.done .btn{color:var(--gold-d)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tcard{border-radius:18px;border:2px solid var(--line);background:var(--card);padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.tcard .ti{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:24px}
+.tcard.words .ti{background:var(--accent-soft)}
+.tcard.story .ti{background:var(--purple-soft)}
+.tcard .tt{font:900 17px/1.2 var(--f-ui)}
+.tcard .tn{font:900 30px/1 var(--f-ui);font-variant-numeric:tabular-nums}
+.tcard .ts{font:700 13px/1.35 var(--f-ui);color:var(--muted);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2.7em}
+.tcard .btn{margin-top:auto;padding:11px 8px;font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.stat{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.stat .si-ic{font-size:26px;line-height:1}
+.stat b{display:block;font:900 22px/1.15 var(--f-ui);font-variant-numeric:tabular-nums}
+.stat span{font:700 12px var(--f-ui);color:var(--muted)}
+.stat.c-orange b{color:var(--orange)} .stat.c-green b{color:var(--good)} .stat.c-blue b{color:var(--blue-d)} .stat.c-gold b{color:var(--gold-d)} .stat.c-red b{color:var(--red-d)} .stat.c-purple b{color:var(--purple-d)}
 .boxes{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
-.box{background:var(--bg);border-radius:8px;padding:8px 2px;text-align:center}
-.box b{display:block;font:600 18px var(--f-mono);font-variant-numeric:tabular-nums}
-.box span{font-size:11px;color:var(--muted)}
-.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:120px}
+.box{border-radius:12px;padding:8px 2px;text-align:center;border:2px solid transparent}
+.box b{display:block;font:900 18px var(--f-ui);font-variant-numeric:tabular-nums}
+.box span{font:800 11px var(--f-ui);opacity:.8}
+.box.s0{background:var(--line);color:var(--muted)} .box.s1{background:var(--bad-soft);color:var(--red-d)} .box.s2{background:var(--orange-soft);color:var(--orange-d)}
+.box.s3{background:var(--gold-soft);color:var(--gold-d)} .box.s4{background:var(--good-soft);color:var(--good)} .box.s5{background:var(--accent-soft);color:var(--blue-d)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:130px}
 .wk{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
-.wk .col{width:100%;max-width:28px;display:flex;flex-direction:column-reverse;border-radius:6px;overflow:hidden;background:var(--bg)}
-.wk .ok{background:var(--good)}
-.wk .no{background:var(--bad)}
-.wk small{font:400 11px var(--f-mono);color:var(--muted)}
-.wk.today small{color:var(--accent);font-weight:600}
-.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}
+.wk .col{width:100%;max-width:30px;display:flex;flex-direction:column-reverse;border-radius:8px;overflow:hidden;background:var(--line)}
+.wk .ok{background:var(--green)}
+.wk .no{background:var(--red)}
+.wk small{font:800 12px var(--f-ui);color:var(--muted)}
+.wk.today small:last-child{color:#fff;background:var(--blue);border-radius:8px;padding:0 6px}
+.legend{display:flex;gap:14px;font:700 12px var(--f-ui);color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 
 /* ---- test ---- */
 .progress{display:flex;align-items:center;gap:14px}
-.count{font:700 30px/1 var(--f-mono);color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+.count{font:900 28px/1 var(--f-ui);color:var(--green-d);font-variant-numeric:tabular-nums;white-space:nowrap}
 .count small{font-size:18px;color:var(--muted);font-weight:500}
-.pbar{flex:1;height:10px;border-radius:5px;background:var(--accent-soft);overflow:hidden}
-.pbar i{display:block;height:100%;background:var(--accent);border-radius:5px;transition:width .3s}
+.pbar{flex:1;height:16px;border-radius:8px;background:var(--line);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--green);border-radius:8px;transition:width .3s;box-shadow:inset 0 -4px 0 #0001,inset 0 4px 0 #fff4}
 .qsent{font:italic 400 22px/1.6 var(--f-word)}
 .gap{font:600 21px/1.2 var(--f-ui);font-style:normal;border:0;border-bottom:3px solid var(--accent);border-radius:6px 6px 0 0;background:var(--accent-soft);color:var(--fg);padding:2px 6px;margin:0 2px;text-align:center;max-width:100%;vertical-align:baseline;letter-spacing:.02em}
 .gap::placeholder{color:var(--muted);letter-spacing:.12em;font-family:var(--f-mono);font-weight:500}
@@ -142,7 +183,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .fill.ok{background:var(--good-soft);color:var(--good)}
 .fill.no{background:var(--bad-soft);color:var(--bad)}
 .qdef{display:flex;flex-direction:column;gap:4px;padding-top:12px;border-top:1px solid var(--line);font:400 17px/1.55 var(--f-word);color:var(--muted)}
-.verdict{font-weight:600;font-size:15px}
+.verdict{font-weight:900;font-size:16px}
 .verdict.ok{color:var(--good)}
 .verdict.no{color:var(--bad)}
 .verdict s{color:var(--muted);font-weight:400;margin-right:6px}
@@ -169,17 +210,29 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .storytext p:last-child{margin:0}
 .sw{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--accent);cursor:pointer;text-decoration:underline dotted 1.5px;text-underline-offset:4px}
 .storytext .fill{font-size:17px}
-.slist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
-.si{display:flex;flex-direction:column;gap:6px;padding:14px;border:0;border-top:1px solid var(--line);background:none;text-align:left;cursor:pointer;width:100%}
-.si:first-child{border-top:0}
-.si .t{display:flex;justify-content:space-between;gap:10px;font:600 17px var(--f-word)}
-.si .t span{font:400 12px var(--f-mono);color:var(--muted);white-space:nowrap}
-.si .ws{display:flex;flex-wrap:wrap;gap:6px}
-.si .ws i{font:500 12px var(--f-ui);font-style:normal;padding:2px 9px;border-radius:10px;background:var(--accent-soft)}
-.si .last{font-size:12px;color:var(--muted)}
-.stitle{font:700 26px/1.2 var(--f-word);margin:0;text-wrap:balance}
+.slist{display:flex;flex-direction:column;gap:10px}
+.si{display:grid;grid-template-columns:46px 1fr auto;gap:4px 12px;align-items:start;padding:14px;border:2px solid var(--line);border-bottom-width:4px;border-radius:18px;background:var(--card);text-align:left;cursor:pointer;width:100%}
+.si:active{transform:translateY(2px);border-bottom-width:2px;margin-bottom:2px}
+.si .sic{grid-row:span 3;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font:900 20px var(--f-ui);color:#fff}
+.si .t{font:900 17px/1.3 var(--f-ui);min-width:0;grid-column:2}
+.si .sc{grid-column:3;grid-row:1;font:900 15px var(--f-ui);padding:2px 10px;border-radius:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.si .ws{grid-column:2 / 4;display:flex;flex-wrap:wrap;gap:6px}
+.si .ws i{font:800 12px var(--f-ui);font-style:normal;padding:2px 9px;border-radius:10px;background:var(--bg);border:1.5px solid var(--line)}
+.si .meta{grid-column:2 / 4;font:700 12.5px var(--f-ui);color:var(--muted)}
+.si .meta b{font-weight:900}
+.si.g-new .sic{background:var(--line);color:var(--muted)}
+.si.g-perfect{border-color:var(--gold);background:var(--gold-soft)} .si.g-perfect .sic{background:var(--gold);box-shadow:0 3px 0 var(--gold-d)} .si.g-perfect .sc{background:var(--gold);color:#4b3800} .si.g-perfect .meta b{color:var(--gold-d)}
+.si.g-good{border-color:#a5ed6e} .si.g-good .sic{background:var(--green);box-shadow:0 3px 0 var(--green-d)} .si.g-good .sc{background:var(--good-soft);color:var(--good)} .si.g-good .meta b{color:var(--good)}
+.si.g-low{border-color:#ffc27a} .si.g-low .sic{background:var(--orange);box-shadow:0 3px 0 var(--orange-d)} .si.g-low .sc{background:var(--orange-soft);color:var(--orange-d)} .si.g-low .meta b{color:var(--orange-d)}
+.sstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sstats div{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 4px;text-align:center}
+.sstats b{display:block;font:900 20px/1.2 var(--f-ui);font-variant-numeric:tabular-nums}
+.sstats span{font:800 11px var(--f-ui);color:var(--muted)}
+.slegend{display:flex;flex-wrap:wrap;gap:6px 12px;font:700 12px var(--f-ui);color:var(--muted);padding:0 4px}
+.slegend i{font-style:normal}
+.stitle{font:900 26px/1.2 var(--f-ui);margin:0;text-wrap:balance}
 .inlineback{align-self:flex-start;margin-left:-4px}
-.fieldlabel{font-weight:600;font-size:14px}
+.fieldlabel{font-weight:800;font-size:14px}
 
 /* tappable story words */
 .tw{cursor:pointer;border-radius:4px}
@@ -195,9 +248,9 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .trbtn svg{width:16px;height:16px}
 
 /* ---- dict ---- */
-.seg{display:flex;background:var(--line);border-radius:10px;padding:3px;margin:0 var(--gutter-r) 8px var(--gutter-l)}
-.seg button{flex:1;border:0;background:none;border-radius:8px;padding:7px 0;font:600 14px var(--f-ui);color:var(--muted);cursor:pointer}
-.seg button[aria-selected="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px #0002}
+.seg{display:flex;background:var(--line);border-radius:14px;padding:3px;margin:0 var(--gutter-r) 8px var(--gutter-l)}
+.seg button{flex:1;border:0;background:none;border-radius:11px;padding:7px 0;font:800 14px var(--f-ui);color:var(--muted);cursor:pointer}
+.seg button[aria-selected="true"]{background:var(--card);color:var(--blue-d);box-shadow:0 2px 0 var(--line-d)}
 .pane{flex:1;min-height:0;display:flex;flex-direction:column}
 .composer{display:flex;gap:8px;padding:8px var(--gutter-r) 10px var(--gutter-l);border-top:1px solid var(--line);background:var(--bg)}
 .composer.top{border-top:0;padding-top:2px}
@@ -205,8 +258,8 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .bubble{align-self:center;font-size:13px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 14px}
 .bubble.err{color:var(--bad)}
 .listhead{display:flex;align-items:center;justify-content:space-between}
-.plus{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:var(--card);font:400 26px/1 var(--f-ui);cursor:pointer;display:grid;place-items:center}
-.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
+.plus{width:42px;height:42px;border-radius:14px;border:0;background:var(--green);color:#fff;font:800 26px/1 var(--f-ui);cursor:pointer;display:grid;place-items:center;box-shadow:0 3px 0 var(--green-d)}
+.list{display:flex;flex-direction:column;border:2px solid var(--line);border-radius:18px;background:var(--card);overflow:hidden}
 .li{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:13px 14px;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;width:100%}
 .li:first-child{border-top:0}
 .li.sel{grid-template-columns:auto 1fr auto auto}
@@ -225,9 +278,9 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .aibtn{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0 10px}
 .aibtn svg{width:18px;height:18px}
 .aibtn:disabled{opacity:.6;cursor:default}
-.li .w{font:600 17px var(--f-word);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li .w{font:800 17px var(--f-ui);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li .d{font:400 12px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
-.st{font:500 11px var(--f-mono);padding:2px 8px;border-radius:10px;background:var(--accent-soft)}
+.st{font:800 11px var(--f-ui);padding:2px 9px;border-radius:10px;background:var(--accent-soft);color:var(--blue-d)}
 .results{display:flex;flex-direction:column;gap:6px;font-size:14px}
 .results .ok{color:var(--good)} .results .no{color:var(--bad)} .results .skip{color:var(--muted)}
 
@@ -246,40 +299,40 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 
 .mepage{flex:1;min-height:0;display:flex;flex-direction:column}
 .bar.sub{align-items:center;padding-bottom:8px}
-.bar.sub h2{flex:1;text-align:center;font:600 17px var(--f-ui);margin:0}
+.bar.sub h2{flex:1;text-align:center;font:900 18px var(--f-ui);margin:0}
 .back{width:40px;height:40px;margin-left:-8px;border:0;background:none;color:var(--accent);font:400 34px/1 var(--f-ui);cursor:pointer;display:grid;place-items:center;padding-bottom:4px}
 .back-spacer{width:32px}
 .group{display:flex;flex-direction:column;gap:6px}
 .grouplabel{padding-left:4px}
-.menu{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.menu{background:var(--card);border:2px solid var(--line);border-radius:18px;overflow:hidden}
 .mi{display:flex;align-items:center;gap:12px;width:100%;padding:14px;border:0;border-top:1px solid var(--line);background:none;text-align:left;cursor:pointer}
 .mi:first-child{border-top:0}
 .mi:active{background:var(--bg)}
-.mi .ic{width:32px;height:32px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.mi .ic{width:34px;height:34px;border-radius:11px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
 .mi .ic svg{width:19px;height:19px}
-.mi .t{flex:1;font:500 16px var(--f-ui)}
+.mi .t{flex:1;font:700 16px var(--f-ui)}
 .mi .v{font-size:14px;color:var(--muted)}
 .mi .v.on{color:var(--good)}
 .mi .chev{color:var(--muted);font-size:22px;line-height:1}
 
 /* ---- results ---- */
-.hlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
+.hlist{display:flex;flex-direction:column;border:2px solid var(--line);border-radius:18px;background:var(--card);overflow:hidden}
 .hi{display:flex;align-items:center;gap:10px;padding:13px 14px;border:0;border-top:1px solid var(--line);background:none;text-align:left;cursor:pointer;width:100%}
 .hi:first-child{border-top:0}
-.hi .when{flex:1;font:500 15px var(--f-ui)}
-.hi .res{font:400 14px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums;display:flex;gap:10px;align-items:baseline}
-.hi .res b{font:600 15px var(--f-mono);min-width:3.2em;text-align:right}
+.hi .when{flex:1;font:800 15px var(--f-ui)}
+.hi .res{font:800 14px var(--f-ui);color:var(--muted);font-variant-numeric:tabular-nums;display:flex;gap:10px;align-items:baseline}
+.hi .res b{font:900 16px var(--f-ui);min-width:3.2em;text-align:right}
 .hi .chev{color:var(--muted);font-size:20px}
-.score{font:700 44px/1 var(--f-mono);font-variant-numeric:tabular-nums}
+.score{font:900 46px/1 var(--f-ui);font-variant-numeric:tabular-nums}
 .score small{font-size:22px;color:var(--muted);font-weight:500}
 .splitbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line)}
 .splitbar .ok{background:var(--good)} .splitbar .no{background:var(--bad)}
-.rlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
+.rlist{display:flex;flex-direction:column;border:2px solid var(--line);border-radius:18px;background:var(--card);overflow:hidden}
 .ri{display:grid;grid-template-columns:24px 1fr;gap:4px 10px;padding:12px 14px;border:0;border-top:1px solid var(--line);background:none;text-align:left;cursor:pointer;width:100%}
 .ri:first-child{border-top:0}
 .ri .mk{font:700 16px var(--f-ui);grid-row:span 2}
 .ri .mk.ok{color:var(--good)} .ri .mk.no{color:var(--bad)}
-.ri .top{display:flex;justify-content:space-between;gap:8px;font:600 16px var(--f-word)}
+.ri .top{display:flex;justify-content:space-between;gap:8px;font:800 16px var(--f-ui)}
 .ri .top span{font:400 12px var(--f-mono);color:var(--muted);white-space:nowrap}
 .ri .sent{font:italic 400 14px/1.45 var(--f-word);color:var(--muted)}
 .ri .sent b{font-style:normal;color:var(--fg)}
@@ -327,9 +380,14 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 
   <!-- Test -->
   <section class="screen" id="s-test" hidden>
-    <div class="bar"><h1>Test</h1><button class="linkbtn quit" id="testQuit" type="button" hidden>Quit</button></div>
+    <div class="bar"><h1>Test</h1>
+      <div class="tbar" id="testBarR" hidden>
+        <span class="ttime" id="testTime" aria-label="Time">⏱ 0:00</span>
+        <button class="hintbtn" id="testHint" type="button" aria-pressed="false">💡 Hint</button>
+        <button class="linkbtn quit" id="testQuit" type="button">Quit</button>
+      </div></div>
     <div class="seg" role="tablist" id="testSeg">
-      <button role="tab" id="tseg-schedule" aria-selected="true" type="button">Schedule</button>
+      <button role="tab" id="tseg-schedule" aria-selected="true" type="button">Words</button>
       <button role="tab" id="tseg-story" aria-selected="false" type="button">Story</button>
     </div>
     <div class="scroll" id="testScroll"><div class="stack" id="testBody"></div></div>
@@ -374,7 +432,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.18.4</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.19.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -1114,6 +1172,7 @@ function show(name){
   if(name!==curTab) stopReading();
   setTabbarHidden(false);
   if(name!=='dict') listSel=null;
+  setTimeout(tmrSync,0);
   curTab=name;
   for(const t of TABS){$('tab-'+t).setAttribute('aria-selected',t===name);$('s-'+t).hidden=t!==name}
   if(name==='home') renderHome();
@@ -1135,58 +1194,102 @@ function streak(){
   while(log[fmt(d)]){n++;d.setDate(d.getDate()-1)}
   return n;
 }
+// The story to suggest next: newest untested, otherwise the lowest score below 100%
+function nextStory(){
+  const byNew=[...stories].sort((a,b)=>(b.created||0)-(a.created||0));
+  const untested=byNew.find(s=>!s.last);if(untested) return untested;
+  const low=byNew.filter(s=>s.last&&s.last.ok<s.last.total).sort((a,b)=>a.last.ok/a.last.total-b.last.ok/b.last.total)[0];
+  return low||null;
+}
 function renderHome(){
   const items=allItems();
   const due=items.filter(it=>isDue(it.d)).length;
   const doneToday=log[today()]?log[today()].ok+log[today()].no:0;
   let ok7=0,no7=0;const days=[];
   for(let i=6;i>=0;i--){const k=addDays(-i);const v=log[k]||{ok:0,no:0};ok7+=v.ok;no7+=v.no;days.push({k,v})}
-  const acc=ok7+no7?Math.round(ok7/(ok7+no7)*100)+'%':'–';
+  const acc=ok7+no7?Math.round(ok7/(ok7+no7)*100):null;
   const counts=[0,0,0,0,0,0];items.forEach(it=>counts[Math.min(it.d.stage,5)]++);
   const mastered=items.filter(it=>it.d.stage>=4).length;
   const max=Math.max(1,...days.map(x=>x.v.ok+x.v.no));
   const dn=['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const st=streak(),goal=doneToday+due,pct=goal?Math.round(doneToday/goal*100):0,done=due===0&&doneToday>0;
+  const name=(acct==='cloud'&&user&&user.name)?user.name.split(' ')[0]:'';
+  const h=new Date().getHours(),hello=h<12?'Good morning':h<18?'Good afternoon':'Good evening';
+  const msg=done?'Daily goal complete! 🎉':due===0?'Nothing due today. Practice or read a story!':doneToday?`Only ${due} more to finish today. You've got this!`:st?`${plural(due,'sentence')} waiting. Keep your ${st}-day streak alive!`:`${plural(due,'sentence')} waiting. Start a streak today!`;
+  const ns=nextStory(),tested=stories.filter(s=>s.last),perfect=tested.filter(s=>s.last.ok===s.last.total).length;
   $('homeBody').innerHTML=`
-    <div class="card hero">
-      <div class="label" style="color:inherit;opacity:.8">Today</div>
-      <div class="row" style="align-items:baseline;gap:10px"><span class="big">${due}</span><span class="sub">${due===1?'sentence':'sentences'} to review</span></div>
-      ${doneToday?`<div class="sub">${plural(doneToday,'answer')} given today</div>`:''}
-      <button class="btn block" id="homeStart" type="button">${due?'Start today\'s test':'Practice today\'s sentences'}</button>
+    <div class="hhead">
+      <div><div class="hi-name">${hello}${name?', '+esc(name):''}!</div><div class="hi-sub">${st?'You\'re on a roll.':'Let\'s learn some words.'}</div></div>
+      <span class="pill fire${st?'':' off'}" title="Day streak">🔥 ${st}</span>
+    </div>
+    <div class="card hero${done?' done':''}">
+      <div class="label">Today's goal</div>
+      <div class="msg-big">${msg}</div>
+      ${goal?`<div class="gbar"><i style="width:${Math.max(pct,4)}%"></i></div><div class="gnum">${doneToday} / ${goal} sentences · ${pct}%</div>`:''}
+      <button class="btn block" id="homeStart" type="button">${due?'Start words test':'Practice words'}</button>
+    </div>
+    <div class="duo">
+      <div class="tcard words">
+        <div class="ti">🔤</div><div class="tt">Words test</div>
+        <div class="tn" style="color:${due?'var(--orange)':'var(--good)'}">${due?due:'✓'}</div>
+        <div class="ts">${due?`${due===1?'sentence':'sentences'} to review`:doneToday?`All done · ${doneToday} answered today`:'Nothing due today'}</div>
+        <button class="btn blue" id="homeWords" type="button">${due?'Review':'Practice'}</button>
+      </div>
+      <div class="tcard story">
+        <div class="ti">📖</div><div class="tt">Story test</div>
+        <div class="tn" style="color:var(--purple-d)">${perfect}<small style="font-size:16px;color:var(--muted)"> / ${stories.length} ★</small></div>
+        <div class="ts">${!stories.length?'Make a story from your words':ns?(ns.last?'Try again: ':'Next: ')+esc(ns.title):'Every story is perfect!'}</div>
+        <button class="btn purple" id="homeStory" type="button">${!stories.length?'Make one':ns?'Start':'Stories'}</button>
+      </div>
     </div>
     <div class="stats">
-      <div class="stat"><b>${streak()}</b><span>Day streak</span></div>
-      <div class="stat"><b>${acc}</b><span>Accuracy, last 7 days</span></div>
-      <div class="stat"><b>${cards.length}</b><span>Words</span></div>
-      <div class="stat"><b>${items.length}</b><span>Example sentences</span></div>
+      <div class="stat c-orange"><span class="si-ic">🔥</span><div><b>${st}</b><span>Day streak</span></div></div>
+      <div class="stat ${acc===null?'':acc>=80?'c-green':acc>=50?'c-gold':'c-red'}"><span class="si-ic">🎯</span><div><b>${acc===null?'–':acc+'%'}</b><span>Accuracy · 7 days</span></div></div>
+      <div class="stat c-blue"><span class="si-ic">📚</span><div><b>${cards.length}</b><span>Words · ${items.length} sentences</span></div></div>
+      <div class="stat c-gold"><span class="si-ic">👑</span><div><b>${mastered}</b><span>Mastered (30+ days)</span></div></div>
     </div>
     <div class="card">
-      <div class="row" style="justify-content:space-between"><span class="label">Review stages</span><span class="note">${plural(mastered,'sentence')} at 30+ days</span></div>
-      <div class="boxes">${['New','3d','7d','14d','30d','60d'].map((n,i)=>`<div class="box"><b>${counts[i]}</b><span>${n}</span></div>`).join('')}</div>
+      <div class="row" style="justify-content:space-between"><span class="label">Review stages</span><span class="note">sentences per stage</span></div>
+      <div class="boxes">${['New','3d','7d','14d','30d','60d'].map((n,i)=>`<div class="box s${i}"><b>${counts[i]}</b><span>${n}</span></div>`).join('')}</div>
     </div>
     <div class="card">
       <div class="row" style="justify-content:space-between"><span class="label">Last 7 days</span>
-        <span class="legend"><span><i style="background:var(--good)"></i>Correct</span><span><i style="background:var(--bad)"></i>Missed</span></span></div>
-      <div class="week">${days.map(({k,v})=>{const t=v.ok+v.no;const h=t/max*90;const [y,m,d]=k.split('-').map(Number);const wd=dn[new Date(y,m-1,d).getDay()];
-        return `<div class="wk${k===today()?' today':''}"><small>${t||''}</small><div class="col" style="height:${Math.max(h,3)}px">${t?`<div class="ok" style="height:${v.ok/t*100}%"></div><div class="no" style="height:${v.no/t*100}%"></div>`:''}</div><small>${wd}</small></div>`}).join('')}</div>
+        <span class="legend"><span><i style="background:var(--green)"></i>Correct</span><span><i style="background:var(--red)"></i>Missed</span></span></div>
+      <div class="week">${days.map(({k,v})=>{const t=v.ok+v.no;const hh=t/max*95;const [y,m,d]=k.split('-').map(Number);const wd=dn[new Date(y,m-1,d).getDay()];
+        return `<div class="wk${k===today()?' today':''}"><small>${t||''}</small><div class="col" style="height:${Math.max(hh,4)}px">${t?`<div class="ok" style="height:${v.ok/t*100}%"></div><div class="no" style="height:${v.no/t*100}%"></div>`:''}</div><small>${wd}</small></div>`}).join('')}</div>
     </div>`;
-  $('homeStart').onclick=()=>{show('test');startTest()};
+  const goWords=()=>{show('test');testPane='schedule';renderTestTab();startTest()};
+  $('homeStart').onclick=goWords;$('homeWords').onclick=goWords;
+  $('homeStory').onclick=()=>{
+    if(!stories.length){show('dict');dictPane='story';storyView=null;renderDict();openStoryForm();return}
+    show('test');testPane='story';renderTestTab();
+    if(ns) startStoryTest(ns.id);
+  };
 }
 
 // ---------- test ----------
 // Practice rule: a sentence already answered today (and not due) is practice and keeps its schedule.
-let queue=[],cur=null,answered=false,score={ok:0,no:0},total=0,hint={used:0},inTest=false,results=[];
+let queue=[],cur=null,answered=false,score={ok:0,no:0},total=0,hint={used:0},inTest=false,results=[],testStartedAt='';
 const testActive=()=>inTest;
 function fmtWhen(iso){
   const d=new Date(iso);
   return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
 function shortDate(ymd){const [y,m,d]=String(ymd).split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
-const pctColor=p=>p>=80?'var(--good)':p>=50?'var(--accent)':'var(--bad)';
+const pctColor=p=>p>=80?'var(--good)':p>=50?'var(--orange)':'var(--bad)';
+function agoOrTime(iso){
+  const d=new Date(iso),min=Math.floor((Date.now()-d)/60000);
+  if(min<1) return 'Just now';
+  if(min<60) return min+' min ago';
+  const p=n=>String(n).padStart(2,'0');
+  return p(d.getMonth()+1)+'.'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+const durText=secs=>secs==null?'':secs<60?'<1 min':Math.round(secs/60)+' min';
 function historyHTML(){
   if(!history.length) return `<div class="label" style="padding-left:4px">History</div><div class="card empty">No tests yet. Your results will appear here.</div>`;
   return `<div class="label" style="padding-left:4px">History</div>
     <div class="hlist">${history.slice(0,30).map((h,i)=>{const p=h.total?Math.round(h.ok/h.total*100):0;
-      return `<button class="hi" type="button" data-hist="${i}"><span class="when">${esc(fmtWhen(h.at))}</span><span class="res">${h.ok} / ${h.total}<b style="color:${pctColor(p)}">${p}%</b></span><span class="chev">›</span></button>`}).join('')}</div>`;
+      return `<button class="hi" type="button" data-hist="${i}"><span class="when">${esc(agoOrTime(h.at))}${h.quit?'<span class="stop">Stopped</span>':''}<span class="meta">${h.secs!=null?'⏱ '+durText(h.secs)+' · ':''}${h.quit&&h.planned?`${h.total} of ${h.planned} answered`:plural(h.total,'question')}</span></span><span class="res">${h.ok} / ${h.total}<b style="color:${pctColor(p)}">${p}%</b></span><span class="chev">›</span></button>`}).join('')}</div>`;
 }
 function testHome(){
   inTest=false;
@@ -1197,12 +1300,12 @@ function testHome(){
     $('testBody').innerHTML=`<div class="card empty"><div style="font:600 18px var(--f-ui);color:var(--fg)">All done for today</div>${next?`<div class="note">Next review: ${dueLabel(next).toLowerCase()}</div>`:'<div class="note">Add words in the Words tab to start.</div>'}</div>${historyHTML()}`;
     return;
   }
-  $('testBody').innerHTML=`<div class="card">
+  $('testBody').innerHTML=`<div class="card thome">
     <div class="stats">
-      <div class="stat"><b>${pending}</b><span>To review</span></div>
-      <div class="stat"><b>${set.length-pending}</b><span>Done today</span></div>
+      <div class="stat ${pending?'c-orange':'c-green'}"><span class="si-ic">${pending?'⏳':'✅'}</span><div><b>${pending}</b><span>To review</span></div></div>
+      <div class="stat c-green"><span class="si-ic">🏁</span><div><b>${set.length-pending}</b><span>Done today</span></div></div>
     </div>
-    <p class="note">Each question is an example sentence with a blank. A word with three sentences comes up three times. Sentences you already answered today count as practice and keep their schedule.</p>
+    <p class="note" style="font-size:13px">Fill the blank in each example sentence. ${pending?'If you stop halfway, your answers are saved and the next test picks up the rest.':'Everything due is done. Practicing again won&rsquo;t change the schedule.'}</p>
     <button class="btn block" id="startBtn" type="button">${pending?'Start test':'Practice again'}</button>
   </div>${historyHTML()}`;
   $('startBtn').onclick=startTest;
@@ -1211,15 +1314,44 @@ $('testBody').addEventListener('click',e=>{
   const h=e.target.closest('[data-hist]');
   if(h) renderResult(history[+h.dataset.hist],false);
 });
-// ---------- test tab: Schedule / Story ----------
+// ---------- test tab: Words / Story ----------
 let testPane='schedule';
-// Quit sits in the header while a test is running
-function setQuit(fn){const q=$('testQuit');q.hidden=!fn;q.onclick=fn||null;document.body.classList.toggle('intest',!!fn)}   // no tab bar during a test
+// Timer, Hint and Quit sit in the fixed header while a test runs; no tab bar during a test
+function setQuit(fn,hintFn){
+  $('testBarR').hidden=!fn;$('testQuit').onclick=fn||null;
+  $('testHint').hidden=!hintFn;$('testHint').onclick=hintFn||null;$('testHint').disabled=false;
+  document.body.classList.toggle('intest',!!fn);
+}
+// Test timer: runs only while a test is on screen (stops on another tab, another app, or a locked phone)
+const tmr={ms:0,since:0,on:false};
+const tmrShould=()=>tmr.on&&curTab==='test'&&document.visibilityState==='visible';
+function tmrSync(){
+  const now=Date.now();
+  if(tmrShould()){if(!tmr.since) tmr.since=now}
+  else if(tmr.since){tmr.ms+=now-tmr.since;tmr.since=0}
+  const secs=tmrSecs(),el=$('testTime');
+  if(el){el.textContent='⏱ '+Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0');el.classList.toggle('paused',tmr.on&&!tmr.since)}
+}
+const tmrSecs=()=>Math.floor((tmr.ms+(tmr.since?Date.now()-tmr.since:0))/1000);
+function tmrStart(){tmr.ms=0;tmr.since=0;tmr.on=true;tmrSync()}
+function tmrStop(){tmrSync();const s=tmrSecs();tmr.on=false;tmr.since=0;return s}
+setInterval(tmrSync,500);
+document.addEventListener('visibilitychange',tmrSync);
+window.addEventListener('pagehide',tmrSync);
+// Ask before quitting
+function confirmQuit(text,onQuit){
+  openSheet('Quit this test?',`<div class="card qconfirm"><p>${text}</p>
+    <button class="btn block" id="qKeep" type="button">Keep going</button>
+    <button class="btn danger block" id="qQuit" type="button">Quit</button></div>`);
+  $('qKeep').onclick=closeSheet;
+  $('qQuit').onclick=()=>{closeSheet();onQuit()};
+}
 function renderTestTab(){
   $('tseg-schedule').setAttribute('aria-selected',testPane==='schedule');$('tseg-story').setAttribute('aria-selected',testPane==='story');
   $('testScroll').hidden=testPane!=='schedule';$('storyTestScroll').hidden=testPane!=='story';
-  if(testPane==='schedule'){$('testSeg').hidden=inTest;setQuit(inTest?quitTest:null);if(!inTest) testHome()}
-  else{$('testSeg').hidden=!!storyRun;setQuit(storyRun&&!storyRun.done?storyTestList:null);if(!storyRun) storyTestList()}
+  if(testPane==='schedule'){$('testSeg').hidden=inTest;setQuit(inTest?askQuitTest:null,inTest?useHint:null);if(!inTest) testHome()}
+  else{$('testSeg').hidden=!!storyRun;setQuit(storyRun&&!storyRun.done?askQuitStory:null,storyRun&&!storyRun.done?toggleStoryHint:null);if(!storyRun) storyTestList()}
+  tmrSync();
 }
 $('tseg-schedule').onclick=()=>{testPane='schedule';renderTestTab()};
 $('tseg-story').onclick=()=>{testPane='story';renderTestTab()};
@@ -1251,11 +1383,35 @@ function storyHTML(s,fn,afterPara,tapWords){
 }
 const storyParas=s=>s.text.split(/\n\s*\n/).map(p=>p.replace(/\s+/g,' ').trim());
 const fmtDay=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-function storyRow(s,extra){
-  return `<button class="si" type="button" data-story="${esc(s.id)}">
-    <span class="t">${esc(s.title)}<span>${esc(fmtDay(s.created))}</span></span>
-    <span class="ws">${s.words.slice(0,5).map(w=>`<i>${esc(w)}</i>`).join('')}${s.words.length>5?`<i style="background:none;color:var(--muted)">+${s.words.length-5}</i>`:''}</span>
-    ${extra||''}</button>`;
+// Score grade: perfect (100%), good (70%+), low (under 70%), or not tested yet
+function storyGrade(s){
+  if(!s.last||!s.last.total) return {g:'new',icon:'✦',pct:null};
+  const pct=Math.round(s.last.ok/s.last.total*100);
+  return pct===100?{g:'perfect',icon:'👑',pct}:pct>=70?{g:'good',icon:'✓',pct}:{g:'low',icon:'↻',pct};
+}
+const storiesNewest=()=>[...stories].sort((a,b)=>(b.created||0)-(a.created||0));
+const dayLabel=iso=>{const d=new Date(iso),n=diffDays(fmt(d));return n===0?'today':n===-1?'yesterday':d.toLocaleDateString('en-US',{month:'short',day:'numeric'})};
+function storyRow(s){
+  const g=storyGrade(s);
+  return `<button class="si g-${g.g}" type="button" data-story="${esc(s.id)}">
+    <span class="sic" aria-hidden="true">${g.icon}</span>
+    <span class="t">${esc(s.title)}</span>
+    ${g.pct!==null?`<span class="sc">${g.pct}%</span>`:`<span class="sc" style="color:var(--muted)">New</span>`}
+    <span class="ws">${s.words.slice(0,5).map(w=>`<i>${esc(w)}</i>`).join('')}${s.words.length>5?`<i style="border-color:transparent;background:none;color:var(--muted)">+${s.words.length-5}</i>`:''}</span>
+    <span class="meta">${s.last?`Tested <b>${esc(dayLabel(s.last.at))}</b> · ${s.last.ok}/${s.last.total} correct${s.tries>1?` · ${s.tries} tries`:''}`:'Not tested yet'} · made ${esc(dayLabel(s.created))}</span>
+  </button>`;
+}
+function storyStatsHTML(){
+  const tested=stories.filter(s=>s.last&&s.last.total);
+  const perfect=tested.filter(s=>s.last.ok===s.last.total).length;
+  const avg=tested.length?Math.round(tested.reduce((a,s)=>a+s.last.ok/s.last.total,0)/tested.length*100):null;
+  return `<div class="sstats">
+    <div><b style="color:var(--blue-d)">${stories.length}</b><span>Stories</span></div>
+    <div><b style="color:var(--purple-d)">${tested.length}</b><span>Tested</span></div>
+    <div><b style="color:var(--gold-d)">${perfect}</b><span>Perfect 👑</span></div>
+    <div><b style="color:${avg===null?'var(--muted)':pctColor(avg)}">${avg===null?'–':avg+'%'}</b><span>Avg score</span></div>
+  </div>
+  <div class="slegend"><i>👑 100%</i><i style="color:var(--good)">✓ 70%+</i><i style="color:var(--orange-d)">↻ under 70%</i><i>✦ not tested</i></div>`;
 }
 
 // ---------- story test ----------
@@ -1264,41 +1420,48 @@ function storyTestList(){
   storyRun=null;$('testSeg').hidden=false;setQuit(null);
   const b=$('storyTestBody');
   if(!stories.length){b.innerHTML=`<div class="card empty">No stories yet. Add one in the Words tab → Story, then test yourself here.</div>`;return}
-  b.innerHTML=`<p class="note" style="padding:0 4px">Pick a story. Its study words become blanks to fill in.</p>
-    <div class="slist">${stories.map(s=>storyRow(s,`<span class="last">${s.last?`Last: ${s.last.ok} / ${s.last.total} · ${Math.round(s.last.ok/s.last.total*100)}% · ${esc(shortDate(fmt(new Date(s.last.at))))}`:'Not tested yet'}</span>`)).join('')}</div>`;
+  b.innerHTML=`${storyStatsHTML()}
+    <p class="note" style="padding:0 4px;font-size:13px">Pick a story. Its study words become blanks to fill in.</p>
+    <div class="slist">${storiesNewest().map(s=>storyRow(s)).join('')}</div>`;
 }
 $('storyTestBody').addEventListener('click',e=>{const r=e.target.closest('[data-story]');if(r&&!storyRun) startStoryTest(r.dataset.story)});
 function startStoryTest(id){
   const s=storyById(id);if(!s) return;
   const ms=storyMatches(s);
   if(!ms.length){$('storyTestBody').innerHTML=`<button class="linkbtn inlineback" id="stBack" type="button">‹ Stories</button><div class="card empty">None of this story's study words appear in its text.</div>`;$('stBack').onclick=storyTestList;return}
-  testPane='story';storyRun={id,ms};$('testSeg').hidden=true;setQuit(storyTestList);
+  testPane='story';storyRun={id,ms};$('testSeg').hidden=true;setQuit(askQuitStory,toggleStoryHint);tmrStart();
   const hintWords=[...new Set(ms.map(m=>m.w))].sort();   // alphabetical, so the order gives nothing away
   $('storyTestBody').innerHTML=`
-    <div class="row" style="justify-content:space-between"><span class="label">${plural(ms.length,'blank')}</span>
-      <button class="hintbtn" id="stHint" type="button" aria-pressed="false">Hint</button></div>
+    <span class="label">${plural(ms.length,'blank')} · 💡 Hint shows the words</span>
     <div class="card" id="stHintBox" hidden><span class="label">Words in this story</span><div class="syn">${hintWords.map(w=>`<span class="chip">${esc(w)}</span>`).join('')}</div></div>
     <h2 class="stitle">${esc(s.title)}</h2>
     <p class="note">Tap a blank and type the word. Enter moves to the next blank.</p>
     <div class="card"><div class="storytext" id="stText">${storyHTML(s,(m,k)=>gapHTML('sg'+k,m.form.length,'sm'))}</div></div>
     <button class="btn block" id="stCheck" type="button">Check</button>`;
   ms.forEach((m,k)=>setupGap('sg'+k,m.form.length,()=>{const n=$('sg'+(k+1));if(n) n.focus();else $('stCheck').focus()}));
-  $('stHint').onclick=()=>{const on=$('stHint').getAttribute('aria-pressed')!=='true';$('stHint').setAttribute('aria-pressed',on);$('stHintBox').hidden=!on};
+  $('testHint').setAttribute('aria-pressed','false');$('testHint').textContent='💡 Hint';
   $('stCheck').onclick=checkStoryTest;
   $('storyTestScroll').scrollTop=0;
   $('sg0').focus({preventScroll:true});
 }
+function toggleStoryHint(){
+  const b=$('testHint'),box=$('stHintBox');if(!box) return;
+  const on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',on);box.hidden=!on;
+  if(on) $('storyTestScroll').scrollTo({top:0,behavior:'smooth'});
+}
+function askQuitStory(){confirmQuit('Your answers in this story won\'t be checked or saved.',()=>{tmrStop();storyTestList()})}
 function checkStoryTest(){
   const s=storyById(storyRun.id),ms=storyRun.ms;
+  const secs=tmrStop();
   const res=ms.map((m,k)=>{const v=gapValue('sg'+k);return{m,v,ok:!!v&&(v===m.form.toLowerCase()||v===m.w.toLowerCase())}});
   const ok=res.filter(r=>r.ok).length,total=res.length,pct=Math.round(ok/total*100);
-  s.last={ok,total,at:new Date().toISOString()};save();
+  s.last={ok,total,at:new Date().toISOString(),secs};s.tries=(s.tries||0)+1;save();
   storyRun.done=true;setQuit(null);
   if(ok===total) chime();
   const misses=res.filter(r=>!r.ok);
   $('storyTestBody').innerHTML=`
     <div class="card">
-      <span class="label">${esc(s.title)}</span>
+      <span class="label">${esc(s.title)} · ⏱ ${durText(secs)}</span>
       <div class="row" style="justify-content:space-between;align-items:flex-end">
         <span class="score">${ok}<small> / ${total} correct</small></span>
         <span style="font:600 22px var(--f-mono);color:${pctColor(pct)}">${pct}%</span>
@@ -1327,10 +1490,11 @@ function spread(list){
   return list;
 }
 function startTest(){
-  const set=todayItems();
+  const all=todayItems(),dueNow=all.filter(it=>isDue(it.d));
+  const set=dueNow.length?dueNow:all;   // remaining due sentences; practice only when nothing is due
   if(!set.length){testHome();return}
-  queue=spread(set.slice());total=queue.length;score={ok:0,no:0};results=[];inTest=true;
-  $('testSeg').hidden=true;setQuit(quitTest);
+  queue=spread(set.slice());total=queue.length;score={ok:0,no:0};results=[];inTest=true;testStartedAt=new Date().toISOString();
+  $('testSeg').hidden=true;setQuit(askQuitTest,useHint);tmrStart();
   next();
 }
 // ---------- letter-slot blank ----------
@@ -1388,12 +1552,25 @@ function useHint(){
   setGapPrefix('ansIn',curForm.slice(0,k));
   $('ansIn').focus();
   const left=3-hint.used;
-  $('hintBtn').textContent=left?`Hint (${left} left)`:'No hints left';
-  $('hintBtn').disabled=!left||k>=n-1;
+  $('testHint').textContent=left?`💡 Hint ${left}`:'💡 0';
+  $('testHint').disabled=!left||k>=n-1;
+}
+function askQuitTest(){
+  const n=results.length;
+  confirmQuit(n?`You answered ${n} of ${total}. Those answers are saved to your history, and the next test starts with the sentences you haven't done yet.`:`You haven't answered anything yet, so nothing will be saved.`,quitTest);
 }
 function quitTest(){
+  const secs=tmrStop();
+  if(results.length) saveHistory(secs,true);
   inTest=false;queue=[];cur=null;
   renderTestTab();
+}
+function saveHistory(secs,quit){
+  const h={at:testStartedAt||new Date().toISOString(),secs,total:results.length,planned:total,ok:score.ok,quit:!!quit,items:results.map(r=>({
+    w:r.c.word,form:r.form,ok:r.ok,prac:r.prac,typed:r.typed||'',s:r.noEx?r.d.d:r.d.ex,noEx:r.noEx,due:r.d.due}))};
+  history.unshift(h);if(history.length>60) history.length=60;
+  save();
+  return h;
 }
 function next(){
   cur=queue.shift();answered=false;hint={used:0};
@@ -1421,12 +1598,12 @@ function next(){
     </div>
     <div id="askArea" class="stack" style="gap:8px">
       <button class="btn block" id="checkBtn" type="button">Check</button>
-      <div class="split"><button class="btn ghost" id="hintBtn" type="button">Hint (3 left)</button><button class="btn ghost" id="idk" type="button">I don't know</button></div>
+      <button class="btn ghost block" id="idk" type="button">I don't know</button>
     </div>`;
   const check=()=>{if(gapTyped('ansIn')||gaps.ansIn.prefix) grade(gapValue('ansIn'));else $('ansIn').focus()};
   setupGap('ansIn',curForm.length,check);
   $('checkBtn').onclick=check;
-  $('hintBtn').onclick=useHint;
+  $('testHint').textContent='💡 Hint 3';$('testHint').disabled=curForm.length<2;
   $('idk').onclick=()=>grade(null);
   $('testScroll').scrollTop=0;
   $('ansIn').focus({preventScroll:true});
@@ -1457,6 +1634,7 @@ function grade(ans){
   const after=$('afterArea');after.hidden=false;
   after.innerHTML=`<div class="verdict ${ok?'ok':'no'}">${ok?'Correct':(a?`<s>${esc(a)}</s>Not quite`:'Answer shown')} · <span style="font-weight:400">${when}</span></div>`;
   $('askArea').innerHTML=`<button class="btn block" id="nextBtn" type="button">${queue.length?'Next':'See results'}</button>`;
+  $('testHint').disabled=true;
   $('nextBtn').onclick=next;
   flash(ok);
   const w=cur.c.word,au=cur.c.audio,say=curSay;
@@ -1465,12 +1643,9 @@ function grade(ans){
   $('nextBtn').focus({preventScroll:true});
 }
 function finish(){
+  const secs=tmrStop();
   inTest=false;$('testSeg').hidden=false;setQuit(null);
-  const h={at:new Date().toISOString(),total,ok:score.ok,items:results.map(r=>({
-    w:r.c.word,form:r.form,ok:r.ok,prac:r.prac,typed:r.typed||'',s:r.noEx?r.d.d:r.d.ex,noEx:r.noEx,due:r.d.due}))};
-  history.unshift(h);if(history.length>60) history.length=60;
-  save();
-  renderResult(h,true);
+  renderResult(saveHistory(secs,false),true);
 }
 // Results page. fresh = just finished (offers Retake); otherwise opened from History (offers Back).
 function renderResult(h,fresh){
@@ -1482,7 +1657,7 @@ function renderResult(h,fresh){
   $('testBody').innerHTML=`
     ${fresh?'':`<button class="linkbtn" id="resBack" type="button" style="align-self:flex-start">‹ Back</button>`}
     <div class="card">
-      <span class="label">${fresh?'Test complete':esc(fmtWhen(h.at))}</span>
+      <span class="label">${fresh?'Test complete':esc(fmtWhen(h.at))}${h.quit?' · stopped':''}${h.secs!=null?' · ⏱ '+durText(h.secs):''}</span>
       <div class="row" style="justify-content:space-between;align-items:flex-end">
         <span class="score">${h.ok}<small> / ${h.total} correct</small></span>
         <span style="font:600 22px var(--f-mono);color:${pctColor(pct)}">${pct}%</span>
@@ -1575,7 +1750,7 @@ function renderStories(){
   if(storyView&&storyById(storyView)){renderStoryView(storyById(storyView));return}
   storyView=null;
   b.innerHTML=`<div class="listhead"><span class="label">${plural(stories.length,'story','stories')}</span><button class="plus" id="storyAdd" type="button" aria-label="Add a story">+</button></div>
-    ${stories.length?`<div class="slist">${stories.map(s=>storyRow(s)).join('')}</div>`
+    ${stories.length?`${storyStatsHTML()}<div class="slist">${storiesNewest().map(s=>storyRow(s)).join('')}</div>`
       :`<div class="card empty">No stories yet. Tap + to add an English story and the words you want to learn from it.</div>`}`;
   $('storyAdd').onclick=openStoryForm;
 }
