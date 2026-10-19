@@ -298,6 +298,11 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .photobox .prow{display:flex;gap:8px;align-items:stretch}
 .photobox .seg{margin:0;flex:none}
 .photobox .seg button{padding:7px 12px;white-space:nowrap}
+.photobox .plev{align-items:center;flex-wrap:wrap;gap:6px 14px}
+.photobox .lvl{display:flex;align-items:center;gap:8px;font:700 13px var(--f-ui);color:var(--muted)}
+.photobox .lvl select{font:700 14px var(--f-ui);color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:10px;padding:6px 8px}
+.photobox .keep{display:flex;align-items:center;gap:6px;font:700 13px var(--f-ui);color:var(--muted)}
+.photobox .keep input{width:18px;height:18px;accent-color:var(--accent);margin:0}
 .photobox .prow .btn{flex:1;min-width:0;padding-left:8px;padding-right:8px;white-space:nowrap}
 #stHint{font-size:15px;resize:vertical;min-height:52px}
 .aibtn{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0 10px}
@@ -460,7 +465,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.26.2</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.27.0</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -2195,6 +2200,8 @@ function openBulk(){
       <div class="label" id="photoLbl">Photo of a word list</div>
       <div class="prow"><div class="seg" role="radiogroup" aria-label="Definitions in"><button type="button" data-dl="en">EN–EN</button><button type="button" data-dl="ko">EN–KO</button></div>
         <button class="btn blue" id="photoBtn" type="button">📷 Photo</button></div>
+      <div class="prow plev"><label class="lvl"><span>Example level</span><select id="photoLvl">${PHOTO_LEVELS.map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select></label>
+        <label class="keep"><input type="checkbox" id="photoKeep"> <span>Keep photo examples</span></label></div>
       <input type="file" id="photoIn" accept="image/*" multiple hidden>
       <p class="note" id="photoNote"></p>
       <div class="msg" id="photoMsg"></div>
@@ -2223,11 +2230,21 @@ function openBulk(){
 }
 // ---- Photo of a word list → JSON (the AI picked in Me → Settings → AI reads the image) ----
 let photoLang=lsGet('wm.photoLang')||(LANG==='ko'?'ko':'en');
+const PHOTO_LEVELS=[['very-easy','Very easy'],['easy','Easy'],['medium','Medium'],['intermediate','Intermediate'],['high','High']];
+const PHOTO_LEVEL_TEXT={
+  'very-easy':'VERY EASY: about 5–9 words, only the most common everyday words (around A1), present or simple past tense, one simple clause — a young beginner must understand it.',
+  'easy':'EASY: about 7–12 words, common everyday words (A2, middle-school level), simple grammar, at most one short extra clause.',
+  'medium':'MEDIUM: about 10–16 words, everyday topics, common vocabulary (B1, high-school level), ordinary grammar.',
+  'intermediate':'INTERMEDIATE: about 12–20 words, wider vocabulary (B2), natural use of clauses and connectors.',
+  'high':'HIGH: about 15–28 words, advanced vocabulary and complex sentences (C1, college / test-prep level such as TOEFL, SAT, GRE).'};
+let photoLvl=lsGet('wm.photoLvl')||'easy',photoKeep=lsGet('wm.photoKeep')!=='0';
 function setupPhoto(){
   const paint=()=>{document.querySelectorAll('#bulkPhoto [data-dl]').forEach(b=>{const on=b.dataset.dl===photoLang;b.setAttribute('aria-selected',on);b.setAttribute('aria-checked',on);b.setAttribute('role','radio')});
-    $('photoNote').textContent=photoLang==='ko'?'Definitions in Korean. Whatever the photo shows (meanings, examples, similar words) is used; only missing parts are written by the AI.':'Definitions in English. Whatever the photo shows (meanings, examples, similar words) is used; only missing parts are written by the AI.'};
+    $('photoNote').textContent=photoLang==='ko'?'Definitions in Korean. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'Definitions in English. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.'};
   document.querySelectorAll('#bulkPhoto [data-dl]').forEach(b=>b.onclick=()=>{photoLang=b.dataset.dl;lsSet('wm.photoLang',photoLang);paint()});
   paint();
+  $('photoLvl').value=photoLvl;$('photoLvl').onchange=()=>{photoLvl=$('photoLvl').value;lsSet('wm.photoLvl',photoLvl)};
+  $('photoKeep').checked=photoKeep;$('photoKeep').onchange=()=>{photoKeep=$('photoKeep').checked;lsSet('wm.photoKeep',photoKeep?'1':'0')};
   $('photoLbl').textContent=aiKey()?`Photo of a word list · ${AI[aiProv()].name}`:'Photo of a word list';
   $('photoBtn').onclick=()=>{
     const m=$('photoMsg');m.className='msg';m.textContent='';
@@ -2249,20 +2266,37 @@ function photoData(file){
     img.src=url;
   });
 }
-function photoPrompt(lang){
+function photoPrompt(lang,lvl,keep){
+  const ko=lang==='ko';
   return `You read photos of English vocabulary lists (textbook or workbook pages, flashcards, printed or handwritten word lists) and turn them into JSON for a vocabulary app.
 Return ONLY a JSON object, no other text:
-{"words":[{"word":"...","pos":"...","pairs":[{"example":"...","definition":"..."}],"similar":["...","..."]}]}
-Rules:
-- Include every English headword or expression you can read in the photo(s), in the order shown. Lowercase unless it is a proper noun. Keep multi-word expressions as one item. Skip page numbers, headings and instructions.
-- Use what the photo gives: if it shows a definition/meaning, example sentence, part of speech or similar words/synonyms for a word, use them (fix only obvious reading errors).
-- Fill in only what is missing: no example sentence → write one natural, fairly simple English sentence that uses the word (any form) in that meaning; no definition → write one; no similar words → give 2-4 common ones; no part of speech → give it (noun, verb, adjective, adverb, phrase, ...).
-- ${lang==='ko'
-  ?'Definitions must be in KOREAN: short, natural Korean meanings like a Korean-English learner\'s dictionary (e.g. "꼼꼼한, 세심한"). If the photo gives an English definition, translate it into Korean.'
-  :'Definitions must be in ENGLISH: simple learner\'s-dictionary English. If the photo gives a Korean (or other language) meaning, turn it into a simple English definition.'}
-- Example sentences and similar words are always in English.
-- One pair per meaning; if the photo shows several meanings of a word, make up to 3 pairs, each with its own example.
-- If no English words can be read, return {"words":[]}.`;
+{"words":[{"word":"...","pos":"...","pairs":[{"definition":"...","example":"...","exampleKo":"..."}],"similar":["...","..."]}]}
+
+WHICH WORDS
+- Every numbered or highlighted English headword on the page(s), in the order shown. Lowercase unless it is a proper noun. Keep multi-word expressions as one item.
+- Related forms printed under a headword with their own meaning (e.g. "n. dissension 불화, 불일치") become their own items right after that headword.
+- Ignore page numbers, unit titles, test-name tags (수능, 토플, SAT, GRE…), and faint mirrored text showing through from the other side of the page.
+
+DEFINITIONS — COPY FROM THE PHOTO (most important rule)
+- The printed meaning is the source of truth. Do NOT write your own definition when the photo prints one, and do not rephrase, shorten or "improve" it.
+- ${ko
+  ?`Definitions must be KOREAN. If the photo prints a Korean meaning (e.g. "회의를 연기하다, 휴회하다"), copy that Korean text EXACTLY as printed, character for character. Only when a meaning has no Korean text in the photo, translate the photo's English meaning into a short natural Korean meaning. Only when the photo has no meaning at all, write a short Korean meaning yourself.`
+  :`Definitions must be ENGLISH. If the photo prints an English meaning (e.g. "suspend the business of a meeting; recess"), copy that English text EXACTLY as printed. Only when a meaning has no English text in the photo, turn the photo's Korean meaning into a simple English definition. Only when the photo has no meaning at all, write a simple learner's-dictionary definition yourself.`}
+- Numbered meanings (1., 2., …) are separate pairs, in order. Keep each pair's definition and example matched by their numbers (meaning 1 ↔ example 1).
+- "pos": the printed part of speech (v. → verb, n. → noun, adj. → adjective, adv. → adverb); give it yourself only if none is printed.
+
+SIMILAR WORDS
+- English synonyms printed next to the meaning (e.g. "shrewd; wise; perspicacious") go into "similar", copied as printed${ko?'':' (they may also be part of the copied English definition)'}. If none are printed, give 2–4 common ones. Always English.
+
+EXAMPLES
+- ${keep
+  ?`If the photo prints an example sentence for that meaning, copy it EXACTLY (fix only obvious reading errors). If none is printed, write one new example at the level below.`
+  :`Write a NEW example sentence for every pair at the level below, even if the photo prints one (you may use the photo's sentence as a guide to the meaning).`}
+- Every example is English and must contain the headword (any form: adjourned, demolishing…) used in that meaning.
+- Level for examples you write: ${PHOTO_LEVEL_TEXT[lvl]||PHOTO_LEVEL_TEXT.easy}
+- "exampleKo": if the photo prints a Korean translation of an example you copied (often listed at the bottom of the page by item number), copy it exactly; otherwise "".
+
+If no English words can be read, return {"words":[]}.`;
 }
 async function photoToJson(files){
   const m=$('photoMsg'),btn=$('photoBtn');
@@ -2271,13 +2305,13 @@ async function photoToJson(files){
   btn.disabled=true;
   try{
     const imgs=await Promise.all(files.map(photoData));
-    const txt=await aiVision(photoPrompt(photoLang),imgs);
+    const txt=await aiVision(photoPrompt(photoLang,photoLvl,photoKeep),imgs);
     let data;try{const t=txt.replace(/^[\s\S]*?```(?:json)?\s*|\s*```[\s\S]*$/g,'');data=JSON.parse(t.slice(t.search(/[\[{]/)))}catch(_){throw new Error(`${ai} sent back something unexpected. Try again.`)}
     if(data&&!Array.isArray(data)) data=data.words||data.items||[data];
     const items=(data||[]).map(o=>{
       if(!o||typeof o!=='object') return null;
       const word=String(o.word||'').trim();if(!word) return null;
-      const pairs=(Array.isArray(o.pairs)?o.pairs:[]).map(p=>({example:String(p&&p.example||'').trim(),definition:String(p&&p.definition||'').trim()})).filter(p=>p.example||p.definition);
+      const pairs=(Array.isArray(o.pairs)?o.pairs:[]).map(p=>{const q={example:String(p&&p.example||'').trim(),definition:String(p&&p.definition||'').trim()};const k=String(p&&p.exampleKo||'').trim();if(k&&q.example) q.exampleKo=k;return q}).filter(p=>p.example||p.definition);
       return{word,pos:String(o.pos||'').trim(),pairs,similar:(Array.isArray(o.similar)?o.similar:[]).map(String).filter(Boolean).slice(0,6)};
     }).filter(o=>o&&o.pairs.length);
     if(!items.length){m.className='msg err';m.textContent='No words could be read from the photo. Try a clearer, closer photo.';return}
@@ -2325,7 +2359,10 @@ function jsonToCard(o){
   if(!word) throw new Error('An item has no "word"');
   const pos=String(o.pos||o.partOfSpeech||o.type||'').trim();
   const raw=o.pairs||o.examples||o.senses||o.meanings||[];
-  const defs=(Array.isArray(raw)?raw:[]).map(p=>Array.isArray(p)?newDef(p[1],p[0]):newDef(p.definition||p.def||p.meaning||'',p.example||p.ex||p.sentence||'')).filter(d=>d.d||d.ex);
+  const defs=(Array.isArray(raw)?raw:[]).map(p=>{if(Array.isArray(p)) return newDef(p[1],p[0]);
+    const d=newDef(p.definition||p.def||p.meaning||'',p.example||p.ex||p.sentence||'');
+    const k=String(p.exampleKo||p.ko||'').trim();if(k&&d.ex){d.exKo=k;d.exKoSrc=d.ex}   // Korean translation printed with the example
+    return d}).filter(d=>d.d||d.ex);
   if(!defs.length) throw new Error(`"${word}" has no example/definition pairs`);
   const syn=o.similar||o.synonyms||o.similarWords||[];
   return{word,phonetic:String(o.phonetic||''),audio:'',meanings:[{pos,defs}],synonyms:mergeSyn(word,Array.isArray(syn)?syn:[]),added:today()};
@@ -2841,7 +2878,9 @@ const I18N_KO={
 // words tab
 'Look up a word':'단어 찾기',"Search for any word. It won't be added to your study list until you tap":'아무 단어나 검색해 보세요. 학습 목록에는 이 버튼을 눌러야 추가돼요:',
 '+ Add':'+ 추가','✓ In your list':'✓ 목록에 있음','Similar words':'비슷한 단어','Add words':'단어 추가','Add a story':'스토리 추가','Tap words to pick them':'단어를 탭해서 고르세요',
-'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Photo of a word list':'단어장 사진으로 만들기','EN–EN':'영영','EN–KO':'영한','📷 Photo':'📷 사진','Definitions in':'정의 언어',
+'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Photo of a word list':'단어장 사진으로 만들기','EN–EN':'영영','Example level':'예문 수준','Keep photo examples':'사진 예문 그대로 쓰기','Very easy':'아주 쉬움','Easy':'쉬움','Medium':'보통','Intermediate':'중상','High':'어려움',
+'Definitions in Korean. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 한국어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.',
+'Definitions in English. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 영어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.','EN–KO':'영한','📷 Photo':'📷 사진','Definitions in':'정의 언어',
 'Definitions in Korean. Whatever the photo shows (meanings, examples, similar words) is used; only missing parts are written by the AI.':'뜻은 한국어로 만들어요. 사진에 있는 뜻·예문·유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.',
 'Definitions in English. Whatever the photo shows (meanings, examples, similar words) is used; only missing parts are written by the AI.':'뜻은 영어로 만들어요. 사진에 있는 뜻·예문·유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.',
 'Add a Gemini API key first.':'먼저 Gemini API 키를 넣어주세요.',"Couldn't open that photo.":'사진을 열 수 없어요.','No words could be read from the photo. Try a clearer, closer photo.':'사진에서 단어를 읽지 못했어요. 더 선명하게 가까이서 찍어 보세요.','Select all':'전체 선택','Clear':'선택 해제','Test these':'테스트',
