@@ -374,7 +374,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.18.3</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.18.4</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -939,7 +939,14 @@ let reader=null;   // {id, parts:[{p, t}], i, token}
 const splitSentences=p=>p.match(/[^.!?]+[.!?]+["'”’)\]]*|[^.!?]+$/g)?.map(x=>x.trim()).filter(Boolean)||[p];
 function markReading(){
   const pi=reader&&reader.parts[reader.i]?reader.parts[reader.i].p:-1;
-  document.querySelectorAll('#storyBody .storytext > p').forEach((el,i)=>el.classList.toggle('reading',i===pi));
+  const ps=document.querySelectorAll('#storyBody .storytext > p');
+  ps.forEach((el,i)=>el.classList.toggle('reading',i===pi));
+  // follow the voice: when a new paragraph starts, scroll it to the upper part of the screen
+  if(pi>=0&&pi!==markReading.lastP&&ps[pi]){
+    const sc=$('storyScroll'),r=ps[pi].getBoundingClientRect(),sr=sc.getBoundingClientRect();
+    if(sr.height) sc.scrollTo({top:Math.max(0,sc.scrollTop+(r.top-sr.top)-sr.height*.22),behavior:'smooth'});
+  }
+  markReading.lastP=pi;
   const b=$('svRead');
   if(b){b.setAttribute('aria-pressed',!!reader);b.querySelector('span').textContent=reader?'Stop':'Listen'}
 }
