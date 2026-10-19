@@ -374,7 +374,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.18.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.18.1</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -1441,7 +1441,7 @@ function grade(ans){
   $('nextBtn').onclick=next;
   flash(ok);
   const w=cur.c.word,au=cur.c.audio,say=curSay;
-  const reveal=()=>{if(!say||!speak(say)) playWord(w,au)};
+  const reveal=()=>{if(!say||!sayExample(say)) playWord(w,au)};
   if(ok){chime();setTimeout(reveal,600)}else reveal();
   $('nextBtn').focus({preventScroll:true});
 }
