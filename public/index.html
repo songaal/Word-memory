@@ -40,7 +40,7 @@ input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* ---- shell ---- */
-.view{position:fixed;inset:0;display:flex;flex-direction:column}
+.view{position:fixed;left:0;right:0;top:var(--vvtop,0px);height:var(--vvh,100%);display:flex;flex-direction:column}
 .screen{flex:1;min-height:0;display:flex;flex-direction:column}
 .bar{padding:calc(env(safe-area-inset-top,0px) + 14px) var(--gutter-r) 10px var(--gutter-l);background:var(--bg);display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
 .bar h1{font:700 28px/1.15 var(--f-word);margin:0}
@@ -374,7 +374,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.17.4</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.17.5</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -2131,6 +2131,24 @@ async function genStory(){
 let kbTimer=null;
 document.addEventListener('focusin',e=>{if(e.target.matches('input,textarea')){clearTimeout(kbTimer);document.body.classList.add('kb')}});
 document.addEventListener('focusout',e=>{if(e.target.matches('input,textarea')){clearTimeout(kbTimer);kbTimer=setTimeout(()=>{const a=document.activeElement;if(!a||!a.matches('input,textarea')) document.body.classList.remove('kb')},150)}});
+// ---------- native feel: keyboard ----------
+// iOS doesn't shrink the page when the keyboard opens; it slides the visible area instead,
+// which lets the whole screen scroll. Fit the app to the visible area and keep it pinned there.
+(function(){
+  const vv=window.visualViewport;if(!vv) return;
+  const root=document.documentElement;let raf=0;
+  function fit(){
+    raf=0;
+    root.style.setProperty('--vvh',Math.round(vv.height)+'px');
+    root.style.setProperty('--vvtop',Math.round(vv.offsetTop)+'px');
+    if(window.scrollY||document.documentElement.scrollTop) window.scrollTo(0,0);
+  }
+  const later=()=>{if(!raf) raf=requestAnimationFrame(fit)};
+  vv.addEventListener('resize',later);vv.addEventListener('scroll',later);
+  window.addEventListener('scroll',later,{passive:true});
+  document.addEventListener('focusout',()=>setTimeout(fit,300));
+  fit();
+})();
 // ---------- native feel: no pinch/double-tap zoom ----------
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('touchmove',e=>{if(e.touches.length>1) e.preventDefault()},{passive:false});
