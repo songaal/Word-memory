@@ -460,7 +460,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.26.0</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.26.1</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -2185,9 +2185,9 @@ function openBulk(){
     <div class="seg" role="tablist" style="margin:0"><button role="tab" id="bm-words" type="button">Words</button><button role="tab" id="bm-json" type="button">JSON</button></div>
     <p class="note" id="bulkHelp"></p>
     <div class="photobox" id="bulkPhoto" hidden>
-      <div class="label">From a photo of a word list · Gemini</div>
+      <div class="label" id="photoLbl">Photo of a word list</div>
       <div class="prow"><div class="seg" role="radiogroup" aria-label="Definitions in"><button type="button" data-dl="en">EN–EN</button><button type="button" data-dl="ko">EN–KO</button></div>
-        <button class="btn blue" id="photoBtn" type="button">📷 Read photo</button></div>
+        <button class="btn blue" id="photoBtn" type="button">📷 Photo</button></div>
       <input type="file" id="photoIn" accept="image/*" multiple hidden>
       <p class="note" id="photoNote"></p>
       <div class="msg" id="photoMsg"></div>
@@ -2214,16 +2214,17 @@ function openBulk(){
   $('bulkGo').onclick=runBulk;
   setupPhoto();
 }
-// ---- Photo of a word list → JSON (Gemini reads the image) ----
+// ---- Photo of a word list → JSON (the AI picked in Me → Settings → AI reads the image) ----
 let photoLang=lsGet('wm.photoLang')||(LANG==='ko'?'ko':'en');
 function setupPhoto(){
   const paint=()=>{document.querySelectorAll('#bulkPhoto [data-dl]').forEach(b=>{const on=b.dataset.dl===photoLang;b.setAttribute('aria-selected',on);b.setAttribute('aria-checked',on);b.setAttribute('role','radio')});
     $('photoNote').textContent=photoLang==='ko'?'Definitions in Korean. Whatever the photo shows (meanings, examples, similar words) is used; only missing parts are written by the AI.':'Definitions in English. Whatever the photo shows (meanings, examples, similar words) is used; only missing parts are written by the AI.'};
   document.querySelectorAll('#bulkPhoto [data-dl]').forEach(b=>b.onclick=()=>{photoLang=b.dataset.dl;lsSet('wm.photoLang',photoLang);paint()});
   paint();
+  $('photoLbl').textContent=aiKey()?`Photo of a word list · ${AI[aiProv()].name}`:'Photo of a word list';
   $('photoBtn').onclick=()=>{
     const m=$('photoMsg');m.className='msg';m.textContent='';
-    if(!settings.geminiKey){m.className='msg err';m.innerHTML=`Add a Gemini API key first. <button class="linkbtn" type="button" id="phGoAi">Open AI settings</button>`;
+    if(!aiKey()){m.className='msg err';m.innerHTML=`Pick an AI and add its API key first. <button class="linkbtn" type="button" id="phGoAi">Open AI settings</button>`;
       $('phGoAi').onclick=()=>{closeSheet();show('me');openMePage('ai',true)};return}
     $('photoIn').value='';$('photoIn').click();
   };
@@ -2243,8 +2244,8 @@ function photoData(file){
 }
 function photoPrompt(lang){
   return `You read photos of English vocabulary lists (textbook or workbook pages, flashcards, printed or handwritten word lists) and turn them into JSON for a vocabulary app.
-Return ONLY a JSON array, no other text:
-[{"word":"...","pos":"...","pairs":[{"example":"...","definition":"..."}],"similar":["...","..."]}]
+Return ONLY a JSON object, no other text:
+{"words":[{"word":"...","pos":"...","pairs":[{"example":"...","definition":"..."}],"similar":["...","..."]}]}
 Rules:
 - Include every English headword or expression you can read in the photo(s), in the order shown. Lowercase unless it is a proper noun. Keep multi-word expressions as one item. Skip page numbers, headings and instructions.
 - Use what the photo gives: if it shows a definition/meaning, example sentence, part of speech or similar words/synonyms for a word, use them (fix only obvious reading errors).
@@ -2254,20 +2255,17 @@ Rules:
   :'Definitions must be in ENGLISH: simple learner\'s-dictionary English. If the photo gives a Korean (or other language) meaning, turn it into a simple English definition.'}
 - Example sentences and similar words are always in English.
 - One pair per meaning; if the photo shows several meanings of a word, make up to 3 pairs, each with its own example.
-- If no English words can be read, return [].`;
+- If no English words can be read, return {"words":[]}.`;
 }
 async function photoToJson(files){
   const m=$('photoMsg'),btn=$('photoBtn');
-  m.className='msg';m.textContent=`Gemini is reading ${files.length===1?'the photo':files.length+' photos'}… (usually 10–40 seconds)`;
+  const ai=AI[aiProv()].name;
+  m.className='msg';m.textContent=`${ai} is reading ${files.length===1?'the photo':files.length+' photos'}… (usually 10–40 seconds)`;
   btn.disabled=true;
   try{
     const imgs=await Promise.all(files.map(photoData));
-    const k=settings.geminiKey,model=aiModel('gemini');
-    const j=await aiFetch('gemini',`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(k)}`,{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({contents:[{role:'user',parts:[{text:photoPrompt(photoLang)},...imgs.map(d=>({inline_data:{mime_type:'image/jpeg',data:d}}))]}],generationConfig:{responseMimeType:'application/json',temperature:.3}})},150000);
-    const c=j&&j.candidates&&j.candidates[0];
-    const txt=c&&c.content?c.content.parts.map(x=>x.text||'').join(''):'';
-    let data;try{data=JSON.parse(txt.replace(/^```(?:json)?\s*|\s*```$/g,''))}catch(_){throw new Error('Gemini sent back something unexpected. Try again.')}
+    const txt=await aiVision(photoPrompt(photoLang),imgs);
+    let data;try{const t=txt.replace(/^[\s\S]*?```(?:json)?\s*|\s*```[\s\S]*$/g,'');data=JSON.parse(t.slice(t.search(/[\[{]/)))}catch(_){throw new Error(`${ai} sent back something unexpected. Try again.`)}
     if(data&&!Array.isArray(data)) data=data.words||data.items||[data];
     const items=(data||[]).map(o=>{
       if(!o||typeof o!=='object') return null;
@@ -2283,7 +2281,7 @@ async function photoToJson(files){
     $('bulkIn').value=JSON.stringify(all,null,2);
     bulkDraft.json=$('bulkIn').value;
     $('bulkIn').scrollTop=0;
-    m.className='msg ok';m.textContent=`Gemini found ${items.length===1?'1 word':items.length+' words'}. Check the JSON below, then tap Add words.`;
+    m.className='msg ok';m.textContent=`${ai} found ${items.length===1?'1 word':items.length+' words'}. Check the JSON below, then tap Add words.`;
   }catch(e){m.className='msg err';m.textContent=e.message}
   finally{btn.disabled=false}
 }
@@ -2628,6 +2626,25 @@ async function aiComplete(system,user){
     body:JSON.stringify({model,max_tokens:2000,system,messages:[{role:'user',content:user}]})});
   return (j.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('');
 }
+// prompt + JPEG images (base64) → reply text, with the AI in use
+async function aiVision(prompt,imgs){
+  const p=aiProv(),k=aiKey(p),model=aiModel(p),T=150000;
+  if(p==='gemini'){
+    const j=await aiFetch(p,`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(k)}`,{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt},...imgs.map(d=>({inline_data:{mime_type:'image/jpeg',data:d}}))]}],generationConfig:{responseMimeType:'application/json',temperature:.3}})},T);
+    const c=j&&j.candidates&&j.candidates[0];
+    if(!c||!c.content) throw new Error('Gemini sent nothing back'+(c&&c.finishReason?` (${c.finishReason})`:'')+'. Try again.');
+    return c.content.parts.map(x=>x.text||'').join('');
+  }
+  if(p==='openai'){
+    const j=await aiFetch(p,'https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',Authorization:'Bearer '+k},
+      body:JSON.stringify({model,response_format:{type:'json_object'},messages:[{role:'user',content:[{type:'text',text:prompt},...imgs.map(d=>({type:'image_url',image_url:{url:'data:image/jpeg;base64,'+d}}))]}]})},T);
+    return j.choices[0].message.content;
+  }
+  const j=await aiFetch(p,'https://api.anthropic.com/v1/messages',{method:'POST',headers:claudeHeaders(k),
+    body:JSON.stringify({model,max_tokens:8000,messages:[{role:'user',content:[...imgs.map(d=>({type:'image',source:{type:'base64',media_type:'image/jpeg',data:d}})),{type:'text',text:prompt}]}]})},T);
+  return (j.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('');
+}
 // AI settings page
 let aiPage='gemini';
 function renderAi(){
@@ -2817,7 +2834,7 @@ const I18N_KO={
 // words tab
 'Look up a word':'단어 찾기',"Search for any word. It won't be added to your study list until you tap":'아무 단어나 검색해 보세요. 학습 목록에는 이 버튼을 눌러야 추가돼요:',
 '+ Add':'+ 추가','✓ In your list':'✓ 목록에 있음','Similar words':'비슷한 단어','Add words':'단어 추가','Add a story':'스토리 추가','Tap words to pick them':'단어를 탭해서 고르세요',
-'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','From a photo of a word list · Gemini':'단어장 사진으로 만들기 · Gemini','EN–EN':'영영','EN–KO':'영한','📷 Read photo':'📷 사진 → JSON','Definitions in':'정의 언어',
+'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Photo of a word list':'단어장 사진으로 만들기','EN–EN':'영영','EN–KO':'영한','📷 Photo':'📷 사진','Definitions in':'정의 언어',
 'Definitions in Korean. Whatever the photo shows (meanings, examples, similar words) is used; only missing parts are written by the AI.':'뜻은 한국어로 만들어요. 사진에 있는 뜻·예문·유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.',
 'Definitions in English. Whatever the photo shows (meanings, examples, similar words) is used; only missing parts are written by the AI.':'뜻은 영어로 만들어요. 사진에 있는 뜻·예문·유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.',
 'Add a Gemini API key first.':'먼저 Gemini API 키를 넣어주세요.',"Couldn't open that photo.":'사진을 열 수 없어요.','No words could be read from the photo. Try a clearer, closer photo.':'사진에서 단어를 읽지 못했어요. 더 선명하게 가까이서 찍어 보세요.','Select all':'전체 선택','Clear':'선택 해제','Test these':'테스트',
@@ -2911,8 +2928,9 @@ const I18N_KO_RE=[
 [/^(\d+) blanks? · 📖 Words shows the word list$/,'빈칸 $1개 · 📖 단어 버튼으로 목록 보기'],
 [/^(\d+) stor(?:y|ies)$/,'스토리 $1개'],
 [/^(\d+) selected$/,'$1개 선택'],[/^(\d+) words? selected$/,'단어 $1개 선택됨'],[/^(\d+) selected · a story takes (\d+) words or fewer$/,'$1개 선택 · 스토리는 $2개까지 돼요'],
-[/^Gemini is reading (?:the photo|(\d+) photos)… \(usually 10–40 seconds\)$/,(m,n)=>'Gemini가 '+(n?'사진 '+n+'장을':'사진을')+' 읽는 중… (보통 10~40초)'],
-[/^Gemini found (?:1 word|(\d+) words)\. Check the JSON below, then tap Add words\.$/,(m,n)=>'단어 '+(n||1)+'개를 찾았어요. 아래 JSON을 확인하고 단어 추가를 누르세요.'],
+[/^Photo of a word list · (.+)$/,'단어장 사진으로 만들기 · $1'],
+[/^(.+) is reading (?:the photo|(\d+) photos)… \(usually 10–40 seconds\)$/,(m,a,n)=>a+'가 '+(n?'사진 '+n+'장을':'사진을')+' 읽는 중… (보통 10~40초)'],
+[/^(?:.+) found (?:1 word|(\d+) words)\. Check the JSON below, then tap Add words\.$/,(m,n)=>'단어 '+(n||1)+'개를 찾았어요. 아래 JSON을 확인하고 단어 추가를 누르세요.'],
 [/^Delete (\d+) words?\?$/,'단어 $1개를 삭제할까요?'],
 [/^(?:This word|These words) and (?:its 1 sentence|their (\d+) sentences) will be removed with their review schedule\. Stories keep their text\.$/,(m,n)=>'이 단어와 예문 '+(n||1)+'개가 복습 일정과 함께 삭제돼요. 스토리 본문은 그대로 남아요.'],
 [/^Sentence (\d+)$/,'예문 $1'],[/^Delete "(.+)"\?$/,'“$1”을(를) 삭제할까요?'],
