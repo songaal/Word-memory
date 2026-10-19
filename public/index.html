@@ -454,8 +454,16 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.23.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.24.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
+      </div></div>
+    </div>
+    <!-- Me: Language settings page -->
+    <div class="mepage" id="me-lang" hidden>
+      <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>Language</h2><span class="back-spacer"></span></div>
+      <div class="scroll"><div class="stack">
+        <div class="menu" id="langList" role="radiogroup"></div>
+        <p class="note" style="padding:0 4px">The app reloads to switch. Words, sentences and stories stay in English.</p>
       </div></div>
     </div>
     <!-- Me: Voice settings page -->
@@ -598,6 +606,12 @@ function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
 function lsJSON(k){try{const s=lsGet(k);return s?JSON.parse(s):null}catch(e){return null}}
+// ---------- language: device default, or the choice in Me → Settings → Language ----------
+const LANG_PREF=lsGet('wm.lang')||'auto';
+const DEVICE_LANG=String((navigator.languages&&navigator.languages[0])||navigator.language||'en').toLowerCase().startsWith('ko')?'ko':'en';
+const LANG=LANG_PREF==='ko'||LANG_PREF==='en'?LANG_PREF:DEVICE_LANG;
+const LOC=()=>LANG==='ko'?'ko-KR':'en-US';
+document.documentElement.lang=LANG;
 
 let session=lsGet('wm.session'), user=lsJSON('wm.user');
 let acct=session&&user?'cloud':(lsGet('wm.guest')==='1'?'guest':null);
@@ -1141,6 +1155,7 @@ function chime(){
 
 // ---------- translation ----------
 // Google Cloud Translation, called from the browser with the user's own API key.
+const LANG_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>';
 const AI_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>';
 const TR_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h8M8 3v2M5.5 5c.8 3 3.2 5.6 6 7M10.5 5c-.9 3.6-3.3 6.5-6.5 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/></svg>';
 const SPK_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
@@ -1360,9 +1375,9 @@ let queue=[],cur=null,answered=false,score={ok:0,no:0},total=0,hint={used:0},inT
 const testActive=()=>inTest;
 function fmtWhen(iso){
   const d=new Date(iso);
-  return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  return d.toLocaleDateString(LOC(),{weekday:'short',month:'short',day:'numeric'})+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
-function shortDate(ymd){const [y,m,d]=String(ymd).split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function shortDate(ymd){const [y,m,d]=String(ymd).split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString(LOC(),{month:'short',day:'numeric'})}
 const pctColor=p=>p>=80?'var(--good)':p>=50?'var(--orange)':'var(--bad)';
 function agoOrTime(iso){
   const d=new Date(iso),min=Math.floor((Date.now()-d)/60000);
@@ -1371,7 +1386,7 @@ function agoOrTime(iso){
   const p=n=>String(n).padStart(2,'0'),hm=p(d.getHours())+':'+p(d.getMinutes()),n=diffDays(fmt(d));
   if(n===0) return 'Today '+hm;
   if(n===-1) return 'Yesterday '+hm;
-  const md=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const md=d.toLocaleDateString(LOC(),{month:'short',day:'numeric'});
   return d.getFullYear()===new Date().getFullYear()?md+' · '+hm:md+', '+d.getFullYear();
 }
 const durText=secs=>secs==null?'':secs<60?'<1 min':Math.round(secs/60)+' min';
@@ -1472,7 +1487,7 @@ function storyHTML(s,fn,afterPara,tapWords){
   return html.split(/\n\s*\n/).map((p,i)=>`<p>${p.replace(/\n/g,'<br>')}</p>${afterPara?afterPara(i):''}`).join('');
 }
 const storyParas=s=>s.text.split(/\n\s*\n/).map(p=>p.replace(/\s+/g,' ').trim());
-const fmtDay=iso=>new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const fmtDay=iso=>new Date(iso).toLocaleDateString(LOC(),{month:'short',day:'numeric',year:'numeric'});
 // Score grade: perfect (100%), good (70%+), low (under 70%), or not tested yet
 function storyGrade(s){
   if(!s.last||!s.last.total) return {g:'new',icon:'✦',pct:null};
@@ -1480,7 +1495,7 @@ function storyGrade(s){
   return pct===100?{g:'perfect',icon:'👑',pct}:pct>=70?{g:'good',icon:'✓',pct}:{g:'low',icon:'↻',pct};
 }
 const storiesNewest=()=>[...stories].sort((a,b)=>(b.created||0)-(a.created||0));
-const dayLabel=iso=>{const d=new Date(iso),n=diffDays(fmt(d));return n===0?'today':n===-1?'yesterday':d.toLocaleDateString('en-US',{month:'short',day:'numeric'})};
+const dayLabel=iso=>{const d=new Date(iso),n=diffDays(fmt(d));return n===0?'today':n===-1?'yesterday':d.toLocaleDateString(LOC(),{month:'short',day:'numeric'})};
 function storyRow(s){
   const g=storyGrade(s);
   return `<button class="si g-${g.g}" type="button" data-story="${esc(s.id)}">
@@ -1677,7 +1692,7 @@ function useHint(){
   if(!left||k>=n-1) setHintShow();else $('hintBtn').textContent='💡 '+left;
 }
 // No hints left: the button shows the answer instead (counts as not known)
-function setHintShow(){const b=$('hintBtn');if(!b) return;b.dataset.show='1';b.textContent='Show';b.title="I don't know. Show the answer"}
+function setHintShow(){const b=$('hintBtn');if(!b) return;b.dataset.show='1';b.textContent='Reveal';b.title="I don't know. Show the answer"}
 function askQuitTest(){
   const n=results.length;
   confirmQuit(n?`You answered ${n} of ${total}. Those answers are saved to your history, and the next test starts with the sentences you haven't done yet.`:`You haven't answered anything yet, so nothing will be saved.`,quitTest);
@@ -2283,6 +2298,7 @@ function bulkResult(added,skipped,failed,updated=[]){
 const SETTINGS_MENU=[
   {id:'translate',title:'Google Translate',icon:TR_ICON,value:()=>settings.translateKey?['On','on']:['Not set',''],render:()=>renderSettings()},
   {id:'ai',title:'AI',icon:AI_ICON,value:()=>aiKey()?[AI[aiProv()].name,'on']:['Not set',''],render:()=>renderAi()},
+  {id:'lang',title:'Language',icon:LANG_ICON,value:()=>[LANG==='ko'?'한국어':'English',''],render:()=>renderLang()},
   {id:'voice',title:'Voice',icon:SPK_ICON,value:()=>{if(gOn()) return ['Google · '+gVoice().replace(/^en-(US|GB|AU)-(Chirp3-HD|Neural2)-/,''),'on'];const v=pickVoice();return [v?v.name.replace(/\s*\(.*\)$/,'').slice(0,18):'Default','']},render:()=>renderVoice()},
 ];
 let mePage='main';
@@ -2314,6 +2330,15 @@ document.addEventListener('click',e=>{
   if(e.target.closest('[data-back]')){
     if(history.state&&history.state.me) history.back();else{openMePage('main',false);renderMe()}
   }
+});
+// Language page
+function renderLang(){
+  const opts=[['auto',`System default (${DEVICE_LANG==='ko'?'한국어':'English'})`],['en','English'],['ko','한국어']];
+  $('langList').innerHTML=opts.map(([k,l])=>`<button class="mi" type="button" role="radio" aria-checked="${LANG_PREF===k}" data-lang="${k}"><span class="rdo"></span><span class="t">${esc(l)}</span></button>`).join('');
+}
+$('langList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-lang]');if(!b||b.dataset.lang===LANG_PREF) return;
+  lsSet('wm.lang',b.dataset.lang);location.reload();
 });
 // Voice page
 const VOICE_SAMPLE='Reading every day is the best way to learn new words.';
@@ -2644,6 +2669,202 @@ document.addEventListener('focusin',e=>{
 // ---------- native feel: no pinch/double-tap zoom ----------
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('touchmove',e=>{if(e.touches.length>1) e.preventDefault()},{passive:false});
+
+// ---------- Korean dictionary (exact interface strings, then patterns) ----------
+const I18N_KO={
+// tabs, bars, common
+'Home':'홈','Test':'테스트','Words':'단어','Me':'나','Story':'스토리','Stories':'스토리','Dictionary':'사전','Settings':'설정','About':'정보',
+'Back':'뒤로','Close':'닫기','Main':'메인','Cancel':'취소','Delete':'삭제','Edit':'편집','Select':'선택','Search':'검색','Check':'확인','Next':'다음',
+'Start':'시작','Stop':'정지','Listen':'듣기','🔊 Listen':'🔊 듣기','Translate':'번역','Show':'보기','Hide':'숨기기','Selected':'선택됨','New':'신규','Today':'오늘','Tomorrow':'내일',
+'today':'오늘','yesterday':'어제','Saved':'저장됨','Saving…':'저장 중…','Syncing…':'동기화 중…','Offline · saved on this device':'오프라인 · 이 기기에 저장됨',
+'Not set':'설정 안 됨','On':'켜짐','Default':'기본','Try again':'다시 하기','Keep going':'계속하기','Quit':'그만하기','Practice':'연습','Review':'복습하기',
+'Su':'일','Mo':'월','Tu':'화','We':'수','Th':'목','Fr':'금','Sa':'토','Time':'시간','Day streak':'연속 학습일','Correct':'정답','Missed':'오답',
+'adjective':'형용사','noun':'명사','verb':'동사','adverb':'부사','preposition':'전치사','conjunction':'접속사','pronoun':'대명사','interjection':'감탄사','phrase':'구','phrasal verb':'구동사','idiom':'숙어',
+// gate / loading
+'Learn words through example sentences. Sign in with Google to keep your words and review schedule on every device.':'예문으로 단어를 익혀요. Google로 로그인하면 모든 기기에서 단어와 복습 일정을 이어서 쓸 수 있어요.',
+'Continue without signing in':'로그인 없이 계속하기','Without signing in, words are saved only in this browser.':'로그인하지 않으면 단어는 이 브라우저에만 저장돼요.',
+'Signing in…':'로그인 중…',"Sign-in didn't work. Please try again.":'로그인하지 못했어요. 다시 시도해 주세요.',
+'Your session ended. Sign in again to keep saving. Unsaved changes are kept on this device.':'로그인이 만료됐어요. 계속 저장하려면 다시 로그인하세요. 저장 안 된 변경은 이 기기에 남아 있어요.',
+'Loading your words…':'단어를 불러오는 중…',"Couldn't load your words. Check your internet connection.":'단어를 불러오지 못했어요. 인터넷 연결을 확인하세요.','Sign out':'로그아웃','Sign in':'로그인',
+// home
+"You're on a roll.":'잘하고 있어요!',"Let's learn some words.":'단어 공부를 시작해 볼까요?',"Today's goal":'오늘의 목표','Daily goal complete! 🎉':'오늘 목표 달성! 🎉',
+'Nothing due today. Practice or read a story!':'오늘 복습할 문장이 없어요. 연습하거나 스토리를 읽어봐요!','Start words test':'단어 테스트 시작','Practice words':'단어 연습',
+'correct today':'오늘 정답률','sentences tomorrow':'문장 내일 복습','sentence tomorrow':'문장 내일 복습','Words test':'단어 테스트','Story test':'스토리 테스트',
+'sentences to review':'문장 복습 대기','sentence to review':'문장 복습 대기','Nothing due today':'오늘은 복습할 게 없어요','Every story is perfect!':'모든 스토리 만점!',
+'Make a story from your words':'내 단어로 스토리를 만들어 보세요','Make one':'만들기','Accuracy · 7 days':'정답률 · 7일','Mastered (30+ days)':'마스터 (30일 이상)',
+'Review stages':'복습 단계','sentences per stage':'단계별 문장 수','Last 7 days':'최근 7일',
+// test
+'To review':'복습할 문장','Done today':'오늘 완료','Start test':'테스트 시작','Practice again':'다시 연습','History':'기록','Just now':'방금',
+'Fill the blank in each example sentence. If you stop halfway, your answers are saved and the next test picks up the rest.':'예문의 빈칸을 채우세요. 중간에 그만둬도 푼 답은 저장되고, 다음 테스트는 남은 문장부터 이어서 해요.',
+'Fill the blank in each example sentence. Everything due is done. Practicing again won’t change the schedule.':'예문의 빈칸을 채우세요. 오늘 복습은 다 끝났어요. 다시 연습해도 일정은 바뀌지 않아요.',
+'No tests yet. Your results will appear here.':'아직 테스트 기록이 없어요. 결과가 여기에 쌓여요.','All done for today':'오늘 할 일 끝!','Add words in the Words tab to start.':'단어 탭에서 단어를 추가해 시작하세요.',
+'Stopped':'중단','Selected words':'선택한 단어','Retest':'다시 테스트','💡 Hint':'💡 힌트','Reveal':'정답 보기','See results':'결과 보기',
+'Correct ·':'정답 ·','Not quite ·':'아쉬워요 ·','Answer shown ·':'정답 공개 ·','Back tomorrow':'내일 다시','Practice · schedule unchanged':'연습 · 일정 그대로',
+'Quit this test?':'테스트를 그만할까요?',"You haven't answered anything yet, so nothing will be saved.":'아직 푼 문제가 없어서 저장되는 건 없어요.',
+"Your answers in this story won't be checked or saved.":'이 스토리에 쓴 답은 채점되지도 저장되지도 않아요.','Test complete':'테스트 완료',
+'Retake test':'다시 테스트','Test these again':'이 문장들 다시 테스트','Answers · tap to see the word':'답 · 탭해서 단어 보기','Missed · tap to see the word':'틀린 단어 · 탭해서 보기',
+'Every sentence moved to a longer review interval.':'모든 문장이 더 긴 복습 간격으로 넘어갔어요.','These sentences are no longer in your word list.':'이 문장들은 더 이상 단어 목록에 없어요.',
+'Left blank':'빈칸으로 둠',"I don't know. Show the answer":'모르겠어요. 정답 보기',"Show the word's entry":'단어 뜻 보기',
+// story test / list
+'Pick a story. Its study words become blanks to fill in.':'스토리를 고르세요. 공부할 단어가 빈칸이 돼요.','Tested':'테스트함','Perfect 👑':'만점 👑','Avg score':'평균 점수',
+'👑 100%':'👑 100%','✓ 70%+':'✓ 70% 이상','↻ under 70%':'↻ 70% 미만','✦ not tested':'✦ 테스트 전','Not tested yet':'아직 테스트 안 함',
+'📖 Words':'📖 단어','💡 Words in this story':'💡 이 스토리의 단어','Words in this story':'이 스토리의 단어','Tap a blank to keep typing.':'빈칸을 누르면 계속 입력할 수 있어요.',
+'Tap a blank and type the word. Enter moves to the next blank.':'빈칸을 누르고 단어를 입력하세요. 엔터를 누르면 다음 빈칸으로 가요.','Back to stories':'스토리 목록','‹ Stories':'‹ 스토리','‹ Back':'‹ 뒤로',
+'No stories yet. Add one in the Words tab → Story, then test yourself here.':'아직 스토리가 없어요. 단어 탭 → 스토리에서 추가한 뒤 여기서 테스트하세요.',
+"None of this story's study words appear in its text.":'이 스토리 본문에 공부할 단어가 하나도 없어요.',
+// words tab
+'Look up a word':'단어 찾기',"Search for any word. It won't be added to your study list until you tap":'아무 단어나 검색해 보세요. 학습 목록에는 이 버튼을 눌러야 추가돼요:',
+'+ Add':'+ 추가','✓ In your list':'✓ 목록에 있음','Similar words':'비슷한 단어','Add words':'단어 추가','Add a story':'스토리 추가','Tap words to pick them':'단어를 탭해서 고르세요',
+'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Test these':'테스트',
+'No words yet. Tap + to add some, or search in the Search tab.':'아직 단어가 없어요. +를 눌러 추가하거나 사전에서 검색하세요.',
+'Schedule':'복습 일정','Definition':'정의','Delete word':'단어 삭제','JSON':'JSON',
+'One word per line. Each word is looked up in the dictionary and filled in for you.':'한 줄에 한 단어씩 적어주세요. 사전에서 찾아 자동으로 채워요.',
+'A JSON array of words with your own sentences. Copy the object inside the array for each word.':'내 예문으로 만든 단어 JSON 배열이에요. 단어마다 배열 안의 객체를 복사해서 쓰세요.',
+'is a list of example + definition;':'는 예문 + 정의 목록,',
+'is a list of words. One array per line also works. A word that is already in your list is replaced with what you enter here.':'는 비슷한 단어 목록이에요. 한 줄에 배열 하나씩 넣어도 돼요. 이미 목록에 있는 단어는 여기 입력한 내용으로 바뀌어요.',
+'Type at least one word.':'단어를 하나 이상 입력하세요.','Fill in the template first: a word and at least one example + definition.':'먼저 템플릿을 채워주세요: 단어 하나와 예문+정의 한 쌍 이상.',
+'Words added':'추가된 단어','Words updated':'바뀐 단어','No new words added.':'새로 추가된 단어가 없어요.','An item has no "word"':'"word"가 없는 항목이 있어요','Each item must be an object':'각 항목은 객체여야 해요',
+'No stories yet. Tap + to add an English story and the words you want to learn from it.':'아직 스토리가 없어요. +를 눌러 영어 스토리와 배울 단어를 추가하세요.',
+'Study words':'공부할 단어','Test this story':'이 스토리 테스트','Translating…':'번역 중…',
+'New story':'새 스토리','Edit story':'스토리 편집','Title':'제목','Words to learn':'배울 단어','Request for the AI':'AI에게 요청','(optional)':'(선택)',
+'Each word should appear in the story (any form, like "inflated" for "inflate"). Plain words already in your word list are used as they are; the others are looked up in the dictionary and added to your word list. A JSON array (':'각 단어는 스토리에 나와야 해요("inflate" 대신 "inflated"처럼 다른 형태도 괜찮아요). 이미 내 단어 목록에 있는 단어는 그대로 쓰고, 나머지는 사전에서 찾아 단어 목록에 추가해요. JSON 배열(',
+') adds those words to your word list with your own definitions, replacing any that are already there.':')을 넣으면 내 정의로 단어 목록에 추가하고, 이미 있는 단어는 바꿔요.',
+'e.g. A radio DJ reading a listener\'s letter, in easy words':'예: 라디오 DJ가 청취자 사연을 읽는 대본, 쉬운 단어로','e.g. The Lost Tire':'예: 잃어버린 타이어',
+'Paste or type an English story…':'영어 스토리를 붙여넣거나 입력하세요…','One per line, or separated by commas\n\nOr a JSON array, same format as Add words → JSON':'한 줄에 하나씩, 또는 쉼표로 구분\n\n또는 단어 추가 → JSON과 같은 형식의 JSON 배열',
+'Write with AI':'AI로 쓰기','Writing…':'쓰는 중…','Save story':'스토리 저장','Save changes':'변경 저장',
+'Add a title.':'제목을 입력하세요.','Add the story text.':'스토리 본문을 입력하세요.','Add at least one word to learn.':'배울 단어를 하나 이상 입력하세요.',
+'Pick an AI and add its API key first.':'먼저 AI를 고르고 API 키를 넣어주세요.','Open AI settings':'AI 설정 열기','Add the words to learn first.':'배울 단어를 먼저 입력하세요.',
+'Pick 20 words or fewer for one story.':'스토리 하나에 단어는 20개까지예요.','Done. Review the story, change anything you like, then tap Save story.':'완료! 스토리를 확인하고 고칠 부분을 고친 뒤 스토리 저장을 누르세요.',
+'Play example sentence':'예문 듣기','Play definition':'정의 듣기','Show Korean translation':'한국어 번역 보기','Korean translation':'한국어 번역','Genre or idea for the AI (optional)':'AI에게 줄 장르나 아이디어 (선택)',
+// dictionary messages
+'The dictionary is not responding right now. Try again in a minute.':'지금 사전이 응답하지 않아요. 잠시 후 다시 시도하세요.','You seem to be offline. Check your connection.':'오프라인인 것 같아요. 연결을 확인하세요.',
+'Something went wrong. Please try again.':'문제가 생겼어요. 다시 시도해 주세요.',
+// me
+'Not signed in':'로그인 안 됨','Words are saved in this browser only.':'단어는 이 브라우저에만 저장돼요.','Google Translate':'Google 번역','Voice':'음성','Language':'언어','AI':'AI',
+"Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.":'사전: Merriam-Webster Learner\'s 사전과 유의어 사전. 사전 음성이 없는 단어는 브라우저 음성으로 읽어요.',
+'API key':'API 키','Used for the Korean translation button next to example sentences.':'예문 옆의 한국어 번역 버튼에 쓰여요.',
+'Saved in this browser only. Sign in to use it on all your devices.':'이 브라우저에만 저장돼요. 로그인하면 모든 기기에서 쓸 수 있어요.','Saved to your account, so it works on all your devices.':'계정에 저장돼서 모든 기기에서 쓸 수 있어요.',
+'Paste your API key':'API 키를 붙여넣으세요','Save and test':'저장 후 테스트','Remove key':'키 삭제','How to get a key':'키 받는 방법',
+'Open Google Cloud Console and pick (or create) a project.':'Google Cloud 콘솔을 열고 프로젝트를 고르거나 새로 만드세요.','APIs & Services → Library → enable':'API 및 서비스 → 라이브러리 → 사용 설정:',
+'. Billing must be on; the first 500,000 characters each month are free.':'. 결제가 켜져 있어야 하고, 매달 처음 50만 자는 무료예요.','APIs & Services → Credentials → Create credentials →':'API 및 서비스 → 사용자 인증 정보 → 사용자 인증 정보 만들기 →',
+'Recommended: restrict the key to the Cloud Translation API and to this website.':'권장: 이 키를 Cloud Translation API와 이 웹사이트에서만 쓰도록 제한하세요.',
+'A key is saved.':'키가 저장돼 있어요.','No key saved yet.':'저장된 키가 없어요.','Paste a key first.':'먼저 키를 붙여넣으세요.','Testing the key…':'키 확인 중…','Key removed.':'키를 삭제했어요.',
+'Add your Google Translate API key in Me → Settings to see translations.':'번역을 보려면 나 → 설정에서 Google 번역 API 키를 넣어주세요.','Add your Google Translate key in Me → Settings.':'나 → 설정에서 Google 번역 키를 넣어주세요.',
+'Add your Google Translate API key in the Me tab to see translations.':'번역을 보려면 나 탭에서 Google 번역 API 키를 넣어주세요.','Could not reach Google Translate. Check your connection.':'Google 번역에 연결할 수 없어요. 인터넷 연결을 확인하세요.',
+'Use for writing stories':'스토리 작성에 쓸 AI','Add a key below to start.':'아래에 키를 넣어 시작하세요.','In use':'사용 중','Add key':'키 추가','No key yet':'키 없음',
+"Couldn't save the choice. Try again.":'선택을 저장하지 못했어요. 다시 시도하세요.','API keys':'API 키','Pick an AI to add or change its key. Only the one checked above is used.':'AI를 골라 키를 넣거나 바꾸세요. 위에서 체크한 AI만 쓰여요.',
+'Gemini API key':'Gemini API 키','OpenAI API key':'OpenAI API 키','Claude API key':'Claude API 키','Model':'모델','Leave empty for':'비워두면',
+'Keys are saved in this browser only. Sign in to use them on all your devices.':'키는 이 브라우저에만 저장돼요. 로그인하면 모든 기기에서 쓸 수 있어요.','Keys are saved to your account, so they work on all your devices.':'키는 계정에 저장돼서 모든 기기에서 쓸 수 있어요.',
+"(Google's current Flash model, free tier). You can type any other model name from your account.":'(Google의 최신 Flash 모델, 무료)을 써요. 내 계정의 다른 모델 이름을 적어도 돼요.',
+'. You can type any other model name from your account.':'을 써요. 내 계정의 다른 모델 이름을 적어도 돼요.','(fast and cheapest). You can type any other model name from your account.':'(빠르고 가장 저렴)을 써요. 내 계정의 다른 모델 이름을 적어도 돼요.',
+'Key saved · in use.':'키 저장됨 · 사용 중.','Go to':'접속:','and sign in with your Google account.':'에서 Google 계정으로 로그인하세요.','and sign in.':'에서 로그인하세요.','Tap':'누르기:',
+'Copy it here. No billing needed: the free tier is enough for a few stories a day (free-tier text may be used by Google to improve its products).':'여기에 붙여넣으세요. 결제는 필요 없어요. 무료 등급으로 하루 스토리 몇 개는 충분히 만들 수 있어요(무료 등급 내용은 Google 제품 개선에 쓰일 수 있어요).',
+'Billing → add credit (billed separately from ChatGPT Plus). With data sharing on (Settings → Data controls), mini models get free daily tokens.':'Billing → 크레딧 충전 (ChatGPT Plus와 별도로 청구돼요). 데이터 공유(Settings → Data controls)를 켜면 mini 모델은 매일 무료 토큰을 받아요.',
+', then copy it here.':'을 눌러 만든 뒤 여기에 붙여넣으세요.','Billing → buy credits (billed separately from a Claude Pro/Max plan). One story with Haiku costs well under a cent.':'Billing → 크레딧 구매 (Claude Pro/Max 구독과 별도). Haiku로 스토리 하나는 1센트도 안 들어요.',
+'Example sentences and stories':'예문과 스토리','Google voice':'Google 음성','This device':'이 기기','Speed':'속도',
+'Natural Google voices for example sentences and stories (Chirp 3 HD and Neural2: 1 million characters a month free). Word pronunciation keeps the dictionary/device sound.':'예문과 스토리를 자연스러운 Google 음성으로 읽어요 (Chirp 3 HD, Neural2: 매달 100만 자 무료). 단어 발음은 사전·기기 음성을 그대로 써요.',
+'Voices built into this device. On iPhone, web apps only get the basic voices, so they can sound robotic.':'이 기기에 들어 있는 음성이에요. 아이폰 웹앱에서는 기본 음성만 쓸 수 있어서 기계음처럼 들릴 수 있어요.',
+'Google voices · tap to hear and choose':'Google 음성 · 탭해서 듣고 고르기','All':'전체','US':'미국','UK':'영국','Australia':'호주',
+'Device voice · used for words and definitions':'기기 음성 · 단어와 정의에 사용','Device voices · tap to hear and choose':'기기 음성 · 탭해서 듣고 고르기',
+'Loading Google voices…':'Google 음성 불러오는 중…','Loading voices…':'음성 불러오는 중…',"This browser can't read text aloud.":'이 브라우저는 소리 내어 읽기를 지원하지 않아요.',
+'Google voices use your Google API key.':'Google 음성은 Google API 키를 사용해요.','Add it in Google Translate settings':'Google 번역 설정에서 추가하기',
+'Turn on the Cloud Text-to-Speech API in the Google Cloud project of your key, then come back.':'키가 있는 Google Cloud 프로젝트에서 Cloud Text-to-Speech API를 켠 뒤 다시 와주세요.',
+'Turn on the Cloud Text-to-Speech API in the Google Cloud project of your key.':'키가 있는 Google Cloud 프로젝트에서 Cloud Text-to-Speech API를 켜주세요.',
+'Your API key is restricted. In Google Cloud → APIs & Services → Credentials → your key → API restrictions, add "Cloud Text-to-Speech API" and save. It can take a few minutes.':'API 키에 사용 제한이 있어요. Google Cloud → API 및 서비스 → 사용자 인증 정보 → 내 키 → API 제한사항에 "Cloud Text-to-Speech API"를 추가하고 저장하세요. 몇 분 걸릴 수 있어요.',
+'The Google API key was rejected.':'Google API 키가 거부됐어요.',
+'The app reloads to switch. Words, sentences and stories stay in English.':'바꾸면 앱이 다시 시작돼요. 단어, 예문, 스토리는 영어 그대로예요.',
+};
+const POS_KO={adjective:'형용사',noun:'명사',verb:'동사',adverb:'부사',preposition:'전치사',conjunction:'접속사',pronoun:'대명사',interjection:'감탄사',phrase:'구'};
+const durKo=d=>d.replace('<1 min','1분 미만').replace(/(\d+) min/,'$1분');
+const dueKo=d=>d==='today'?'오늘':d==='tomorrow'?'내일':d.replace(/^in (\d+) days?$/,'$1일 뒤');
+const I18N_KO_RE=[
+[/^Good (morning|afternoon|evening)(?:, (.+))?!$/,(m,t,n)=>({morning:'좋은 아침이에요',afternoon:'좋은 오후예요',evening:'좋은 저녁이에요'}[t])+(n?', '+n+'님':'')+'!'],
+[/^(\d+) sentences? waiting\. Keep your (\d+)-day streak alive!$/,'$1개 문장이 기다려요. $2일 연속 기록을 이어가요!'],
+[/^(\d+) sentences? waiting\. Start a streak today!$/,'$1개 문장이 기다려요. 오늘부터 연속 기록을 시작해요!'],
+[/^Only (\d+) more to finish today\. You've got this!$/,'오늘 $1개만 더 하면 끝! 할 수 있어요!'],
+[/^(\d+) \/ (\d+) sentences · (\d+)%$/,'$1 / $2 문장 · $3%'],
+[/^All done · (\d+) answered today$/,'모두 완료 · 오늘 $1개 풀었어요'],
+[/^Next: (.+)$/,'다음: $1'],[/^Try again: (.+)$/,'다시 도전: $1'],
+[/^Words · (\d+) sentences?$/,'단어 · 예문 $1개'],[/^(\d+) words? · (\d+) sentences?$/,'단어 $1개 · 예문 $2개'],
+[/^(\d+)d$/,'$1일'],[/^(\d+)-day$/,'$1일'],[/^In (\d+) days?$/,'$1일 뒤'],
+[/^(\d+) min ago$/,'$1분 전'],[/^Today (\d\d:\d\d)$/,'오늘 $1'],[/^Yesterday (\d\d:\d\d)$/,'어제 $1'],
+[/^⏱ (.+?) · (\d+) of (\d+) answered$/,(m,d,a,b)=>'⏱ '+durKo(d)+' · '+b+'문제 중 '+a+'문제 풀었음'],
+[/^⏱ (.+?) · (\d+) questions?$/,(m,d,n)=>'⏱ '+durKo(d)+' · '+n+'문제'],
+[/^(\d+) of (\d+) answered$/,'$2문제 중 $1문제 풀었음'],[/^(\d+) questions?$/,'$1문제'],
+[/^Definition · (.+)$/,(m,p)=>'정의 · '+(POS_KO[p]||p)],
+[/^💡 (\d)$/,'💡 $1'],
+[/^Back in (\d+) days?$/,'$1일 뒤 다시'],
+[/^You answered (\d+) of (\d+)\. Those answers are saved to your history, and the next test starts with the sentences you haven't done yet\.$/,'$2문제 중 $1문제를 풀었어요. 푼 문제는 기록에 저장되고, 다음 테스트는 아직 안 푼 문장부터 시작해요.'],
+[/^\/ (\d+) correct$/,'/ $1 정답'],
+[/^(\d+) sentences? came back for the next day\.( Practice answers did not change the schedule\.)?$/,(m,n,t)=>n+'개 문장이 다음 날 다시 나와요.'+(t?' 연습 답은 일정을 바꾸지 않았어요.':'')],
+[/^Every sentence moved to a longer review interval\. Practice answers did not change the schedule\.$/,'모든 문장이 더 긴 복습 간격으로 넘어갔어요. 연습 답은 일정을 바꾸지 않았어요.'],
+[/^Next: (.+)$/,'다음: $1'],
+[/^· you wrote “(.*)”$/,'· 내가 쓴 답 “$1”'],[/^You wrote “(.*)”$/,'내가 쓴 답 “$1”'],
+[/^Next review: (.+)$/,(m,d)=>'다음 복습: '+dueKo(d)],
+[/^· (\d+)\/(\d+) correct(?: · (\d+) tries)? · made (.+)$/,(m,a,b,t,d)=>'· '+a+'/'+b+' 정답'+(t?' · '+t+'번 시도':'')+' · 만든 날 '+dueKo(d)],
+[/^Not tested yet · made (.+)$/,(m,d)=>'아직 테스트 안 함 · 만든 날 '+dueKo(d)],
+[/^(\d+) blanks? · 📖 Words shows the word list$/,'빈칸 $1개 · 📖 단어 버튼으로 목록 보기'],
+[/^(\d+) stor(?:y|ies)$/,'스토리 $1개'],
+[/^(\d+) selected$/,'$1개 선택'],[/^(\d+) words? selected$/,'단어 $1개 선택됨'],[/^(\d+) selected · a story takes (\d+) words or fewer$/,'$1개 선택 · 스토리는 $2개까지 돼요'],
+[/^Sentence (\d+)$/,'예문 $1'],[/^Delete "(.+)"\?$/,'“$1”을(를) 삭제할까요?'],
+[/^"(.+)" isn't in the dictionary\. Check the spelling\.$/,'“$1”은(는) 사전에 없어요. 철자를 확인해 주세요.'],[/^"(.+)" isn't in the dictionary\.$/,'“$1”은(는) 사전에 없어요.'],
+[/^Looking up "(.+)"…$/,'“$1” 찾는 중…'],[/^Looking up (\d+) of (\d+)…$/,'$2개 중 $1번째 찾는 중…'],
+[/^– (.+): already in your list(?: as "(.+)")?$/,'– $1: 이미 목록에 있어요'],
+[/^Line (\d+) isn't valid JSON: (.+)$/,'$1번째 줄이 올바른 JSON이 아니에요: $2'],[/^"(.+)" has no example\/definition pairs$/,'“$1”에 예문/정의 쌍이 없어요'],
+[/^(.+) · (\d+) study words? · tap any word for its entry$/,'$1 · 공부할 단어 $2개 · 단어를 탭하면 뜻이 나와요'],
+[/^Write with (.+)$/,'$1로 쓰기'],[/^Write again with (.+)$/,'$1로 다시 쓰기'],
+[/^Not found in the story text: (.+)\. Check the story above, or tap Save again to keep them anyway\.$/,'스토리 본문에 없는 단어: $1. 스토리를 확인하거나, 그대로 두려면 저장을 한 번 더 누르세요.'],
+[/^(.+) is writing a story with (\d+) words?… \(usually 5–20 seconds\)$/,'$1가 단어 $2개로 스토리를 쓰는 중… (보통 5~20초)'],
+[/^Not used in the story: (.+)\. Tap Write again, or edit the story\.$/,'스토리에 안 쓰인 단어: $1. 다시 쓰기를 누르거나 직접 고쳐주세요.'],
+[/^Add a genre or idea if you like, then tap Write with (.+)\.$/,'원하면 장르나 아이디어를 적고 $1로 쓰기를 누르세요.'],
+[/^The (.+) API key was rejected\. Check it in Me → Settings → AI\.$/,'$1 API 키가 거부됐어요. 나 → 설정 → AI에서 확인하세요.'],
+[/^Couldn't reach (.+)\. Check your connection\.$/,'$1에 연결할 수 없어요. 인터넷 연결을 확인하세요.'],[/^(.+) took too long\. Try again\.$/,'$1 응답이 너무 늦어요. 다시 시도하세요.'],
+[/^(.+) sent back something unexpected\. Try again\.$/,'$1의 응답이 이상해요. 다시 시도하세요.'],[/^(.+) sent back an empty story\. Try again\.$/,'$1가 빈 스토리를 보냈어요. 다시 시도하세요.'],
+[/^Model "(.+?)" isn't available for this key\.(.*)$/,'이 키로는 "$1" 모델을 쓸 수 없어요.$2'],
+[/^Saved\. Test translation: (.+)$/,'저장했어요. 번역 테스트: $1'],[/^The key didn't work: (.+)$/,'키가 작동하지 않아요: $1'],
+[/^Stories are written by (.+)\.$/,'$1가 스토리를 써요.'],[/^Add a (.+) key below first\.$/,'먼저 아래에 $1 키를 넣어주세요.'],
+[/^Key saved · not in use \(check (.+) above to use it\)\.$/,'키 저장됨 · 사용 안 함 (쓰려면 위에서 $1를 체크하세요).'],
+[/^Saved\. (.+) \((.+)\) writes your stories\.$/,'저장했어요. $1 ($2)가 스토리를 써요.'],[/^Saved\. The key works\. Check (.+) above to use it\.$/,'저장했어요. 키가 작동해요. 쓰려면 위에서 $1를 체크하세요.'],
+[/^(US|UK|Australia) · (female|male|neutral)? · (Most natural|Natural)$/,(m,r,g,t)=>({US:'미국',UK:'영국',Australia:'호주'}[r])+' · '+({female:'여성',male:'남성',neutral:'중성'}[g]||'')+' · '+(t==='Most natural'?'가장 자연스러움':'자연스러움')],
+[/^Last try failed: (.+)$/,'마지막 시도 실패: $1'],
+[/^System default \((.+)\)$/,'시스템 기본값 ($1)'],
+[/^Missing word, (\d+) letters$/,'빈칸, $1글자'],
+[/^Test complete(?: · stopped)?(?: · ⏱ (.+))?$/,(m,d)=>'테스트 완료'+(d?' · ⏱ '+durKo(d):'')],
+[/^(.*)⏱ (<1 min|\d+ min)(.*)$/,(m,a,d,b)=>a.replace(' · stopped',' · 중단')+'⏱ '+durKo(d)+b],
+];
+// ---------- Korean UI: translate interface text as it is drawn ----------
+// Learning content (sentences, stories, words, definitions, what you type) is never translated.
+const I18N_SKIP='.storytext,.ex,.def,.qsent,.stitle,.si .t,.si .ws,.li .w,.word h2,.ri .top,.ri .sent,.chip,.syn,.pko,.ko,.qdef>div,[data-noi18n]';
+function trText(str){
+  const m=/^(\s*)([\s\S]*?)(\s*)$/.exec(str),core=m[2];if(!core) return null;
+  let out=I18N_KO[core];
+  if(out==null) for(const [re,to] of I18N_KO_RE){if(re.test(core)){out=core.replace(re,to);break}}
+  return out==null?null:m[1]+out+m[3];
+}
+function trAttrs(el){
+  for(const a of ['placeholder','title','aria-label']){const v=el.getAttribute&&el.getAttribute(a);if(v){const t=trText(v);if(t!=null&&t!==v) el.setAttribute(a,t)}}
+}
+function trTree(root){
+  if(root.nodeType===3){const p=root.parentElement;if(p&&!p.closest(I18N_SKIP)){const t=trText(root.data);if(t!=null&&t!==root.data) root.data=t}return}
+  if(root.nodeType!==1) return;
+  if(root.matches('input,textarea')){trAttrs(root);return}
+  if(root.closest(I18N_SKIP)){root.querySelectorAll&&root.querySelectorAll('input,textarea').forEach(trAttrs);return}
+  trAttrs(root);
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT,{acceptNode:n=>n.nodeType===1&&n.matches(I18N_SKIP)&&!n.matches('input,textarea')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  let n;while((n=w.nextNode())){
+    if(n.nodeType===3){const t=trText(n.data);if(t!=null&&t!==n.data) n.data=t}
+    else trAttrs(n);
+  }
+  root.querySelectorAll('input,textarea').forEach(trAttrs);
+}
+if(LANG==='ko'){
+  trTree(document.body);
+  new MutationObserver(ms=>{for(const m of ms){
+    if(m.type==='childList') m.addedNodes.forEach(trTree);
+    else if(m.type==='characterData') trTree(m.target);
+    else if(m.type==='attributes') {if(!(m.target.closest&&m.target.closest(I18N_SKIP))||m.target.matches('input,textarea')) trAttrs(m.target)}
+  }}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label']});
+}
 
 // ---------- start ----------
 try{speechSynthesis.getVoices()}catch(e){}
