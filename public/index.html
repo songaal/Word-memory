@@ -444,7 +444,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.21.2</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.21.3</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -1347,8 +1347,11 @@ function agoOrTime(iso){
   const d=new Date(iso),min=Math.floor((Date.now()-d)/60000);
   if(min<1) return 'Just now';
   if(min<60) return min+' min ago';
-  const p=n=>String(n).padStart(2,'0');
-  return p(d.getMonth()+1)+'.'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+  const p=n=>String(n).padStart(2,'0'),hm=p(d.getHours())+':'+p(d.getMinutes()),n=diffDays(fmt(d));
+  if(n===0) return 'Today '+hm;
+  if(n===-1) return 'Yesterday '+hm;
+  const md=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  return d.getFullYear()===new Date().getFullYear()?md+' · '+hm:md+', '+d.getFullYear();
 }
 const durText=secs=>secs==null?'':secs<60?'<1 min':Math.round(secs/60)+' min';
 function historyHTML(){

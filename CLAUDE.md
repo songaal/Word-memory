@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.21.2</span> · <span class="version-date">2026/10/19</span>
+<span class="version-tag">v2.21.3</span> · <span class="version-date">2026/10/19</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.21.2 — 2026/10/19**
+**Current version: v2.21.3 — 2026/10/19**
 
 ## Architecture
 
@@ -21,7 +21,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
   - Native-app shell: fixed full screen, no zoom (viewport + gesture blocking), no pull-to-refresh, one scroll area per tab, bottom tab bar: **Home** (greeting + 🔥 streak pill, green "Today's goal" hero with progress bar and Start words test (gold when done), Words test / Story test cards — the story card starts `nextStory()`: newest untested, else lowest score — colored stat tiles, colored review-stage boxes, 7-day chart), **Test** (Words / Story; the Words pane is still `testPane='schedule'` / `tseg-schedule` internally), **Words** (Dictionary / Words / Story), **Me** (profile + settings menu). Internally the Words tab still uses `dict` ids. Text can't be selected by dragging (inputs excepted). `.view` is sized to the visual viewport (`--vvh`/`--vvtop` from `visualViewport`), so when the iOS keyboard opens the bars and search box stay put and only the inner list scrolls. The tab bar hides while an input has focus (keyboard up), via `body.kb`, and during a running test, via `body.intest` (set by `setQuit`). On the Words tab's three panes it slides down while scrolling down and back up on scrolling up (`setTabbarHidden` → `body.tbhide`; shown again near the top and whenever the screen changes — tab, pane (also when code switches it, e.g. Select → story form), or story list ↔ story page (`tbScreenIs`)). Popups use a bottom sheet. The selected tab's icon is filled.
   - Me → Settings is a list menu (`SETTINGS_MENU` in the script); each item opens its own page with a ‹ back button, and the phone/browser back gesture also returns. Add future settings to that list.
   - While a test runs (words or story) the fixed Test header shows a **timer** (`tmr`, m:ss, counts only while the Test tab is on screen and the app is visible — `tmrSync` on tab change/visibilitychange), a **💡 Hint** button (words: `useHint`, disabled after answering; story: `toggleStoryHint` puts the keyboard away and slides up `#hintPop` with the story's words; focusing any blank or ✕ closes it — `hideStoryHint`) and **Quit**, which asks first (`confirmQuit` sheet). Quitting a words test keeps what was answered: it's saved to `history` with `quit:true`, `planned`, `secs` (`saveHistory`); `startTest` takes only the sentences still due (practice of today's sentences only when nothing is due), so the next test continues with the rest. Quitting a story test saves nothing.
-  - When a test ends, a results screen shows the score and every answer (misses first, tap for the word). Each test is saved to `history` (`{at, secs, total, planned, ok, quit, items}`, newest first, max 60) and listed under the Start button; rows show "x min ago" within an hour, else `MM.dd HH:mm`, plus ⏱ minutes and a "Stopped" tag; tapping one opens the same results page.
+  - When a test ends, a results screen shows the score and every answer (misses first, tap for the word). Each test is saved to `history` (`{at, secs, total, planned, ok, quit, items}`, newest first, max 60) and listed under the Start button; rows show "x min ago" within an hour, then "Today 21:05", "Yesterday 21:05", "Oct 17 · 21:05", or "Oct 17, 2025" for other years (`agoOrTime`), plus ⏱ minutes and a "Stopped" tag; tapping one opens the same results page.
   - Learning is example-first: each word card lists numbered example sentences, each with its definition underneath (no number); similar words come last.
   - Words test buttons: **Check** (75%) and **Pass** (25%, = I don't know) on one line (`.askrow`).
   - **Test items are example sentences, not words.** Each definition with an example (`meanings[].defs[]`) has its own schedule: `stage`, `due`, `last`. A word with no example gives one item from its first definition. The answer is typed into a letter-slot blank inside the sentence (`gapHTML`/`setupGap`: one `_` per letter, fixed to the answer's length, a transparent input on top); hints reveal fixed leading letters (1, then +2, then +2) and typing continues after them. On reveal the blank is filled (green right / red wrong) and tapping it opens the word's entry. **Quit** (top right of the Test header, shown only while a test runs) asks first, then ends the test and saves the answered part; the next test continues with the sentences still due.
