@@ -444,7 +444,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.21.1</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.21.2</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -604,20 +604,65 @@ function save(){
   saveGen++;
   if(acct==='guest'){lsSet(GUEST_KEY,JSON.stringify(cards));lsSet(GUEST_SEED,String(seed));lsSet(GUEST_LOG,JSON.stringify(log));lsSet(GUEST_HIST,JSON.stringify(history));lsSet(GUEST_STORIES,JSON.stringify(stories));return}
   if(acct!=='cloud') return;
-  lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories}));
+  lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories,serverAt}));
   lsSet(pendingKey(),'1');
   schedulePush();
 }
 let pushTimer=null,pushing=false,dirty=false;
+let serverAt=null;   // updatedAt of the server copy our data is based on (guards against stale reads and overwriting other devices)
+// Merge two copies of the data instead of letting one overwrite the other.
+// Sentences keep the schedule from whichever copy studied them more recently; daily counts take the larger
+// number; history and stories are combined.
+function mergeData(a,b){
+  const lastOf=d=>(d&&d.last)||'';
+  // local objects are updated in place, so a running test keeps pointing at the live cards
+  const byWord=new Map((a.cards||[]).map(c=>[c.word.toLowerCase(),c]));
+  for(const rc of b.cards||[]){
+    const k=rc.word.toLowerCase(),lc=byWord.get(k);
+    if(!lc){byWord.set(k,JSON.parse(JSON.stringify(rc)));continue}
+    const rdefs=(rc.meanings||[]).flatMap(g=>g.defs||[]);
+    const key=d=>(d.ex||'')+'\u0001'+(d.d||'');
+    const ldefs=(lc.meanings||[]).flatMap(g=>g.defs||[]);
+    const lmap=new Map(ldefs.map(d=>[key(d),d]));
+    for(const rd of rdefs){
+      const ld=lmap.get(key(rd));
+      if(ld){if(lastOf(rd)>lastOf(ld)){ld.stage=rd.stage;ld.due=rd.due;ld.last=rd.last}}
+    }
+  }
+  const log={...(b.log||{})};
+  for(const [d,v] of Object.entries(a.log||{})){const r=log[d]||{ok:0,no:0};log[d]={ok:Math.max(v.ok||0,r.ok||0),no:Math.max(v.no||0,r.no||0)}}
+  const hk=h=>h.at+'|'+h.total+'|'+h.ok;
+  const hist=new Map();for(const h of [...(a.history||[]),...(b.history||[])]) if(h&&!hist.has(hk(h))) hist.set(hk(h),h);
+  const history=[...hist.values()].sort((x,y)=>x.at<y.at?1:-1).slice(0,60);
+  const sts=new Map((a.stories||[]).map(x=>[x.id,x]));
+  for(const rs of b.stories||[]){
+    const ls=sts.get(rs.id);
+    if(!ls){sts.set(rs.id,{...rs});continue}
+    if(rs.last&&(!ls.last||rs.last.at>ls.last.at)) ls.last=rs.last;
+    ls.tries=Math.max(ls.tries||0,rs.tries||0);
+    if(!ls.ko&&rs.ko){ls.ko=rs.ko;ls.koSrc=rs.koSrc}
+  }
+  return{cards:[...byWord.values()],seed:Math.max(a.seed||0,b.seed||0),log,history,stories:[...sts.values()]};
+}
 function schedulePush(){dirty=true;setSync('saving');clearTimeout(pushTimer);pushTimer=setTimeout(push,700)}
 async function push(){
   if(acct!=='cloud') return;
   if(pushing){pushTimer=setTimeout(push,500);return}
   pushing=true;dirty=false;
   try{
-    const r=await api('/api/words',{method:'PUT',body:JSON.stringify({cards,seed,log,history,stories})});
+    const r=await api('/api/words',{method:'PUT',body:JSON.stringify({cards,seed,log,history,stories,base:serverAt})});
     if(r.status===401){expired();return}
+    if(r.status===409){
+      // another device saved first: merge its copy with ours, then save the result
+      const j=await r.json();const d=j.data||{};
+      ({cards,seed,log,history,stories}=mergeData({cards,seed,log,history,stories},d));migrate();
+      serverAt=d.updatedAt||serverAt;
+      lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories,serverAt}));
+      rerenderCurrent();
+      pushing=false;dirty=true;pushTimer=setTimeout(push,50);return;
+    }
     if(!r.ok) throw new Error('save');
+    try{const j=await r.json();if(j.updatedAt){serverAt=j.updatedAt;lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories,serverAt}))}}catch(_){}
     if(!dirty){lsDel(pendingKey());setSync('saved')}
   }catch(e){setSync('offline')}
   finally{pushing=false}
@@ -692,7 +737,7 @@ function loadGuest(){
 async function loadCloud(){
   loadSettings();
   const cache=lsJSON(cacheKey());
-  if(cache&&Array.isArray(cache.cards)){cards=cache.cards;seed=cache.seed||0;log=cache.log||{};history=cache.history||[];stories=cache.stories||[];migrate();showView('app');renderAll()}
+  if(cache&&Array.isArray(cache.cards)){cards=cache.cards;seed=cache.seed||0;log=cache.log||{};history=cache.history||[];stories=cache.stories||[];serverAt=cache.serverAt||null;migrate();showView('app');renderAll()}
   else showView('loading','Loading your words…');
   // Changes made offline win: send them up instead of downloading.
   if(cache&&lsGet(pendingKey())==='1'){schedulePush();return}
@@ -702,14 +747,15 @@ async function loadCloud(){
     if(r.status===401){expired();return}
     if(!r.ok) throw new Error('load');
     const d=await r.json();
-    if(Array.isArray(d.cards)){cards=d.cards;seed=d.seed||0;log=d.log||{};history=d.history||[];stories=d.stories||[]}
+    if(cache&&serverAt&&d.updatedAt&&d.updatedAt<serverAt){setSync('saved');return}   // an older copy (stale read): keep what we have
+    if(Array.isArray(d.cards)){cards=d.cards;seed=d.seed||0;log=d.log||{};history=d.history||[];stories=d.stories||[];serverAt=d.updatedAt||null}
     else{
       // First sign-in on this account: bring over words saved without signing in.
       const g=lsJSON(GUEST_KEY);
       if(Array.isArray(g)&&g.length){cards=g;seed=Number(lsGet(GUEST_SEED)||0);log=lsJSON(GUEST_LOG)||{};history=lsJSON(GUEST_HIST)||[];stories=lsJSON(GUEST_STORIES)||[]}else{cards=null;seed=0;log={};history=[];stories=[]}
     }
     const changed=applySeeds()|migrate()||!Array.isArray(d.cards);
-    lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories}));
+    lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories,serverAt}));
     showView('app');renderAll();
     if(changed) save(); else setSync('saved');
   }catch(e){
@@ -734,10 +780,12 @@ async function refreshCloud(minGap){
     if(!r.ok) return;
     const d=await r.json();
     if(!Array.isArray(d.cards)||gen!==saveGen||dirty||lsGet(pendingKey())==='1') return;
+    if(serverAt&&(!d.updatedAt||d.updatedAt<=serverAt)) return;   // same or older copy (KV can return stale data for a while)
+    serverAt=d.updatedAt;
     const next={cards:d.cards,seed:d.seed||0,log:d.log||{},history:d.history||[],stories:d.stories||[]};
     if(JSON.stringify(next)===JSON.stringify({cards,seed,log,history,stories})) return;
     ({cards,seed,log,history,stories}=next);migrate();
-    lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories}));
+    lsSet(cacheKey(),JSON.stringify({cards,seed,log,history,stories,serverAt}));
     rerenderCurrent();
   }catch(e){}finally{pulling=false}
 }

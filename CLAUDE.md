@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.21.1</span> · <span class="version-date">2026/10/19</span>
+<span class="version-tag">v2.21.2</span> · <span class="version-date">2026/10/19</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.21.1 — 2026/10/19**
+**Current version: v2.21.2 — 2026/10/19**
 
 ## Architecture
 
@@ -29,6 +29,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
   - Words → Dictionary: search box at the top (auto-focused when the tab opens), results below with the newest first; looks words up without adding them (+ Add button). Words → Words has a + button for bulk add with two modes: **Words** (one per line, looked up in the dictionary) and **JSON** (prefilled template `[{word, pos, pairs:[{example, definition}], similar:[]}]`; one array per line also accepted). After adding, a results screen lists the new words. JSON import **overwrites** a word already in the list (sentences with unchanged example text keep their schedule and translation); Words mode skips existing words.
   - Any `data-pop="<word>"` element opens that word's entry in the quick popup (`#pop`), a bottom sheet that layers above the main sheet (`#sheet`).
   - **Sync between devices**: data loads once at start, then `refreshCloud` pulls `/api/words` again when the app returns to the foreground (`visibilitychange`/`focus`) and on tab or sub-tab taps (at most every 15 s), and redraws the current screen (`rerenderCurrent`, no focus change). It skips while local changes are unsent (`dirty`/pending), during a test, or with a sheet/popup open; `saveGen` drops a pull that raced a local change. Settings reload on foreground too.
+  - **Versions and merging** (KV is eventually consistent — a read can return an older copy for a minute or more): every saved copy has `updatedAt`; the client keeps `serverAt` (the copy its data is based on, also in the cache) and ignores any read with an older or equal `updatedAt` (refresh and start-up). `PUT /api/words` sends `base: serverAt`; if the stored copy is newer the worker answers **409** with it, and the client merges (`mergeData`: per sentence the schedule with the later `last` wins, daily `log` counts take the max, history and stories are combined, local objects updated in place so a running test keeps working) and saves again. Deleted words/stories can come back from the other copy in a merge.
   - Home stats use `log` (answers per day, `{ 'YYYY-MM-DD': {ok, no} }`), saved with the word list.
   - Dictionary: looked up through `GET /api/lookup` on the worker (never directly from the browser).
   - Sound: dictionary audio for words (device speech as fallback, and for definitions). **Example sentences** (`data-kind="ex"` → `sayExample`), the sentence read on **test reveal**, and **story Listen** use the engine chosen in Me → Settings → Voice: **Google voice** (Google Cloud Text-to-Speech with the Google key from the Google Translate page — the project needs the Cloud Text-to-Speech API; default `en-US-Chirp3-HD-Aoede`, list = en-US/GB/AU Chirp3-HD + Neural2, filtered by an All/US/UK/Australia tab (`voicePref.greg`); key-restriction and API-off errors get plain instructions (`gErrText`) and the voice list retries when the page is reopened; MP3 cached in Cache Storage `wm-tts-v1` so a sentence is fetched once; speed via `playbackRate`; one shared `gAudio`, primed with a silent WAV on a tap for iOS; falls back to device speech on error, `gLastError` shown on the Voice page) or **This device** (Web Speech API; iOS web apps only get basic voices). Me → Settings → Voice picks the engine (`voicePref.engine`, `gvoice`) plus a device English voice and speed (Apple novelty/character and Eloquence voices are hidden: `oddVoice`) (per device, localStorage `wm.voice`); `makeUtter` applies it everywhere. Story page **Listen** reads sentence by sentence, highlights the current paragraph and smoothly scrolls each new paragraph to the upper part of the screen (`reader`, `markReading`; stopped on leaving the page/tab or when anything else speaks).
@@ -37,7 +38,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 - **Backend**: `src/index.js` — Cloudflare Worker
   - `POST /api/auth/login` — verifies a Google ID token, creates a session (KV, 60 days)
   - `POST /api/auth/logout`, `GET /api/me`
-  - `GET/PUT /api/words` — the signed-in user's whole word list and answer log (`wm:words:<google sub>` → `{cards, seed, log, history, stories}`)
+  - `GET/PUT /api/words` — the signed-in user's whole word list and answer log (`wm:words:<google sub>` → `{cards, seed, log, history, stories, updatedAt}`); PUT takes `base` and returns 409 `{conflict, data}` when the stored copy is newer
   - `GET/PUT /api/settings` — the signed-in user's settings, Google Translate API key, AI provider and keys (`wm:settings:<google sub>` → `{translateKey, aiProvider, openaiKey, openaiModel, geminiKey, geminiModel, claudeKey, claudeModel}`; `SETTING_FIELDS`). Guests keep settings in localStorage.
   - `GET /api/lookup?word=` — Merriam-Webster Learner's (definition, examples, pronunciation) + Merriam-Webster Thesaurus (similar words), asked together. Cached in KV (`wm:dict2:<word>`, 90 days) once the Thesaurus has answered. `&fresh=1` skips the cache; `&debug=1` adds a `sources` report.
   - The browser tops up similar words from Datamuse when the Thesaurus gives fewer than 4 (Datamuse returns HTTP 403 to Cloudflare Workers).

@@ -128,8 +128,16 @@ async function putWords(request, env) {
   const history = Array.isArray(body.history) ? body.history.slice(0, 60).filter(h => h && typeof h === 'object') : [];
   // stories: the user's own English stories with study words; keep up to 300
   const stories = Array.isArray(body.stories) ? body.stories.slice(0, 300).filter(x => x && typeof x === 'object') : [];
-  const record = { cards: body.cards, seed: Number(body.seed) || 0, log, history, stories, updatedAt: new Date().toISOString() };
-  await env.WORDS.put(`wm:words:${user.sub}`, JSON.stringify(record));
+  // Another device saved after the copy this client started from: send the stored copy back so the client
+  // can merge instead of overwriting. (KV is eventually consistent, so this is best effort.)
+  const key = `wm:words:${user.sub}`;
+  const cur = await env.WORDS.get(key, 'json').catch(() => null);
+  if (cur && cur.updatedAt && typeof body.base === 'string' && cur.updatedAt > body.base)
+    return json({ conflict: true, data: cur }, 409);
+  let now = new Date().toISOString();
+  if (cur && cur.updatedAt && now <= cur.updatedAt) now = new Date(Date.parse(cur.updatedAt) + 1).toISOString();
+  const record = { cards: body.cards, seed: Number(body.seed) || 0, log, history, stories, updatedAt: now };
+  await env.WORDS.put(key, JSON.stringify(record));
   return json({ ok: true, updatedAt: record.updatedAt });
 }
 
