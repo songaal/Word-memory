@@ -460,7 +460,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.26.1</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.26.2</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -1145,17 +1145,24 @@ function playWord(word,audio){
   speak(word);
 }
 let actx=null;
+// Correct-answer "ding-ding": two quick rising bell notes (E6 → A6), Duolingo style
 function chime(){
   try{
     actx=actx||new (window.AudioContext||window.webkitAudioContext)();
     if(actx.state==='suspended') actx.resume();
-    const t=actx.currentTime;
-    [[1046.5,0],[1318.5,.08],[1568,.16]].forEach(([f,d])=>{
-      const o=actx.createOscillator(),g=actx.createGain();
-      o.type='triangle';o.frequency.value=f;
-      g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.22,t+d+.012);g.gain.exponentialRampToValueAtTime(.001,t+d+.4);
-      o.connect(g);g.connect(actx.destination);o.start(t+d);o.stop(t+d+.45);
-    });
+    const t=actx.currentTime+.01,out=actx.createGain();out.gain.value=.9;out.connect(actx.destination);
+    const bell=(f,at,len,vol)=>{
+      // fundamental + soft overtones = a bright, round bell
+      [[1,1],[2,.28],[3,.08],[4.2,.04]].forEach(([m,v])=>{
+        const o=actx.createOscillator(),g=actx.createGain();
+        o.type='sine';o.frequency.value=f*m;
+        g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(vol*v,at+.006);
+        g.gain.exponentialRampToValueAtTime(.0008,at+len/(m>1?m*.8:1));
+        o.connect(g);g.connect(out);o.start(at);o.stop(at+len+.05);
+      });
+    };
+    bell(1318.5,t,.22,.32);     // "ding"
+    bell(1760,t+.1,.55,.36);    // "ding!" (higher, rings longer)
   }catch(e){}
 }
 
