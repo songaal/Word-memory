@@ -1,35 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7c5cff"/><stop offset=".62" stop-color="#b16cf0"/><stop offset="1" stop-color="#ff7a59"/>
+      <stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#b86cf0"/>
     </linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cf9a68"/><stop offset="1" stop-color="#bb8452"/>
+    </linearGradient>
+    <radialGradient id="orange" cx=".38" cy=".35" r=".7">
+      <stop offset="0" stop-color="#ffc04d"/><stop offset="1" stop-color="#ff8a00"/>
+    </radialGradient>
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/>
-  <!-- tiny ears high on the head -->
-  <ellipse cx="176" cy="122" rx="24" ry="19" fill="#8a5631"/><ellipse cx="176" cy="125" rx="12" ry="9" fill="#5e3618"/>
-  <ellipse cx="336" cy="122" rx="24" ry="19" fill="#8a5631"/><ellipse cx="336" cy="125" rx="12" ry="9" fill="#5e3618"/>
-  <!-- long, boxy head with a flat top -->
-  <rect x="138" y="112" width="236" height="316" rx="96" fill="#bd8553"/>
-  <!-- big blunt snout (a bit darker) -->
-  <rect x="150" y="262" width="212" height="166" rx="80" fill="#a46c3f"/>
-  <!-- sleepy half-closed eyes -->
-  <ellipse cx="196" cy="214" rx="15" ry="12" fill="#2b1a10"/>
-  <ellipse cx="316" cy="214" rx="15" ry="12" fill="#2b1a10"/>
-  <rect x="176" y="196" width="40" height="17" fill="#bd8553"/>
-  <rect x="296" y="196" width="40" height="17" fill="#bd8553"/>
-  <path d="M179 213 Q196 206 213 213 M299 213 Q316 206 333 213" fill="none" stroke="#6b3f1f" stroke-width="5" stroke-linecap="round"/>
-  <circle cx="201" cy="219" r="3.5" fill="#fff" opacity=".9"/><circle cx="321" cy="219" r="3.5" fill="#fff" opacity=".9"/>
-  <!-- soft blush -->
-  <ellipse cx="168" cy="252" rx="18" ry="10" fill="#ff9fb0" opacity=".55"/>
-  <ellipse cx="344" cy="252" rx="18" ry="10" fill="#ff9fb0" opacity=".55"/>
+  <!-- ears at the top corners of the head -->
+  <ellipse cx="88" cy="196" rx="40" ry="32" fill="#8a5631"/><ellipse cx="90" cy="200" rx="21" ry="16" fill="#5e3618"/>
+  <ellipse cx="424" cy="196" rx="40" ry="32" fill="#8a5631"/><ellipse cx="422" cy="200" rx="21" ry="16" fill="#5e3618"/>
+  <!-- the face fills the icon -->
+  <path d="M-10 540 L-10 290 C-10 196 90 160 256 160 C422 160 522 196 522 290 L522 540 Z" fill="url(#fur)"/>
+  <!-- darker snout -->
+  <rect x="166" y="286" width="180" height="250" rx="80" fill="#a8703f"/>
+  <!-- sleepy eyes, wide apart -->
+  <ellipse cx="140" cy="279" rx="19" ry="12" fill="#2b1a10"/>
+  <ellipse cx="372" cy="279" rx="19" ry="12" fill="#2b1a10"/>
+  <rect x="114" y="252" width="52" height="22" fill="#cb9563"/>
+  <rect x="346" y="252" width="52" height="22" fill="#cb9563"/>
+  <path d="M118 274 L162 274 M350 274 L394 274" fill="none" stroke="#6b3f1f" stroke-width="6" stroke-linecap="round"/>
+  <!-- blush -->
+  <ellipse cx="104" cy="336" rx="30" ry="16" fill="#ff9fb0" opacity=".35"/>
+  <ellipse cx="408" cy="336" rx="30" ry="16" fill="#ff9fb0" opacity=".35"/>
   <!-- wide nose with slit nostrils -->
-  <rect x="206" y="284" width="100" height="40" rx="20" fill="#3d2414"/>
-  <ellipse cx="232" cy="304" rx="9" ry="4.5" fill="#1f0f06" transform="rotate(-18 232 304)"/>
-  <ellipse cx="280" cy="304" rx="9" ry="4.5" fill="#1f0f06" transform="rotate(18 280 304)"/>
-  <ellipse cx="236" cy="292" rx="14" ry="4" fill="#fff" opacity=".15"/>
-  <!-- small calm smile -->
-  <path d="M256 324 L256 352 M226 362 Q241 376 256 356 Q271 376 286 362" fill="none" stroke="#3d2414" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- story sparkle -->
-  <path d="M404 96 L415 128 L447 139 L415 150 L404 182 L393 150 L361 139 L393 128 Z" fill="#ffd34d" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>
-  <circle cx="104" cy="112" r="7" fill="#fff" opacity=".9"/><circle cx="436" cy="218" r="5" fill="#fff" opacity=".9"/>
+  <rect x="198" y="300" width="116" height="46" rx="23" fill="#3d2414"/>
+  <ellipse cx="228" cy="323" rx="11" ry="5.5" fill="#1f0f06" transform="rotate(-18 228 323)"/>
+  <ellipse cx="284" cy="323" rx="11" ry="5.5" fill="#1f0f06" transform="rotate(18 284 323)"/>
+  <ellipse cx="232" cy="310" rx="16" ry="4.5" fill="#fff" opacity=".15"/>
+  <!-- calm smile -->
+  <path d="M256 346 L256 420 M226 436 Q240 424 256 421 Q272 424 286 436" fill="none" stroke="#3d2414" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- a mandarin orange on top -->
+  <ellipse cx="256" cy="166" rx="46" ry="10" fill="#000" opacity=".12"/>
+  <circle cx="256" cy="118" r="50" fill="url(#orange)"/>
+  <circle cx="240" cy="100" r="12" fill="#fff" opacity=".35"/>
+  <circle cx="276" cy="130" r="2.5" fill="#e07800" opacity=".6"/><circle cx="262" cy="142" r="2.5" fill="#e07800" opacity=".6"/><circle cx="286" cy="112" r="2.5" fill="#e07800" opacity=".6"/>
+  <path d="M256 70 L258 82" stroke="#6b4a1f" stroke-width="6" stroke-linecap="round"/>
+  <path d="M258 74 C272 52 300 50 312 60 C296 78 274 82 258 74 Z" fill="#3fae49"/>
+  <path d="M262 73 C278 66 292 62 306 61" stroke="#2c8a36" stroke-width="2.5" fill="none" stroke-linecap="round"/>
 </svg>
