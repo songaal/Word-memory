@@ -444,7 +444,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.21.3</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.22.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -1060,17 +1060,19 @@ function speak(text){
 // ---------- story reader: reads sentence by sentence, highlighting the paragraph ----------
 let reader=null;   // {id, parts:[{p, t}], i, token}
 const splitSentences=p=>p.match(/[^.!?]+[.!?]+["'”’)\]]*|[^.!?]+$/g)?.map(x=>x.trim()).filter(Boolean)||[p];
+const READ_UI={body:'#storyBody',scroll:'storyScroll',btn:'svRead'};
+let readUI=READ_UI;
 function markReading(){
   const pi=reader&&reader.parts[reader.i]?reader.parts[reader.i].p:-1;
-  const ps=document.querySelectorAll('#storyBody .storytext > p');
+  const ps=document.querySelectorAll(readUI.body+' .storytext > p');
   ps.forEach((el,i)=>el.classList.toggle('reading',i===pi));
   // follow the voice: when a new paragraph starts, scroll it to the upper part of the screen
   if(pi>=0&&pi!==markReading.lastP&&ps[pi]){
-    const sc=$('storyScroll'),r=ps[pi].getBoundingClientRect(),sr=sc.getBoundingClientRect();
+    const sc=$(readUI.scroll),r=ps[pi].getBoundingClientRect(),sr=sc.getBoundingClientRect();
     if(sr.height) sc.scrollTo({top:Math.max(0,sc.scrollTop+(r.top-sr.top)-sr.height*.22),behavior:'smooth'});
   }
   markReading.lastP=pi;
-  const b=$('svRead');
+  const b=$(readUI.btn);
   if(b){b.setAttribute('aria-pressed',!!reader);b.querySelector('span').textContent=reader?'Stop':'Listen'}
 }
 function stopReading(){
@@ -1080,8 +1082,10 @@ function stopReading(){
   gStop();
   markReading();
 }
-function startReading(s){
+function startReading(s,ui){
   if(!gOn()&&!('speechSynthesis' in window)) return;
+  if(reader) stopReading();
+  readUI=ui||READ_UI;markReading.lastP=-1;
   if(gOn()) gPrime();
   stopReading();try{speechSynthesis.cancel()}catch(e){}gStop();
   const parts=[];
@@ -1418,7 +1422,7 @@ function confirmQuit(text,onQuit){
 function renderTestTab(){
   $('tseg-schedule').setAttribute('aria-selected',testPane==='schedule');$('tseg-story').setAttribute('aria-selected',testPane==='story');
   $('testScroll').hidden=testPane!=='schedule';$('storyTestScroll').hidden=testPane!=='story';
-  if(testPane==='schedule'){$('testSeg').hidden=inTest;setQuit(inTest?askQuitTest:null,inTest?useHint:null);if(!inTest) testHome()}
+  if(testPane==='schedule'){$('testSeg').hidden=inTest;setQuit(inTest?askQuitTest:null,null);if(!inTest) testHome()}
   else{$('testSeg').hidden=!!storyRun;setQuit(storyRun&&!storyRun.done?askQuitStory:null,storyRun&&!storyRun.done?toggleStoryHint:null);if(!storyRun) storyTestList()}
   tmrSync();
 }
@@ -1501,13 +1505,13 @@ function startStoryTest(id){
   testPane='story';storyRun={id,ms};$('testSeg').hidden=true;setQuit(askQuitStory,toggleStoryHint);tmrStart();
   const hintWords=[...new Set(ms.map(m=>m.w))].sort();   // alphabetical, so the order gives nothing away
   $('storyTestBody').innerHTML=`
-    <span class="label">${plural(ms.length,'blank')} · 💡 Hint shows the words</span>
+    <span class="label">${plural(ms.length,'blank')} · 📖 Words shows the word list</span>
     <h2 class="stitle">${esc(s.title)}</h2>
     <p class="note">Tap a blank and type the word. Enter moves to the next blank.</p>
     <div class="card"><div class="storytext" id="stText">${storyHTML(s,(m,k)=>gapHTML('sg'+k,m.form.length,'sm'))}</div></div>
     <button class="btn block" id="stCheck" type="button">Check</button>`;
   ms.forEach((m,k)=>setupGap('sg'+k,m.form.length,()=>{const n=$('sg'+(k+1));if(n) n.focus();else $('stCheck').focus()}));
-  $('testHint').setAttribute('aria-pressed','false');$('testHint').textContent='💡 Hint';
+  $('testHint').setAttribute('aria-pressed','false');$('testHint').textContent='📖 Words';
   $('hintPopWords').innerHTML=hintWords.map(w=>`<span class="chip">${esc(w)}</span>`).join('');
   // tapping a blank closes the hint and brings the keyboard back
   $('storyTestBody').querySelectorAll('.gin').forEach(i=>i.addEventListener('focus',()=>hideStoryHint()));
@@ -1547,13 +1551,29 @@ function checkStoryTest(){
       </div>
       <div class="splitbar"><div class="ok" style="width:${ok/total*100}%"></div><div class="no" style="width:${(total-ok)/total*100}%"></div></div>
     </div>
-    <div class="card"><div class="storytext">${storyHTML(s,(m,k)=>`<button class="fill ${res[k].ok?'ok':'no'}" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`)}</div></div>
+    <div class="row" style="gap:8px"><button class="hintbtn trbtn" id="srRead" type="button" aria-pressed="false">${SPK_ICON}<span>Listen</span></button><button class="hintbtn trbtn" id="srTr" type="button" aria-pressed="false">${TR_ICON}<span>Translate</span></button><span class="msg" id="srMsg" style="min-height:0"></span></div>
+    <div class="card" id="srCard"><div class="storytext">${storyHTML(s,(m,k)=>`<button class="fill ${res[k].ok?'ok':'no'}" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`)}</div></div>
     ${misses.length?`<div class="label" style="padding-left:4px">Missed · tap to see the word</div>
       <div class="rlist">${misses.map(r=>`<button class="ri" type="button" data-pop="${esc(r.m.w)}"><span class="mk no">✗</span><span class="top">${esc(r.m.form)}<span>${r.m.form.toLowerCase()!==r.m.w?esc(r.m.w):''}</span></span><span class="sent" style="font-style:normal">${r.v?`You wrote “${esc(r.v)}”`:'Left blank'}</span></button>`).join('')}</div>`:''}
     <div class="split"><button class="btn ghost" id="stList" type="button">Back to stories</button><button class="btn" id="stAgain" type="button">Try again</button></div>`;
   const id=storyRun.id;
-  $('stList').onclick=storyTestList;
-  $('stAgain').onclick=()=>startStoryTest(id);
+  const fillFn=(m,k)=>`<button class="fill ${res[k].ok?'ok':'no'}" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`;
+  const RUI={body:'#srCard',scroll:'storyTestScroll',btn:'srRead'};
+  $('srRead').onclick=()=>{if(reader&&reader.id===s.id&&readUI===RUI) stopReading();else startReading(s,RUI)};
+  let trOn=false;
+  const paint=()=>{$('srCard').innerHTML=`<div class="storytext">${storyHTML(s,fillFn,trOn&&s.ko?(i=>s.ko[i]?`<div class="pko">${esc(s.ko[i])}</div>`:''):null)}</div>`;if(reader&&readUI===RUI) markReading()};
+  $('srTr').onclick=async()=>{
+    const m=$('srMsg');m.className='msg';m.textContent='';
+    if(trOn){trOn=false;$('srTr').setAttribute('aria-pressed','false');paint();return}
+    if(!(s.ko&&s.koSrc===s.text)){
+      if(!settings.translateKey){m.className='msg err';m.textContent='Add your Google Translate key in Me → Settings.';return}
+      m.textContent='Translating…';
+      try{s.ko=await translateManyKo(storyParas(s));s.koSrc=s.text;save();m.textContent=''}catch(err){m.className='msg err';m.textContent=err.message;return}
+    }
+    trOn=true;$('srTr').setAttribute('aria-pressed','true');paint();
+  };
+  $('stList').onclick=()=>{stopReading();storyTestList()};
+  $('stAgain').onclick=()=>{stopReading();startStoryTest(id)};
   $('storyTestScroll').scrollTop=0;
 }
 
@@ -1573,7 +1593,7 @@ function startTest(){
   const set=dueNow.length?dueNow:all;   // remaining due sentences; practice only when nothing is due
   if(!set.length){testHome();return}
   queue=spread(set.slice());total=queue.length;score={ok:0,no:0};results=[];inTest=true;testStartedAt=new Date().toISOString();
-  $('testSeg').hidden=true;setQuit(askQuitTest,useHint);tmrStart();
+  $('testSeg').hidden=true;setQuit(askQuitTest,null);tmrStart();
   next();
 }
 // ---------- letter-slot blank ----------
@@ -1631,9 +1651,10 @@ function useHint(){
   setGapPrefix('ansIn',curForm.slice(0,k));
   $('ansIn').focus();
   const left=3-hint.used;
-  $('testHint').textContent=left?`💡 Hint ${left}`:'💡 0';
-  $('testHint').disabled=!left||k>=n-1;
+  if(!left||k>=n-1) setHintShow();else $('hintBtn').textContent='💡 '+left;
 }
+// No hints left: the button shows the answer instead (counts as not known)
+function setHintShow(){const b=$('hintBtn');if(!b) return;b.dataset.show='1';b.textContent='Show';b.title="I don't know. Show the answer"}
 function askQuitTest(){
   const n=results.length;
   confirmQuit(n?`You answered ${n} of ${total}. Those answers are saved to your history, and the next test starts with the sentences you haven't done yet.`:`You haven't answered anything yet, so nothing will be saved.`,quitTest);
@@ -1677,13 +1698,13 @@ function next(){
     </div>
     <div id="askArea" class="askrow">
       <button class="btn" id="checkBtn" type="button">Check</button>
-      <button class="btn ghost" id="idk" type="button" aria-label="I don't know. Show the answer" title="I don't know">Pass</button>
+      <button class="btn ghost" id="hintBtn" type="button">💡 Hint</button>
     </div>`;
   const check=()=>{if(gapTyped('ansIn')||gaps.ansIn.prefix) grade(gapValue('ansIn'));else $('ansIn').focus()};
   setupGap('ansIn',curForm.length,check);
   $('checkBtn').onclick=check;
-  $('testHint').textContent='💡 Hint 3';$('testHint').disabled=curForm.length<2;
-  $('idk').onclick=()=>grade(null);
+  $('hintBtn').onclick=()=>{if(hint.used>=3||$('hintBtn').dataset.show) grade(null);else useHint()};
+  if(curForm.length<2) setHintShow();
   $('testScroll').scrollTop=0;
   $('ansIn').focus({preventScroll:true});
 }
@@ -1711,9 +1732,24 @@ function grade(ans){
   document.querySelector('[data-gap="ansIn"]').outerHTML=`<button class="fill ${ok?'ok':'no'}" type="button" data-pop="${esc(cur.c.word)}" title="Show the word's entry">${esc(curForm)}</button>`;
   $('qsent').querySelectorAll('[data-fill]').forEach(b=>{b.className='fill '+(ok?'ok':'no');b.textContent=b.dataset.fill;b.dataset.pop=cur.c.word});
   const after=$('afterArea');after.hidden=false;
-  after.innerHTML=`<div class="verdict ${ok?'ok':'no'}">${ok?'Correct':(a?`<s>${esc(a)}</s>Not quite`:'Answer shown')} · <span style="font-weight:400">${when}</span></div>`;
-  $('askArea').innerHTML=`<button class="btn block" id="nextBtn" type="button">${queue.length?'Next':'See results'}</button>`;
-  $('testHint').disabled=true;
+  after.innerHTML=`<div class="verdict ${ok?'ok':'no'}">${ok?'Correct':(a?`<s>${esc(a)}</s>Not quite`:'Answer shown')} · <span style="font-weight:400">${when}</span></div>
+    ${curSay?`<div class="row" style="gap:8px"><button class="hintbtn trbtn" id="qListen" type="button">${SPK_ICON}<span>Listen</span></button><button class="hintbtn trbtn" id="qTr" type="button" aria-pressed="false">${TR_ICON}<span>Translate</span></button></div>
+    <div class="ko" id="qKo" hidden></div>`:''}`;
+  if(curSay){
+    const sent=curSay,dd=cur.d;
+    $('qListen').onclick=()=>sayExample(sent);
+    $('qTr').onclick=async()=>{
+      const b=$('qTr'),box=$('qKo');
+      if(b.getAttribute('aria-pressed')==='true'){b.setAttribute('aria-pressed','false');box.hidden=true;return}
+      b.setAttribute('aria-pressed','true');box.hidden=false;box.className='ko';
+      if(dd.exKo&&dd.exKoSrc!==undefined&&dd.exKoSrc!==sent) dd.exKo='';
+      if(dd.exKo){box.textContent=dd.exKo;return}
+      if(!settings.translateKey){box.className='ko err';box.textContent='Add your Google Translate API key in Me → Settings to see translations.';return}
+      box.textContent='Translating…';
+      try{dd.exKo=await translateKo(sent);dd.exKoSrc=sent;save();box.textContent=dd.exKo}catch(err){box.className='ko err';box.textContent=err.message}
+    };
+  }
+  $('askArea').innerHTML=`<button class="btn block" id="nextBtn" type="button" style="grid-column:1 / -1">${queue.length?'Next':'See results'}</button>`;
   $('nextBtn').onclick=next;
   flash(ok);
   const w=cur.c.word,au=cur.c.audio,say=curSay;
