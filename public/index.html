@@ -141,14 +141,20 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .pill.fire{color:var(--orange)}
 .pill.fire.off{color:var(--muted);filter:grayscale(1)}
 .hero{background:var(--green);color:#fff;border:0;box-shadow:0 5px 0 var(--green-d);margin-bottom:5px}
-.hero.done{background:var(--gold);box-shadow:0 5px 0 var(--gold-d);color:#4b3800}
+.hero{position:relative}
+.hero .hbadge{position:absolute;top:14px;right:14px;width:46px;height:46px;border-radius:50%;background:#fff;color:var(--green-d);display:grid;place-items:center;font:900 24px var(--f-ui);box-shadow:0 3px 0 #0002;animation:pop .4s ease-out}
+@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.12)}100%{transform:none}}
+.hero.done .msg-big{padding-right:56px}
+.hdone{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hdone div{background:#ffffff2e;border-radius:14px;padding:8px 10px;font:800 13px/1.3 var(--f-ui)}
+.hdone b{display:block;font:900 20px/1.2 var(--f-ui)}
 .hero .label{color:inherit;opacity:.85}
 .hero .msg-big{font:900 24px/1.25 var(--f-ui)}
 .hero .gbar{height:18px;border-radius:9px;background:#0002;overflow:hidden}
-.hero .gbar i{display:block;height:100%;border-radius:9px;background:#fff;box-shadow:inset 0 -4px 0 #0001}
+.hero .gbar i{display:block;height:100%;border-radius:9px;background:var(--gold);box-shadow:inset 0 -5px 0 #0002,inset 0 4px 0 #fff6}
 .hero .gnum{font:800 14px var(--f-ui);opacity:.9}
 .hero .btn{background:#fff;color:var(--green-d);box-shadow:0 4px 0 #0003}
-.hero.done .btn{color:var(--gold-d)}
+
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .tcard{border-radius:18px;border:2px solid var(--line);background:var(--card);padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .tcard .ti{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:24px}
@@ -444,7 +450,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.22.1</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.22.2</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -1283,6 +1289,8 @@ function renderHome(){
   const max=Math.max(1,...days.map(x=>x.v.ok+x.v.no));
   const dn=['Su','Mo','Tu','We','Th','Fr','Sa'];
   const st=streak(),goal=doneToday+due,pct=goal?Math.round(doneToday/goal*100):0,done=due===0&&doneToday>0;
+  const lt=log[today()]||{ok:0,no:0},accToday=lt.ok+lt.no?Math.round(lt.ok/(lt.ok+lt.no)*100):null;
+  const dueTomorrow=items.filter(it=>it.d.due===addDays(1)).length;
   const name=(acct==='cloud'&&user&&user.name)?user.name.split(' ')[0]:'';
   const h=new Date().getHours(),hello=h<12?'Good morning':h<18?'Good afternoon':'Good evening';
   const msg=done?'Daily goal complete! 🎉':due===0?'Nothing due today. Practice or read a story!':doneToday?`Only ${due} more to finish today. You've got this!`:st?`${plural(due,'sentence')} waiting. Keep your ${st}-day streak alive!`:`${plural(due,'sentence')} waiting. Start a streak today!`;
@@ -1296,7 +1304,11 @@ function renderHome(){
       <div class="label">Today's goal</div>
       <div class="msg-big">${msg}</div>
       ${goal?`<div class="gbar"><i style="width:${Math.max(pct,4)}%"></i></div><div class="gnum">${doneToday} / ${goal} sentences · ${pct}%</div>`:''}
-      <button class="btn block" id="homeStart" type="button">${due?'Start words test':'Practice words'}</button>
+      ${done?`<span class="hbadge" aria-hidden="true">✓</span>
+      <div class="hdone">
+        <div><b>${accToday===null?'–':accToday+'%'}</b>correct today</div>
+        <div><b>${dueTomorrow}</b>${dueTomorrow===1?'sentence':'sentences'} tomorrow</div>
+      </div>`:`<button class="btn block" id="homeStart" type="button">${due?'Start words test':'Practice words'}</button>`}
     </div>
     <div class="duo">
       <div class="tcard words">
@@ -1329,7 +1341,8 @@ function renderHome(){
         return `<div class="wk${k===today()?' today':''}"><small>${t||''}</small><div class="col" style="height:${Math.max(hh,4)}px">${t?`<div class="ok" style="height:${v.ok/t*100}%"></div><div class="no" style="height:${v.no/t*100}%"></div>`:''}</div><small>${wd}</small></div>`}).join('')}</div>
     </div>`;
   const goWords=()=>{show('test');testPane='schedule';renderTestTab();startTest()};
-  $('homeStart').onclick=goWords;$('homeWords').onclick=goWords;
+  if($('homeStart')) $('homeStart').onclick=goWords;
+  $('homeWords').onclick=goWords;
   $('homeStory').onclick=()=>{
     if(!stories.length){show('dict');dictPane='story';storyView=null;renderDict();openStoryForm();return}
     show('test');testPane='story';renderTestTab();
