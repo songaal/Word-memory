@@ -374,7 +374,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.18.2</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.18.3</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -396,6 +396,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
           <div class="msg" id="gMsg" style="padding:0 4px 8px"></div>
           <div class="label" style="padding-left:4px">Google voices · tap to hear and choose</div>
           <div class="seg" role="tablist" id="gRegSeg" style="margin:0 0 10px">
+            <button type="button" role="tab" data-greg="all">All</button>
             <button type="button" role="tab" data-greg="US">US</button>
             <button type="button" role="tab" data-greg="GB">UK</button>
             <button type="button" role="tab" data-greg="AU">Australia</button>
@@ -2006,7 +2007,7 @@ function renderVoice(){
       const reg=voicePref.greg||curReg;
       $('gRegSeg').hidden=false;
       document.querySelectorAll('#gRegSeg [data-greg]').forEach(b=>b.setAttribute('aria-selected',b.dataset.greg===reg));
-      const sorted=[...gVoices].filter(v=>v.name.startsWith('en-'+reg+'-')).sort((a,b)=>G_TYPES.findIndex(([t])=>a.name.includes(t))-G_TYPES.findIndex(([t])=>b.name.includes(t))||a.name.localeCompare(b.name));
+      const sorted=[...gVoices].filter(v=>reg==='all'||v.name.startsWith('en-'+reg+'-')).sort((a,b)=>G_TYPES.findIndex(([t])=>a.name.includes(t))-G_TYPES.findIndex(([t])=>b.name.includes(t))||a.name.localeCompare(b.name));
       $('gVoiceList').innerHTML=sorted.map(v=>{const on=v.name===cur,[,reg]=v.name.match(/^en-(US|GB|AU)/)||[],type=G_TYPES.find(([t])=>v.name.includes(t));
         return `<button class="mi" type="button" data-gvoice="${esc(v.name)}"><span class="ic">${on?'✓':SPK_ICON}</span><span class="t">${esc(label(v.name))}<br><span class="note">${region[reg]||reg} · ${(v.ssmlGender||'').toLowerCase()} · ${type?type[1]:''}</span></span><span class="v ${on?'on':''}">${on?'Selected':'▶'}</span></button>`}).join('');
     }
