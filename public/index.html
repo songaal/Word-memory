@@ -350,11 +350,11 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .ri .sent b{font-style:normal;color:var(--fg)}
 
 /* ---- sheet (popup layer) ---- */
-.sheet{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;justify-content:flex-end;background:#0007}
+.sheet{position:fixed;left:0;right:0;top:var(--vvtop,0px);height:var(--vvh,100%);z-index:50;display:flex;flex-direction:column;justify-content:flex-end;background:#0007}
 .sheet-panel{background:var(--bg);border-radius:18px 18px 0 0;max-height:88%;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:12px var(--gutter-r) 8px var(--gutter-l)}
 .sheet-head b{font:600 16px var(--f-ui)}
-.sheet-body{overflow-y:auto;overscroll-behavior:contain;padding:0 var(--gutter-r) 20px var(--gutter-l)}
+.sheet-body{overflow-y:auto;overscroll-behavior:contain;padding:0 var(--gutter-r) 20px var(--gutter-l);min-height:0}
 .x{width:32px;height:32px;border-radius:50%;border:0;background:var(--line);cursor:pointer;font-size:16px}
 @media (prefers-reduced-motion:no-preference){.sheet-panel{animation:up .22s ease-out}@keyframes up{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}}
 
@@ -444,7 +444,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.22.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.22.1</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -2588,6 +2588,11 @@ document.addEventListener('focusout',e=>{if(e.target.matches('input,textarea')){
   document.addEventListener('focusout',()=>setTimeout(fit,300));
   fit();
 })();
+// Inside a sheet, keep the field being typed in visible above the keyboard
+document.addEventListener('focusin',e=>{
+  const el=e.target;if(!el.matches||!el.matches('input,textarea')||!el.closest('.sheet-body')) return;
+  setTimeout(()=>{if(document.activeElement===el) el.scrollIntoView({block:'center',behavior:'smooth'})},350);
+});
 // ---------- native feel: no pinch/double-tap zoom ----------
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('touchmove',e=>{if(e.touches.length>1) e.preventDefault()},{passive:false});
