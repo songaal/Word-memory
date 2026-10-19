@@ -290,7 +290,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .mi[aria-checked="true"] .rdo::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--accent)}
 .mi.off .t{color:var(--muted)}
 .selbar{padding:10px var(--gutter-r) 10px var(--gutter-l);border-top:1px solid var(--line);background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.selbar .selbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:640px;margin:0 auto}
+.selbar .selbtns{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;max-width:640px;margin:0 auto}
 .selbar .selcount{text-align:center;font:800 13px var(--f-ui);color:var(--muted);margin-bottom:6px}
 .selbar .btn:disabled{opacity:.45;cursor:default}
 #stHint{font-size:15px;resize:vertical;min-height:52px}
@@ -432,7 +432,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
       <div class="scroll"><div class="stack" id="listBody"></div></div>
       <div class="selbar" id="selBar" hidden>
         <div class="selcount" id="selCount"></div>
-        <div class="selbtns"><button class="btn blue" id="selTest" type="button">Test</button><button class="btn" id="selGo" type="button">Make a story</button></div>
+        <div class="selbtns"><button class="btn blue" id="selTest" type="button">Test</button><button class="btn" id="selGo" type="button">Make a story</button><button class="btn danger" id="selDel" type="button" aria-label="Delete">🗑</button></div>
       </div>
     </div>
     <div class="pane" id="pane-story" hidden>
@@ -454,7 +454,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.24.0</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.25.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -2091,14 +2091,14 @@ function renderList(){
   const sorted=[...cards].map(c=>({c,s:wordSummary(c)})).sort((a,b)=>a.s.due<b.s.due?-1:a.s.due>b.s.due?1:a.c.word.localeCompare(b.c.word));
   if(listSel) for(const w of [...listSel]) if(!cards.some(c=>c.word===w)) listSel.delete(w);
   const head=listSel
-    ?`<div class="listhead"><span class="label">${listSel.size?listSel.size+' selected':'Tap words to pick them'}</span><button class="linkbtn" id="selCancel" type="button">Cancel</button></div>`
+    ?`<div class="listhead"><span class="label">${listSel.size?listSel.size+' selected':'Tap words to pick them'}</span><span class="row" style="gap:14px;flex-wrap:nowrap"><button class="linkbtn" id="selAll" type="button">${listSel.size===cards.length?'Clear':'Select all'}</button><button class="linkbtn" id="selCancel" type="button">Cancel</button></span></div>`
     :`<div class="listhead"><span class="label">${plural(cards.length,'word')} · ${plural(allItems().length,'sentence')}</span><span class="row" style="gap:12px;flex-wrap:nowrap">${cards.length?'<button class="linkbtn" id="selBtn" type="button">Select</button>':''}<button class="plus" id="bulkBtn" type="button" aria-label="Add words">+</button></span></div>`;
   $('listBody').innerHTML=`${head}
     ${cards.length?`<div class="list">${sorted.map(({c,s})=>listSel
         ?`<button class="li sel" type="button" data-pick="${esc(c.word)}" aria-pressed="${listSel.has(c.word)}"><span class="ck"></span><span class="w">${esc(c.word)}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${dueLabel(s.due)}</span></button>`
         :`<button class="li" type="button" data-open="${esc(c.word)}"><span class="w">${esc(c.word)}${c.sample?' <span class="tag">Sample</span>':''}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${dueLabel(s.due)}</span></button>`).join('')}</div>`
       :`<div class="card empty">No words yet. Tap + to add some, or search in the Search tab.</div>`}`;
-  if(listSel) $('selCancel').onclick=()=>{listSel=null;renderList()};
+  if(listSel){$('selCancel').onclick=()=>{listSel=null;renderList()};$('selAll').onclick=()=>{listSel=listSel.size===cards.length?new Set():new Set(cards.map(c=>c.word));renderList()}}
   else{$('bulkBtn').onclick=openBulk;if($('selBtn')) $('selBtn').onclick=()=>{listSel=new Set();renderList()}}
   renderSelBar();
 }
@@ -2106,7 +2106,8 @@ function renderSelBar(){
   const bar=$('selBar');bar.hidden=!listSel||dictPane!=='list';if(bar.hidden) return;
   const n=listSel.size,b=$('selGo'),t=$('selTest');
   $('selCount').textContent=!n?'Pick words to test or to make a story':n>SEL_MAX?`${n} selected · a story takes ${SEL_MAX} words or fewer`:`${n===1?'1 word':n+' words'} selected`;
-  t.disabled=!n;b.disabled=!n||n>SEL_MAX;
+  t.disabled=!n;b.disabled=!n||n>SEL_MAX;$('selDel').disabled=!n;
+  const sa=$('selAll');if(sa) sa.textContent=n&&n===cards.length?'Clear':'Select all';
   t.textContent=n?`Test ${n===1?'it':'these'}`:'Test';b.textContent='Make a story';
 }
 // Test just the picked words: every example sentence of each one (due ones count, the rest are practice)
@@ -2116,6 +2117,18 @@ $('selTest').onclick=()=>{
   listSel=null;renderList();
   show('test');testPane='schedule';renderTestTab();
   startTest(set,'Selected words');
+};
+// Delete the picked words (asks first)
+$('selDel').onclick=()=>{
+  if(!listSel||!listSel.size) return;
+  const pick=new Set(listSel),n=pick.size,sent=allItems().filter(it=>pick.has(it.c.word)).length;
+  const names=[...cards].map(c=>c.word).filter(w=>pick.has(w));
+  openSheet(`Delete ${n===1?'1 word':n+' words'}?`,`<div class="card qconfirm"><p>${esc(names.slice(0,12).join(', '))}${names.length>12?' …':''}</p>
+    <p class="muted" style="font-size:14px">${n===1?'This word':'These words'} and ${sent===1?'its 1 sentence':'their '+sent+' sentences'} will be removed with their review schedule. Stories keep their text.</p>
+    <button class="btn ghost block" id="delNo" type="button">Cancel</button>
+    <button class="btn danger block" id="delYes" type="button">Delete</button></div>`);
+  $('delNo').onclick=closeSheet;
+  $('delYes').onclick=()=>{cards=cards.filter(c=>!pick.has(c.word));listSel=null;save();closeSheet();renderList();renderBadge()};
 };
 $('selGo').onclick=()=>{
   if(!listSel||!listSel.size) return;
@@ -2715,7 +2728,7 @@ const I18N_KO={
 // words tab
 'Look up a word':'단어 찾기',"Search for any word. It won't be added to your study list until you tap":'아무 단어나 검색해 보세요. 학습 목록에는 이 버튼을 눌러야 추가돼요:',
 '+ Add':'+ 추가','✓ In your list':'✓ 목록에 있음','Similar words':'비슷한 단어','Add words':'단어 추가','Add a story':'스토리 추가','Tap words to pick them':'단어를 탭해서 고르세요',
-'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Test these':'테스트',
+'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Select all':'전체 선택','Clear':'선택 해제','Test these':'테스트',
 'No words yet. Tap + to add some, or search in the Search tab.':'아직 단어가 없어요. +를 눌러 추가하거나 사전에서 검색하세요.',
 'Schedule':'복습 일정','Definition':'정의','Delete word':'단어 삭제','JSON':'JSON',
 'One word per line. Each word is looked up in the dictionary and filled in for you.':'한 줄에 한 단어씩 적어주세요. 사전에서 찾아 자동으로 채워요.',
@@ -2806,6 +2819,8 @@ const I18N_KO_RE=[
 [/^(\d+) blanks? · 📖 Words shows the word list$/,'빈칸 $1개 · 📖 단어 버튼으로 목록 보기'],
 [/^(\d+) stor(?:y|ies)$/,'스토리 $1개'],
 [/^(\d+) selected$/,'$1개 선택'],[/^(\d+) words? selected$/,'단어 $1개 선택됨'],[/^(\d+) selected · a story takes (\d+) words or fewer$/,'$1개 선택 · 스토리는 $2개까지 돼요'],
+[/^Delete (\d+) words?\?$/,'단어 $1개를 삭제할까요?'],
+[/^(?:This word|These words) and (?:its 1 sentence|their (\d+) sentences) will be removed with their review schedule\. Stories keep their text\.$/,(m,n)=>'이 단어와 예문 '+(n||1)+'개가 복습 일정과 함께 삭제돼요. 스토리 본문은 그대로 남아요.'],
 [/^Sentence (\d+)$/,'예문 $1'],[/^Delete "(.+)"\?$/,'“$1”을(를) 삭제할까요?'],
 [/^"(.+)" isn't in the dictionary\. Check the spelling\.$/,'“$1”은(는) 사전에 없어요. 철자를 확인해 주세요.'],[/^"(.+)" isn't in the dictionary\.$/,'“$1”은(는) 사전에 없어요.'],
 [/^Looking up "(.+)"…$/,'“$1” 찾는 중…'],[/^Looking up (\d+) of (\d+)…$/,'$2개 중 $1번째 찾는 중…'],
