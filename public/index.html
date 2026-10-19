@@ -374,7 +374,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.17.5</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.18.0</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -382,12 +382,22 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
     <div class="mepage" id="me-voice" hidden>
       <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>Voice</h2><span class="back-spacer"></span></div>
       <div class="scroll"><div class="stack">
-        <p class="note" style="padding:0 4px">Used for reading sentences and stories aloud. Voices come from this device, so the list is different on your phone and your computer, and the choice is saved on this device only.</p>
+        <div class="label" style="padding-left:4px">Example sentences and stories</div>
+        <div class="seg" role="tablist" id="engSeg" style="margin:0">
+          <button type="button" role="tab" data-eng="google">Google voice</button>
+          <button type="button" role="tab" data-eng="device">This device</button>
+        </div>
+        <p class="note" style="padding:0 4px;margin-top:-6px" id="engNote"></p>
         <div class="card field">
           <div class="row" style="justify-content:space-between"><label class="fieldlabel" for="vRate">Speed</label><span class="note" id="vRateLbl"></span></div>
           <input type="range" id="vRate" min="0.6" max="1.3" step="0.05">
         </div>
-        <div class="label" style="padding-left:4px">English voices · tap to hear and choose</div>
+        <div id="gBox">
+          <div class="msg" id="gMsg" style="padding:0 4px 8px"></div>
+          <div class="label" style="padding-left:4px">Google voices · tap to hear and choose</div>
+          <div class="menu" id="gVoiceList"></div>
+        </div>
+        <div class="label" style="padding-left:4px" id="devLabel">Device voices · tap to hear and choose</div>
         <div class="menu" id="voiceList"></div>
       </div></div>
     </div>
@@ -831,7 +841,7 @@ const lookupErr=(code,w)=>(LOOKUP_ERR[code]||(()=>'Something went wrong. Please 
 
 // ---------- sound ----------
 // Voice choice is per device (voices come from the phone/browser): localStorage 'wm.voice' = {uri, rate}
-let voicePref=lsJSON('wm.voice')||{uri:'',rate:.9};
+let voicePref={uri:'',rate:.9,engine:'device',gvoice:'',...(lsJSON('wm.voice')||{})};
 // Apple novelty / character voices (sound effects, singing, robots) and the retro Eloquence set — hidden from the list
 const ODD_VOICES=new Set(['albert','bad news','bahh','bells','boing','bubbles','cellos','good news','jester','organ','pipe organ','superstar','trinoids','whisper','wobble','zarvox','deranged','hysterical','princess','fred','junior','ralph','kathy','eddy','flo','grandma','grandpa','reed','rocko','sandy','shelley']);
 const oddVoice=v=>/eloquence|speech\.synthesis\.voice\.(?!alex)/i.test(v.voiceURI||'')&&!/samantha|victoria|daniel|karen|moira|tessa|fiona|veena|rishi/i.test(v.name)||ODD_VOICES.has(v.name.replace(/\s*\(.*\)$/,'').trim().toLowerCase());
@@ -847,7 +857,64 @@ function makeUtter(text){
   u.rate=voicePref.rate||.9;
   return u;
 }
+// ---------- Google Cloud Text-to-Speech (example sentences + stories) ----------
+// Uses the Google API key from Me → Settings → Google Translate (the project needs the
+// Cloud Text-to-Speech API on). Audio is cached on the device, so a sentence is paid for once.
+const G_DEFAULT='en-US-Chirp3-HD-Aoede';
+const gOn=()=>voicePref.engine==='google'&&!!settings.translateKey;
+const gVoice=()=>voicePref.gvoice||G_DEFAULT;
+const gAudio=new Audio();gAudio.preload='auto';
+let gUnlocked=false,gPlayToken=0,gLastError='';
+// iOS only lets an audio element play after it has been started from a tap once: prime it
+// with a short silent WAV on the first tap (and from every Listen/▶ tap, which are taps too).
+const SILENT_WAV=(()=>{const n=800,b=new Uint8Array(44+n),v=new DataView(b.buffer),w=(o,t)=>{for(let i=0;i<t.length;i++) b[o+i]=t.charCodeAt(i)};
+  w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,8000,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,'data');v.setUint32(40,n,true);b.fill(128,44);
+  let s='';b.forEach(x=>s+=String.fromCharCode(x));return 'data:audio/wav;base64,'+btoa(s)})();
+function gPrime(){if(gUnlocked) return;gUnlocked=true;try{gAudio.src=SILENT_WAV;const p=gAudio.play();if(p) p.catch(()=>{gUnlocked=false})}catch(e){gUnlocked=false}}
+document.addEventListener('pointerdown',()=>{if(voicePref.engine==='google') gPrime()},true);
+function gHash(t){let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(36)+t.length.toString(36)}
+const gMem=new Map();   // voice|text → object URL
+async function gFetchUrl(text){
+  const v=gVoice(),k=v+'|'+text;
+  if(gMem.has(k)) return gMem.get(k);
+  const cacheUrl='/__tts/'+encodeURIComponent(v)+'/'+gHash(text)+'.mp3';
+  let blob=null;
+  try{const c=await caches.open('wm-tts-v1');const hit=await c.match(cacheUrl);if(hit) blob=await hit.blob()}catch(e){}
+  if(!blob){
+    const lang=v.split('-').slice(0,2).join('-');
+    const r=await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key='+encodeURIComponent(settings.translateKey),{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({input:{text},voice:{languageCode:lang,name:v},audioConfig:{audioEncoding:'MP3'}})});
+    let j=null;try{j=await r.json()}catch(_){}
+    if(!r.ok||!j||!j.audioContent){
+      const m=(j&&j.error&&j.error.message)||('HTTP '+r.status);
+      throw new Error(/has not been used|is disabled|SERVICE_DISABLED/i.test(m)?'Turn on the Cloud Text-to-Speech API in the Google Cloud project of your key.':/API key not valid/i.test(m)?'The Google API key was rejected.':m);
+    }
+    const bin=atob(j.audioContent),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+    blob=new Blob([u8],{type:'audio/mpeg'});
+    try{const c=await caches.open('wm-tts-v1');await c.put(cacheUrl,new Response(blob,{headers:{'content-type':'audio/mpeg'}}))}catch(e){}
+  }
+  const url=URL.createObjectURL(blob);gMem.set(k,url);return url;
+}
+function gStop(){gPlayToken++;try{gAudio.pause()}catch(e){}}
+// Play one piece of text; resolves when it finishes (or is stopped), rejects on failure
+async function gSay(text){
+  const token=++gPlayToken;
+  const url=await gFetchUrl(text);
+  if(token!==gPlayToken) return;
+  gAudio.src=url;gAudio.playbackRate=voicePref.rate||.9;
+  try{gAudio.preservesPitch=true;gAudio.webkitPreservesPitch=true}catch(e){}
+  await gAudio.play();
+  await new Promise(res=>{const done=()=>{gAudio.removeEventListener('ended',done);gAudio.removeEventListener('pause',done);res()};gAudio.addEventListener('ended',done);gAudio.addEventListener('pause',done)});
+}
+// Example sentences: Google voice when chosen, the device voice otherwise (or if Google fails)
+function sayExample(text){
+  if(!gOn()) return speak(text);
+  gPrime();stopReading();try{speechSynthesis.cancel()}catch(e){}
+  gSay(text).then(()=>{gLastError=''}).catch(e=>{gLastError=e.message;speak(text)});
+  return true;
+}
 function speak(text){
+  gStop();
   try{
     if(!('speechSynthesis' in window)) return false;
     stopReading();
@@ -868,20 +935,31 @@ function stopReading(){
   if(!reader) return;
   reader=null;
   try{speechSynthesis.cancel()}catch(e){}
+  gStop();
   markReading();
 }
 function startReading(s){
-  if(!('speechSynthesis' in window)) return;
-  stopReading();speechSynthesis.cancel();
+  if(!gOn()&&!('speechSynthesis' in window)) return;
+  if(gOn()) gPrime();
+  stopReading();try{speechSynthesis.cancel()}catch(e){}gStop();
   const parts=[];
   storyParas(s).forEach((p,pi)=>splitSentences(p).forEach(t=>parts.push({p:pi,t})));
-  reader={id:s.id,parts,i:0,token:Math.random()};
+  reader={id:s.id,parts,i:0,token:Math.random(),google:gOn()};
   readNext(reader.token);
 }
 function readNext(token){
   if(!reader||reader.token!==token) return;
   if(reader.i>=reader.parts.length){reader=null;markReading();return}
   markReading();
+  if(reader.google){
+    const t=reader.parts[reader.i].t,next=reader.parts[reader.i+1];
+    gSay(t).then(()=>{
+      if(!reader||reader.token!==token) return;
+      if(gAudio.ended||gAudio.currentTime>=gAudio.duration-0.05){reader.i++;readNext(token)}
+    }).catch(e=>{gLastError=e.message;if(!reader||reader.token!==token) return;reader.google=false;readNext(token)});
+    if(next) gFetchUrl(next.t).catch(()=>{});   // fetch the next sentence while this one plays
+    return;
+  }
   const u=makeUtter(reader.parts[reader.i].t);
   u.onend=u.onerror=()=>{if(!reader||reader.token!==token) return;reader.i++;readNext(token)};
   speechSynthesis.speak(u);
@@ -944,7 +1022,7 @@ async function translateKo(text){
 // ---------- word card ----------
 // opts.add: show "+ Add" / "In your list" next to the headword (search results)
 function cardHTML(c,opts={}){
-  const exHTML=(d,gi,di)=>`<span class="ex">“${esc(d.ex).replace(wordRe(c.word),m=>'<strong>'+m+'</strong>')}” <button class="say" data-say="${esc(d.ex)}" type="button" aria-label="Play example sentence">🔊</button><button class="tr" data-tr="${esc(c.word)}|${gi}|${di}" type="button" aria-pressed="false" aria-label="Show Korean translation" title="Korean translation">${TR_ICON}</button><span class="ko" hidden></span></span>`;
+  const exHTML=(d,gi,di)=>`<span class="ex">“${esc(d.ex).replace(wordRe(c.word),m=>'<strong>'+m+'</strong>')}” <button class="say" data-kind="ex" data-say="${esc(d.ex)}" type="button" aria-label="Play example sentence">🔊</button><button class="tr" data-tr="${esc(c.word)}|${gi}|${di}" type="button" aria-pressed="false" aria-label="Show Korean translation" title="Korean translation">${TR_ICON}</button><span class="ko" hidden></span></span>`;
   const defHTML=(d,solo)=>`<span class="def${solo?' solo':''}">${esc(d.d)} <button class="say" data-say="${esc(d.d)}" type="button" aria-label="Play definition">🔊</button></span>`;
   const m=c.meanings.map((g,gi)=>`<div><div class="pos">${esc(g.pos||'')}</div><ol class="defs">${g.defs.map((d,di)=>`<li>${d.ex?exHTML(d,gi,di)+defHTML(d,false):defHTML(d,true)}</li>`).join('')}</ol></div>`).join('');
   const s=(c.synonyms||[]).length?`<div class="synblock"><div class="label">Similar words</div><div class="syn">${c.synonyms.map(x=>`<span class="chip">${esc(x)}</span>`).join('')}</div></div>`:'';
@@ -961,7 +1039,7 @@ function cardHTML(c,opts={}){
 // Shared click handling: sound, translation, add-from-search
 document.addEventListener('click',async e=>{
   const say=e.target.closest('[data-say]');
-  if(say){e.stopPropagation();if(say.dataset.kind==='word') playWord(say.dataset.say,say.dataset.audio||'');else speak(say.dataset.say);return}
+  if(say){e.stopPropagation();if(say.dataset.kind==='word') playWord(say.dataset.say,say.dataset.audio||'');else if(say.dataset.kind==='ex') sayExample(say.dataset.say);else speak(say.dataset.say);return}
   const tr=e.target.closest('[data-tr]');
   if(tr){
     e.stopPropagation();
@@ -1848,7 +1926,7 @@ function bulkResult(added,skipped,failed,updated=[]){
 const SETTINGS_MENU=[
   {id:'translate',title:'Google Translate',icon:TR_ICON,value:()=>settings.translateKey?['On','on']:['Not set',''],render:()=>renderSettings()},
   {id:'ai',title:'AI',icon:AI_ICON,value:()=>aiKey()?[AI[aiProv()].name,'on']:['Not set',''],render:()=>renderAi()},
-  {id:'voice',title:'Voice',icon:SPK_ICON,value:()=>{const v=pickVoice();return [v?v.name.replace(/\s*\(.*\)$/,'').slice(0,18):'Default','']},render:()=>renderVoice()},
+  {id:'voice',title:'Voice',icon:SPK_ICON,value:()=>{if(gOn()) return ['Google · '+gVoice().replace(/^en-(US|GB|AU)-(Chirp3-HD|Neural2)-/,''),'on'];const v=pickVoice();return [v?v.name.replace(/\s*\(.*\)$/,'').slice(0,18):'Default','']},render:()=>renderVoice()},
 ];
 let mePage='main';
 function renderMe(){
@@ -1883,7 +1961,41 @@ document.addEventListener('click',e=>{
 // Voice page
 const VOICE_SAMPLE='Reading every day is the best way to learn new words.';
 function saveVoicePref(){lsSet('wm.voice',JSON.stringify(voicePref))}
+let gVoices=null,gVoicesErr='';
+const G_TYPES=[['Chirp3-HD','Most natural'],['Neural2','Natural']];
+async function loadGVoices(){
+  if(gVoices||!settings.translateKey) return;
+  try{
+    const r=await fetch('https://texttospeech.googleapis.com/v1/voices?key='+encodeURIComponent(settings.translateKey));
+    let j=null;try{j=await r.json()}catch(_){}
+    if(!r.ok) throw new Error((j&&j.error&&j.error.message)||('HTTP '+r.status));
+    gVoices=(j.voices||[]).filter(v=>/^en-(US|GB|AU)-/.test(v.name)&&G_TYPES.some(([t])=>v.name.includes('-'+t+'-')));
+    gVoicesErr='';
+  }catch(e){gVoicesErr=/has not been used|is disabled|SERVICE_DISABLED/i.test(e.message)?'Turn on the Cloud Text-to-Speech API in the Google Cloud project of your key, then come back.':e.message}
+  if(curTab==='me'&&mePage==='voice') renderVoice();
+}
 function renderVoice(){
+  const eng=voicePref.engine==='google'?'google':'device';
+  document.querySelectorAll('#engSeg [data-eng]').forEach(b=>b.setAttribute('aria-selected',b.dataset.eng===eng));
+  $('engNote').textContent=eng==='google'
+    ?'Natural Google voices for example sentences and stories (Chirp 3 HD and Neural2: 1 million characters a month free). Word pronunciation keeps the dictionary/device sound.'
+    :'Voices built into this device. On iPhone, web apps only get the basic voices, so they can sound robotic.';
+  $('gBox').hidden=eng!=='google';
+  if(eng==='google'){
+    const gm=$('gMsg');
+    if(!settings.translateKey){gm.className='msg err';gm.innerHTML='Google voices use your Google API key. <button class="linkbtn" type="button" id="gGoKey">Add it in Google Translate settings</button>';$('gGoKey').onclick=()=>openMePage('translate',true);$('gVoiceList').innerHTML=''}
+    else if(gVoicesErr){gm.className='msg err';gm.textContent=gVoicesErr;$('gVoiceList').innerHTML=''}
+    else if(!gVoices){gm.className='msg';gm.textContent='Loading Google voices…';$('gVoiceList').innerHTML='';loadGVoices()}
+    else{
+      gm.className=gLastError?'msg err':'msg';gm.textContent=gLastError?('Last try failed: '+gLastError):'';
+      const cur=gVoice(),label=n=>n.replace(/^en-(US|GB|AU)-Chirp3-HD-/,'').replace(/^en-(US|GB|AU)-Neural2-/,'Neural2 ');
+      const region={US:'US',GB:'UK',AU:'Australia'};
+      const sorted=[...gVoices].sort((a,b)=>G_TYPES.findIndex(([t])=>a.name.includes(t))-G_TYPES.findIndex(([t])=>b.name.includes(t))||a.name.localeCompare(b.name));
+      $('gVoiceList').innerHTML=sorted.map(v=>{const on=v.name===cur,[,reg]=v.name.match(/^en-(US|GB|AU)/)||[],type=G_TYPES.find(([t])=>v.name.includes(t));
+        return `<button class="mi" type="button" data-gvoice="${esc(v.name)}"><span class="ic">${on?'✓':SPK_ICON}</span><span class="t">${esc(label(v.name))}<br><span class="note">${region[reg]||reg} · ${(v.ssmlGender||'').toLowerCase()} · ${type?type[1]:''}</span></span><span class="v ${on?'on':''}">${on?'Selected':'▶'}</span></button>`}).join('');
+    }
+  }
+  $('devLabel').textContent=eng==='google'?'Device voice · used for words and definitions':'Device voices · tap to hear and choose';
   const vs=enVoices(),cur=pickVoice();
   $('vRate').value=voicePref.rate||.9;$('vRateLbl').textContent=(+(voicePref.rate||.9)).toFixed(2)+'×';
   if(!('speechSynthesis' in window)){$('voiceList').innerHTML='<div class="mi"><span class="t">This browser can\'t read text aloud.</span></div>';return}
@@ -1895,12 +2007,21 @@ function renderVoice(){
     <span class="t">${esc(v.name)}<br><span class="note">${esc(v.lang)}${v.localService===false?' · online':''}</span></span>
     <span class="v ${cur&&cur.voiceURI===v.voiceURI?'on':''}">${cur&&cur.voiceURI===v.voiceURI?'Selected':'▶'}</span></button>`).join('');
 }
+$('engSeg').addEventListener('click',e=>{
+  const b=e.target.closest('[data-eng]');if(!b) return;
+  voicePref.engine=b.dataset.eng;saveVoicePref();renderVoice();
+});
+$('gVoiceList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-gvoice]');if(!b) return;
+  voicePref.gvoice=b.dataset.gvoice;saveVoicePref();gLastError='';renderVoice();
+  gSay(VOICE_SAMPLE).catch(err=>{gLastError=err.message;renderVoice()});
+});
 $('voiceList').addEventListener('click',e=>{
   const b=e.target.closest('[data-voice]');if(!b) return;
   voicePref.uri=b.dataset.voice;saveVoicePref();renderVoice();speak(VOICE_SAMPLE);
 });
 $('vRate').addEventListener('input',()=>{voicePref.rate=+$('vRate').value;$('vRateLbl').textContent=voicePref.rate.toFixed(2)+'×'});
-$('vRate').addEventListener('change',()=>{saveVoicePref();speak(VOICE_SAMPLE)});
+$('vRate').addEventListener('change',()=>{saveVoicePref();if(gOn()) gSay(VOICE_SAMPLE).catch(err=>{gLastError=err.message;renderVoice()});else speak(VOICE_SAMPLE)});
 try{speechSynthesis.addEventListener('voiceschanged',()=>{if(curTab==='me'){if(mePage==='voice') renderVoice();else renderMe()}})}catch(e){}
 
 // Phone back gesture / browser back closes a settings page instead of leaving the app
