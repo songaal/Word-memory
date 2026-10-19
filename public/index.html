@@ -374,7 +374,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.18.1</span> · <span class="version-date">2026/10/19</span></p>
+          <p class="note"><span class="version-tag">v2.18.2</span> · <span class="version-date">2026/10/19</span></p>
         </div>
       </div></div>
     </div>
@@ -395,6 +395,11 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div id="gBox">
           <div class="msg" id="gMsg" style="padding:0 4px 8px"></div>
           <div class="label" style="padding-left:4px">Google voices · tap to hear and choose</div>
+          <div class="seg" role="tablist" id="gRegSeg" style="margin:0 0 10px">
+            <button type="button" role="tab" data-greg="US">US</button>
+            <button type="button" role="tab" data-greg="GB">UK</button>
+            <button type="button" role="tab" data-greg="AU">Australia</button>
+          </div>
           <div class="menu" id="gVoiceList"></div>
         </div>
         <div class="label" style="padding-left:4px" id="devLabel">Device voices · tap to hear and choose</div>
@@ -874,6 +879,12 @@ function gPrime(){if(gUnlocked) return;gUnlocked=true;try{gAudio.src=SILENT_WAV;
 document.addEventListener('pointerdown',()=>{if(voicePref.engine==='google') gPrime()},true);
 function gHash(t){let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(36)+t.length.toString(36)}
 const gMem=new Map();   // voice|text → object URL
+function gErrText(m){
+  if(/has not been used|is disabled|SERVICE_DISABLED/i.test(m)) return 'Turn on the Cloud Text-to-Speech API in the Google Cloud project of your key, then come back.';
+  if(/are blocked|API_KEY_SERVICE_BLOCKED/i.test(m)) return 'Your API key is restricted. In Google Cloud → APIs & Services → Credentials → your key → API restrictions, add "Cloud Text-to-Speech API" and save. It can take a few minutes.';
+  if(/API key not valid/i.test(m)) return 'The Google API key was rejected.';
+  return m;
+}
 async function gFetchUrl(text){
   const v=gVoice(),k=v+'|'+text;
   if(gMem.has(k)) return gMem.get(k);
@@ -887,7 +898,7 @@ async function gFetchUrl(text){
     let j=null;try{j=await r.json()}catch(_){}
     if(!r.ok||!j||!j.audioContent){
       const m=(j&&j.error&&j.error.message)||('HTTP '+r.status);
-      throw new Error(/has not been used|is disabled|SERVICE_DISABLED/i.test(m)?'Turn on the Cloud Text-to-Speech API in the Google Cloud project of your key.':/API key not valid/i.test(m)?'The Google API key was rejected.':m);
+      throw new Error(gErrText(m));
     }
     const bin=atob(j.audioContent),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
     blob=new Blob([u8],{type:'audio/mpeg'});
@@ -1961,7 +1972,7 @@ document.addEventListener('click',e=>{
 // Voice page
 const VOICE_SAMPLE='Reading every day is the best way to learn new words.';
 function saveVoicePref(){lsSet('wm.voice',JSON.stringify(voicePref))}
-let gVoices=null,gVoicesErr='';
+let gVoices=null,gVoicesErr='',gVoicesErrAt=0;
 const G_TYPES=[['Chirp3-HD','Most natural'],['Neural2','Natural']];
 async function loadGVoices(){
   if(gVoices||!settings.translateKey) return;
@@ -1971,7 +1982,7 @@ async function loadGVoices(){
     if(!r.ok) throw new Error((j&&j.error&&j.error.message)||('HTTP '+r.status));
     gVoices=(j.voices||[]).filter(v=>/^en-(US|GB|AU)-/.test(v.name)&&G_TYPES.some(([t])=>v.name.includes('-'+t+'-')));
     gVoicesErr='';
-  }catch(e){gVoicesErr=/has not been used|is disabled|SERVICE_DISABLED/i.test(e.message)?'Turn on the Cloud Text-to-Speech API in the Google Cloud project of your key, then come back.':e.message}
+  }catch(e){gVoicesErr=gErrText(e.message);gVoicesErrAt=Date.now()}
   if(curTab==='me'&&mePage==='voice') renderVoice();
 }
 function renderVoice(){
@@ -1984,13 +1995,18 @@ function renderVoice(){
   if(eng==='google'){
     const gm=$('gMsg');
     if(!settings.translateKey){gm.className='msg err';gm.innerHTML='Google voices use your Google API key. <button class="linkbtn" type="button" id="gGoKey">Add it in Google Translate settings</button>';$('gGoKey').onclick=()=>openMePage('translate',true);$('gVoiceList').innerHTML=''}
-    else if(gVoicesErr){gm.className='msg err';gm.textContent=gVoicesErr;$('gVoiceList').innerHTML=''}
+    else if(gVoicesErr){gm.className='msg err';gm.textContent=gVoicesErr;$('gVoiceList').innerHTML='';$('gRegSeg').hidden=true;
+      if(Date.now()-gVoicesErrAt>5000){gVoicesErr='';loadGVoices()}}   // try again when the page is opened later
     else if(!gVoices){gm.className='msg';gm.textContent='Loading Google voices…';$('gVoiceList').innerHTML='';loadGVoices()}
     else{
       gm.className=gLastError?'msg err':'msg';gm.textContent=gLastError?('Last try failed: '+gLastError):'';
       const cur=gVoice(),label=n=>n.replace(/^en-(US|GB|AU)-Chirp3-HD-/,'').replace(/^en-(US|GB|AU)-Neural2-/,'Neural2 ');
       const region={US:'US',GB:'UK',AU:'Australia'};
-      const sorted=[...gVoices].sort((a,b)=>G_TYPES.findIndex(([t])=>a.name.includes(t))-G_TYPES.findIndex(([t])=>b.name.includes(t))||a.name.localeCompare(b.name));
+      const curReg=(cur.match(/^en-(US|GB|AU)/)||[])[1]||'US';
+      const reg=voicePref.greg||curReg;
+      $('gRegSeg').hidden=false;
+      document.querySelectorAll('#gRegSeg [data-greg]').forEach(b=>b.setAttribute('aria-selected',b.dataset.greg===reg));
+      const sorted=[...gVoices].filter(v=>v.name.startsWith('en-'+reg+'-')).sort((a,b)=>G_TYPES.findIndex(([t])=>a.name.includes(t))-G_TYPES.findIndex(([t])=>b.name.includes(t))||a.name.localeCompare(b.name));
       $('gVoiceList').innerHTML=sorted.map(v=>{const on=v.name===cur,[,reg]=v.name.match(/^en-(US|GB|AU)/)||[],type=G_TYPES.find(([t])=>v.name.includes(t));
         return `<button class="mi" type="button" data-gvoice="${esc(v.name)}"><span class="ic">${on?'✓':SPK_ICON}</span><span class="t">${esc(label(v.name))}<br><span class="note">${region[reg]||reg} · ${(v.ssmlGender||'').toLowerCase()} · ${type?type[1]:''}</span></span><span class="v ${on?'on':''}">${on?'Selected':'▶'}</span></button>`}).join('');
     }
@@ -2010,6 +2026,10 @@ function renderVoice(){
 $('engSeg').addEventListener('click',e=>{
   const b=e.target.closest('[data-eng]');if(!b) return;
   voicePref.engine=b.dataset.eng;saveVoicePref();renderVoice();
+});
+$('gRegSeg').addEventListener('click',e=>{
+  const b=e.target.closest('[data-greg]');if(!b) return;
+  voicePref.greg=b.dataset.greg;saveVoicePref();renderVoice();
 });
 $('gVoiceList').addEventListener('click',e=>{
   const b=e.target.closest('[data-gvoice]');if(!b) return;
