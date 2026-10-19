@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.27.1</span> · <span class="version-date">2026/10/20</span>
+<span class="version-tag">v2.28.0</span> · <span class="version-date">2026/10/20</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.27.1 — 2026/10/20**
+**Current version: v2.28.0 — 2026/10/20**
 
 ## Architecture
 
@@ -22,6 +22,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
   - Me → Settings is a list menu (`SETTINGS_MENU` in the script); each item opens its own page with a ‹ back button, and the phone/browser back gesture also returns. Add future settings to that list.
   - While a test runs (words or story) the fixed Test header shows a **timer** (`tmr`, m:ss, counts only while the Test tab is on screen and the app is visible — `tmrSync` on tab change/visibilitychange), a **📖 Words** button for story tests (`toggleStoryHint` puts the keyboard away and slides up `#hintPop` with the story's words; focusing any blank or ✕ closes it — `hideStoryHint`) and **Quit**, which asks first (`confirmQuit` sheet). Quitting a words test keeps what was answered: it's saved to `history` with `quit:true`, `planned`, `secs` (`saveHistory`); `startTest` takes only the sentences still due (practice of today's sentences only when nothing is due), so the next test continues with the rest. Quitting a story test saves nothing.
   - When a test ends, a results screen shows the score and every answer (misses first, tap for the word). Each test is saved to `history` (`{at, secs, total, planned, ok, quit, items}`, newest first, max 60) and listed under the Start button; rows show "x min ago" within an hour, then "Today 21:05", "Yesterday 21:05", "Oct 17 · 21:05", or "Oct 17, 2025" for other years (`agoOrTime`), plus ⏱ minutes and a "Stopped" tag; tapping one opens the same results page, which has **Test these again** (`itemsFromHistory` finds the same sentences; label 'Retest'). `startTest(customSet,label)` runs a given set (`testCustom`); its history entry stores `kind` (shown as a tag).
+  - **Learn mode** (`startLearn(kind, cards)`, full-screen `#learn` overlay above the tab bar): one word card at a time (`cardHTML`, no schedule) rises from the bottom; drag it **up** (or ↑ Got it) → green flash + `chime`, the word is learned (`c.learned = today`, merged by the later date in `mergeData`); drag **left** (or ← Again) → red flash, the card goes to the end of the queue; right does nothing. Long cards scroll with the same finger until the end, then the card moves (`lnDrag`). Header: Quit (progress is already saved), "x / y learned", purple progress bar, ⏱ timer (pauses when the app is hidden). The finish screen has 🎉 + `confetti` canvas + `fanfare` sound, "Ready for a quick test?" with **Test now** (today's set → `startTest()`, list → `startTest(items,'Learned words')`) and **Later**. Entry points: Words → Words header **Learn** (all words in list order, next to Select) and Home's **Today's learning** card above Today's goal (`todayLearnSet()` = words with a sentence due today + words learned today; shows progress, Start / Continue, then ✓ and Test now; with nothing due it offers Learn all words).
   - Learning is example-first: each word card lists numbered example sentences, each with its definition underneath (no number); similar words come last.
   - Words test buttons: **Check** (75%) and **💡 Hint** (25%, counts down 3→1; when no hints are left it turns into **Reveal** = I don't know) on one line (`.askrow`); the header has no hint for the words test. After answering, the card shows **Listen** (replay the example, `sayExample`) and **Translate** (Korean via `translateKo`, saved as `exKo`/`exKoSrc`).
   - **Test items are example sentences, not words.** Each definition with an example (`meanings[].defs[]`) has its own schedule: `stage`, `due`, `last`. A word with no example gives one item from its first definition. The answer is typed into a letter-slot blank inside the sentence (`gapHTML`/`setupGap`: one `_` per letter, fixed to the answer's length, a transparent input on top); hints reveal fixed leading letters (1, then +2, then +2) and typing continues after them. A right answer plays a Duolingo-style two-note "ding-ding" (`chime`, Web Audio bells E6 → A6; also on a perfect story test); a wrong answer has no sound. On reveal the blank is filled (green right / red wrong) and tapping it opens the word's entry. **Quit** (top right of the Test header, shown only while a test runs) asks first, then ends the test and saves the answered part; the next test continues with the sentences still due.
@@ -47,7 +48,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 - **Storage**: Workers KV namespace `word-memory`, binding `WORDS`. Keys start with `wm:`.
 - **Auth**: Google Identity Services, same OAuth client as video-repeat-player.
 - **Deploy**: Cloudflare Workers Builds (GitHub connected in the Cloudflare dashboard) — auto on push to `main`.
-  - **Do not push to `main` until the user asks to deploy.** Verify changes locally first (local worker + browser test), commit locally, and push only on request.
+  - **Deploy as soon as a change is done** (the user asked for this on 2026/10/20): verify locally first (local worker + browser test), commit, then push to `main` right away and check that the Workers Build succeeded. No need to ask before deploying.
 - **URL**: https://word-memory.songaal.workers.dev
 
 ## Review schedule
