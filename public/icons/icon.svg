@@ -1,29 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3b5ff0"/><stop offset="1" stop-color="#6a3fd8"/>
+      <stop offset="0" stop-color="#7c5cff"/><stop offset=".62" stop-color="#b16cf0"/><stop offset="1" stop-color="#ff7a59"/>
     </linearGradient>
-    <radialGradient id="glow" cx="256" cy="250" r="170" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffe9a8" stop-opacity=".55"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/>
+    <radialGradient id="glow" cx="256" cy="232" r="175" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff3c4" stop-opacity=".6"/><stop offset="1" stop-color="#fff3c4" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/>
-  <circle cx="256" cy="250" r="170" fill="url(#glow)"/>
-  <!-- rising sparkles -->
-  <path d="M256 118 L270 166 L318 180 L270 194 L256 242 L242 194 L194 180 L242 166 Z" fill="#ffd25e"/>
-  <path d="M338 210 L345 232 L367 239 L345 246 L338 268 L331 246 L309 239 L331 232 Z" fill="#fff3c4"/>
-  <path d="M176 222 L182 240 L200 246 L182 252 L176 270 L170 252 L152 246 L170 240 Z" fill="#fff3c4"/>
-  <circle cx="314" cy="140" r="7" fill="#fff3c4"/>
-  <circle cx="200" cy="150" r="5" fill="#fff3c4"/>
-  <!-- open book -->
-  <path d="M256 300 C220 278 170 272 118 282 L118 384 C170 374 220 380 256 402 Z" fill="#ffffff"/>
-  <path d="M256 300 C292 278 342 272 394 282 L394 384 C342 374 292 380 256 402 Z" fill="#eef1ff"/>
-  <path d="M256 300 L256 402" stroke="#c9d1f5" stroke-width="4"/>
-  <!-- text lines -->
-  <g stroke="#b7c2ef" stroke-width="7" stroke-linecap="round">
-    <path d="M146 312 C176 306 206 308 232 318"/><path d="M146 336 C176 330 206 332 232 342"/><path d="M146 360 C170 355 190 356 210 362"/>
-    <path d="M280 318 C306 308 336 306 366 312"/><path d="M280 342 C306 332 336 330 366 336"/>
+  <circle cx="256" cy="232" r="175" fill="url(#glow)"/>
+  <path d="M256 104 L272 160 L328 176 L272 192 L256 248 L240 192 L184 176 L240 160 Z" fill="#ffd34d" stroke="#fff" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M344 204 L352 228 L376 236 L352 244 L344 268 L336 244 L312 236 L336 228 Z" fill="#fff"/>
+  <path d="M170 214 L177 234 L197 241 L177 248 L170 268 L163 248 L143 241 L163 234 Z" fill="#fff"/>
+  <circle cx="320" cy="132" r="8" fill="#fff"/><circle cx="196" cy="142" r="6" fill="#fff"/>
+  <!-- open book with chunky rounded edges -->
+  <path d="M256 300 C220 276 168 270 114 280 L114 388 C168 378 220 384 256 408 Z" fill="#ffffff"/>
+  <path d="M256 300 C292 276 344 270 398 280 L398 388 C344 378 292 384 256 408 Z" fill="#f1ecff"/>
+  <path d="M256 300 L256 408" stroke="#d9cffd" stroke-width="5"/>
+  <g stroke="#c4b6fb" stroke-width="8" stroke-linecap="round">
+    <path d="M144 312 C176 305 206 308 232 318"/><path d="M144 338 C176 331 206 334 232 344"/><path d="M144 364 C170 358 190 360 210 366"/>
+    <path d="M280 318 C306 308 336 305 368 312"/><path d="M280 344 C306 334 336 331 368 338"/>
   </g>
-  <!-- cover edge -->
-  <path d="M108 290 L108 394 C166 382 220 388 256 410 C292 388 346 382 404 394 L404 290" fill="none" stroke="#ffd25e" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M102 290 L102 400 C164 388 220 394 256 418 C292 394 348 388 410 400 L410 290" fill="none" stroke="#ffd34d" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
 </svg>
