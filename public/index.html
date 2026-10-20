@@ -225,6 +225,10 @@ button.chip:active{filter:brightness(.92)}
 .trh{display:flex;flex-direction:column;gap:2px;text-align:left;border:0;background:none;padding:10px 4px;border-bottom:1px solid var(--line);cursor:pointer;color:var(--fg)}
 .trh .a{font:700 14px var(--f-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .trh .b{font:400 13px var(--f-ui);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trh .c{font:800 11px var(--f-ui);color:var(--accent);margin-top:2px}
+.trwrap{position:relative}
+.trwrap textarea{padding-right:40px}
+.trclear{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:0;background:var(--line);color:var(--muted);font:900 13px var(--f-ui);display:grid;place-items:center;cursor:pointer;padding:0}
 /* Journal list (Day One style) */
 .jncount{display:flex;align-items:baseline;justify-content:space-between;padding:2px 4px}
 .jncount b{font:900 22px var(--f-ui)}.jncount span{font:700 13px var(--f-ui);color:var(--muted)}
@@ -631,7 +635,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.38.1</span> · <span class="version-date">2026/10/21</span></p>
+          <p class="note"><span class="version-tag">v2.38.2</span> · <span class="version-date">2026/10/21</span></p>
         </div>
       </div></div>
     </div>
@@ -2093,6 +2097,7 @@ let trPref=(()=>{try{return JSON.parse(lsGet('wm.trPref'))||{}}catch(_){return {
 trPref.dir=trPref.dir==='ko-en'?'ko-en':'en-ko';trPref.eng=trPref.eng||'google';
 let trDraft='',trResult=null;   // {text, out, err, eng, dir}
 const trHist=()=>{try{return JSON.parse(lsGet('wm.trHist'))||[]}catch(_){return []}};
+const trEngName=e=>e==='google'||!e?'Google Translate':AI[e]?AI[e].name:e;
 function renderTranslate(){
   const ais=aiChoices();
   if(trPref.eng!=='google'&&!ais.some(a=>a.p===trPref.eng)) trPref.eng='google';
@@ -2100,15 +2105,18 @@ function renderTranslate(){
   const h=trHist();
   $('trBody').innerHTML=`<div class="card trbox">
       <div class="seg" role="radiogroup" style="margin:0"><button type="button" data-trdir="en-ko" aria-selected="${en}">EN → KO</button><button type="button" data-trdir="ko-en" aria-selected="${!en}">KO → EN</button></div>
-      <textarea id="trIn" rows="4" placeholder="${en?'Type English to translate…':'Type Korean to translate…'}" ${en?'autocapitalize="sentences"':''}>${esc(trDraft)}</textarea>
+      <div class="trwrap"><textarea id="trIn" rows="4" placeholder="${en?'Type English to translate…':'Type Korean to translate…'}" ${en?'autocapitalize="sentences"':''}>${esc(trDraft)}</textarea>
+        <button class="trclear" id="trClear" type="button" aria-label="Clear text"${trDraft?'':' hidden'}>✕</button></div>
       <div class="trrow"><select id="trEng" aria-label="Translator"><option value="google">Google Translate</option>${ais.map(a=>`<option value="${a.p}">${esc(a.label)}</option>`).join('')}</select>
         <button class="btn" id="trGo" type="button">Translate</button></div>
     </div>
     ${trResult?`<div class="card"><div class="trout${trResult.err?' err':''}" id="trOut">${esc(trResult.err||trResult.out)}</div>
       ${trResult.err?'':`<div class="trtools">${trResult.dir==='ko-en'?`<button class="hintbtn trbtn" id="trSay" type="button">${SPK_ICON}<span>Listen</span></button>`:''}<button class="hintbtn trbtn" id="trCopy" type="button"><span>Copy</span></button></div>`}</div>`:''}
-    ${h.length?`<div class="card"><span class="label">Recent</span>${h.map((x,i)=>`<button class="trh" type="button" data-trh="${i}"><span class="a">${esc(x.text)}</span><span class="b">${esc(x.out)}</span></button>`).join('')}</div>`:''}`;
+    ${h.length?`<div class="card"><span class="label">Recent</span>${h.map((x,i)=>`<button class="trh" type="button" data-trh="${i}"><span class="a">${esc(x.text)}</span><span class="b">${esc(x.out)}</span><span class="c">${x.dir==='ko-en'?'KO → EN':'EN → KO'} · ${esc(trEngName(x.eng))}</span></button>`).join('')}</div>`:''}`;
   $('trEng').value=trPref.eng;
-  $('trIn').addEventListener('input',e=>{trDraft=e.target.value});
+  $('trIn').addEventListener('input',e=>{trDraft=e.target.value;$('trClear').hidden=!trDraft});
+  $('trClear').addEventListener('mousedown',e=>e.preventDefault());
+  $('trClear').onclick=()=>{trDraft='';$('trIn').value='';$('trClear').hidden=true;$('trIn').focus()};
   $('trEng').onchange=e=>{trPref.eng=e.target.value;lsSet('wm.trPref',JSON.stringify(trPref))};
   document.querySelectorAll('[data-trdir]').forEach(b=>b.onclick=()=>{trPref.dir=b.dataset.trdir;lsSet('wm.trPref',JSON.stringify(trPref));renderTranslate()});
   $('trGo').onclick=runTranslate;
@@ -4022,7 +4030,7 @@ const I18N_KO={
 'Setup timed out. Start again.':'설정 시간이 지났어요. 다시 시작하세요.','That code didn’t match. Check the app and try again.':'코드가 맞지 않아요. 앱을 확인하고 다시 입력하세요.',
 'Authenticator is on':'인증 앱 사용 중','Authenticator is off':'인증 앱 꺼짐','Add Authy or Google Authenticator to sign in with a code instead of Google':'Authy나 Google Authenticator를 연결하면 Google 대신 코드로 로그인할 수 있어요',
 'All set. Next time, choose “Sign in with an authenticator app” on the sign-in screen.':'설정 완료! 다음부터 로그인 화면에서 “인증 앱으로 로그인”을 고르세요.','Set up':'연결하기','Set up again':'다시 연결하기','Turn off':'끄기',
-'Turn off the authenticator?':'인증 앱을 끌까요?','You won’t be able to sign in with a code until you set it up again. Google sign-in keeps working.':'다시 연결하기 전까지 코드로 로그인할 수 없어요. Google 로그인은 그대로 돼요.','Writing':'글쓰기','Type Korean and press Enter.':'한국어를 입력하고 Enter를 누르세요.','Korean → English, press Enter':'한국어 입력 후 Enter','Korean to translate':'번역할 한국어','Journal':'일기','Translate':'번역','EN → KO':'영 → 한','KO → EN':'한 → 영','Google Translate':'Google 번역','Translating…':'번역 중…','Copy':'복사','Copied':'복사했어요','Recent':'최근 번역',
+'Turn off the authenticator?':'인증 앱을 끌까요?','You won’t be able to sign in with a code until you set it up again. Google sign-in keeps working.':'다시 연결하기 전까지 코드로 로그인할 수 없어요. Google 로그인은 그대로 돼요.','Writing':'글쓰기','Clear text':'지우기','Type Korean and press Enter.':'한국어를 입력하고 Enter를 누르세요.','Korean → English, press Enter':'한국어 입력 후 Enter','Korean to translate':'번역할 한국어','Journal':'일기','Translate':'번역','EN → KO':'영 → 한','KO → EN':'한 → 영','Google Translate':'Google 번역','Translating…':'번역 중…','Copy':'복사','Copied':'복사했어요','Recent':'최근 번역',
 'Type English to translate…':'번역할 영어를 입력하세요…','Type Korean to translate…':'번역할 한국어를 입력하세요…','Translator':'번역기','Add your Google Translate key in Me → Settings.':'나 → 설정에서 Google 번역 키를 넣어주세요.',
 'Newest first':'최신순','No entries yet.':'아직 일기가 없어요.','Tap the pen to write your first one.':'펜 버튼을 눌러 첫 일기를 써보세요.','Untitled':'제목 없음','New entry':'새 일기',
 'Done':'완료','Delete this entry?':'이 일기를 삭제할까요?','Write in English…':'영어로 써보세요…','English only — Korean can’t be typed here':'영어로만 쓸 수 있어요 — 한글은 입력되지 않아요',
@@ -4142,6 +4150,7 @@ const I18N_KO_RE=[
 [/^Set up (.+) · sign in with your email and the app’s code$/,'$1 연결 · 이메일과 앱 코드로 로그인'],
 [/^sign in with your email and the app’s code$/,'이메일과 앱 코드로 로그인'],
 [/^Sign-in: your Google email \((.*)\) \+ the 6-digit code from the app\. Google sign-in keeps working too\.$/,'로그인: Google 이메일($1) + 앱의 6자리 코드. Google 로그인도 그대로 돼요.'],
+[/^(EN → KO|KO → EN) · (.+)$/,(m,d,e)=>(d==='EN → KO'?'영 → 한':'한 → 영')+' · '+(e==='Google Translate'?'Google 번역':e)],
 [/^Delete (\d+) words?\?$/,'단어 $1개를 삭제할까요?'],
 [/^(?:This word|These words) and (?:its 1 sentence|their (\d+) sentences) will be removed with their review schedule\. Stories keep their text\.$/,(m,n)=>'이 단어와 예문 '+(n||1)+'개가 복습 일정과 함께 삭제돼요. 스토리 본문은 그대로 남아요.'],
 [/^Sentence (\d+)$/,'예문 $1'],[/^Delete "(.+)"\?$/,'“$1”을(를) 삭제할까요?'],
@@ -4172,7 +4181,7 @@ const I18N_KO_RE=[
 ];
 // ---------- Korean UI: translate interface text as it is drawn ----------
 // Learning content (sentences, stories, words, definitions, what you type) is never translated.
-const I18N_SKIP='#jtrOut,.jeditor,.jitem .jt,.jitem .js,#trOut,.trh,#trIn,.storytext,.ex,.def,.qsent,.stitle,.si .t,.si .ws,.li .w,.word h2,.ri .top,.ri .sent,.chip,.syn,.pko,.ko,.qdef>div,[data-noi18n]';
+const I18N_SKIP='.trh .a,.trh .b,#jtrOut,.jeditor,.jitem .jt,.jitem .js,#trOut,#trIn,.storytext,.ex,.def,.qsent,.stitle,.si .t,.si .ws,.li .w,.word h2,.ri .top,.ri .sent,.chip,.syn,.pko,.ko,.qdef>div,[data-noi18n]';
 function trText(str){
   const m=/^(\s*)([\s\S]*?)(\s*)$/.exec(str),core=m[2];if(!core) return null;
   let out=I18N_KO[core];
