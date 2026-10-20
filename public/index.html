@@ -512,6 +512,7 @@ button.chip:active{filter:brightness(.92)}
 @media (prefers-reduced-motion:no-preference){.sheet-panel{animation:up .22s ease-out}@keyframes up{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}}
 
 /* ---- gate ---- */
+#gate{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 12px) 0 24px}
 .gatebox{margin:auto;max-width:420px;width:calc(100% - 32px);text-align:center;align-items:center}
 .gatebox h1{font:700 30px/1.2 var(--f-word);margin:0}
 .gatebox p{margin:0;color:var(--muted)}
@@ -522,6 +523,8 @@ button.chip:active{filter:brightness(.92)}
 .einput{width:100%}
 .erow .btn{flex:none;padding-left:16px;padding-right:16px}
 #codeIn{letter-spacing:.4em;text-align:center;font:800 20px var(--f-mono)}
+#codeIn::placeholder,#totpCode::placeholder{letter-spacing:normal;font:600 16px var(--f-ui)}
+#totpCode{letter-spacing:.3em;text-align:center;font:800 20px var(--f-mono)}
 #gsiBtn{min-height:44px;display:flex;justify-content:center}
 </style>
 </head>
@@ -628,7 +631,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.38.0</span> · <span class="version-date">2026/10/21</span></p>
+          <p class="note"><span class="version-tag">v2.38.1</span> · <span class="version-date">2026/10/21</span></p>
         </div>
       </div></div>
     </div>
@@ -1096,6 +1099,9 @@ async function codeGo(){
   finally{$('codeGo').disabled=false}
 }
 function initEmailLogin(){   // called at start (after $ exists)
+  // the sign-in screen scrolls; keep the email / code field above the keyboard
+  ['emailIn','codeIn'].forEach(id=>$(id).addEventListener('focus',()=>setTimeout(()=>{const el=$(id),g=$('gate');if(document.activeElement!==el) return;
+    const gr=g.getBoundingClientRect(),r=$('emailBox').getBoundingClientRect();g.scrollTo({top:g.scrollTop+(r.top-gr.top)-16,behavior:'smooth'})},350)));
   $('emailOpen').onclick=()=>{$('emailBox').hidden=!$('emailBox').hidden;if($('emailBox').hidden) return;
     const last=lsGet('wm.totpEmail');if(last&&!$('emailIn').value) $('emailIn').value=last;($('emailIn').value?$('codeIn'):$('emailIn')).focus()};
   $('codeGo').onclick=codeGo;

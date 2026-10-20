@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.38.0</span> · <span class="version-date">2026/10/21</span>
+<span class="version-tag">v2.38.1</span> · <span class="version-date">2026/10/21</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.38.0 — 2026/10/21**
+**Current version: v2.38.1 — 2026/10/21**
 
 ## Architecture
 
@@ -53,7 +53,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
   - No other similar-word source (Datamuse was removed): similar words are optional. The 3-word limit applies only when words are generated (lookup, photo import); existing cards keep and show all their similar words.
 - **Secrets** (Cloudflare dashboard → Worker → Settings → Variables and Secrets, never in the repo): `MW_LEARNER_KEY`, `MW_THESAURUS_KEY`. Without the Learner's key, lookups return "unavailable"; without the Thesaurus key, words have no similar words.
 - **Storage**: Workers KV namespace `word-memory`, binding `WORDS`. Keys start with `wm:`.
-- **Auth**: Google Identity Services, same OAuth client as video-repeat-player. **Authenticator-app sign-in (TOTP)** replaced the email-code idea (no mail service needed): Me → Settings → **Authenticator app** (`renderAuth`, signed-in Google users only) → `POST /api/totp/setup` gives a secret + `otpauth://` URI, shown as a QR code (qrcode-generator 1.4.4, loaded on demand from jsDelivr, cdnjs fallback; the key is shown too, with Copy) → the user confirms with a 6-digit code (`POST /api/totp/confirm`) → `wm:totp:<sub>`; Turn off = `DELETE /api/totp`. Gate → "Sign in with an authenticator app": Google email + code → `POST /api/auth/totp` (email must be linked: `wm:email:<email>` written by `linkEmail` at Google sign-in and on `GET /api/settings`); RFC 6238 (SHA-1, 6 digits, 30 s, ±1 step), a used step can't be reused, 5 wrong tries per email per 10 minutes; returns the same `{session, user}` as Google sign-in. The last email used is prefilled (`wm.totpEmail`).
+- **Auth**: Google Identity Services, same OAuth client as video-repeat-player. **Authenticator-app sign-in (TOTP)** replaced the email-code idea (no mail service needed): Me → Settings → **Authenticator app** (`renderAuth`, signed-in Google users only) → `POST /api/totp/setup` gives a secret + `otpauth://` URI, shown as a QR code (qrcode-generator 1.4.4, loaded on demand from jsDelivr, cdnjs fallback; the key is shown too, with Copy) → the user confirms with a 6-digit code (`POST /api/totp/confirm`) → `wm:totp:<sub>`; Turn off = `DELETE /api/totp`. Gate → "Sign in with an authenticator app": Google email + code → `POST /api/auth/totp` (email must be linked: `wm:email:<email>` written by `linkEmail` at Google sign-in and on `GET /api/settings`); RFC 6238 (SHA-1, 6 digits, 30 s, ±1 step), a used step can't be reused, 5 wrong tries per email per 10 minutes; returns the same `{session, user}` as Google sign-in. The last email used is prefilled (`wm.totpEmail`). The gate scrolls (`#gate{overflow-y:auto}`) and focusing the email/code field scrolls the box to the top so the keyboard doesn't cover it.
 - **Deploy**: Cloudflare Workers Builds (GitHub connected in the Cloudflare dashboard) — auto on push to `main`.
   - **Deploy as soon as a change is done** (the user asked for this on 2026/10/20): verify locally first (local worker + browser test), commit, then push to `main` right away and check that the Workers Build succeeded. No need to ask before deploying.
 - **URL**: https://word-memory.songaal.workers.dev
