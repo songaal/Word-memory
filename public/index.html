@@ -510,7 +510,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.29.2</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.30.0</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -1488,7 +1488,7 @@ function lnNext(){
   st.innerHTML=`<div class="lcard enter" id="lnCard"><div class="lbody" id="lnBody">${cardHTML(c)}</div><div class="lmore" id="lnMore" hidden></div>
     <div class="lctl"><button type="button" id="lpPlay" aria-label="Pause"></button><button type="button" id="lpLoop" aria-label="Repeat"></button></div></div>`;
   $('lpPlay').onclick=()=>{lp&&lp.playing?lpPause():lpPlay()};
-  $('lpLoop').onclick=()=>{lpLoop=lpLoop==='all'?'one':'all';lsSet('wm.lpLoop',lpLoop);lpIcons()};
+  $('lpLoop').onclick=()=>{lpLoop=lpLoop==='all'?'one':'all';lsSet('wm.lpLoop',lpLoop);lpIcons();if(lp&&lp.mode==='track') gAudio.loop=lpLoop==='all'};
   lpStart(c);
   const card=$('lnCard'),body=$('lnBody');
   const more=()=>{$('lnMore').hidden=body.scrollTop+body.clientHeight>=body.scrollHeight-2};
@@ -1618,19 +1618,89 @@ function lpParts(c){
   if((c.synonyms||[]).length) parts.push({t:c.synonyms.join(', '),kind:'syn'});
   return parts;
 }
+// With the Google voice the whole card is rendered into ONE audio track (clips + pauses, each part twice)
+// and played on a loop by the audio element, so it keeps playing with the screen off or in another app.
+// The device voice (speechSynthesis) can't play in the background, so it reads part by part instead.
 function lpStart(c){
   lpStop();
-  lp={c,parts:lpParts(c),i:0,rep:0,playing:false,token:0};
+  lp={c,parts:lpParts(c),i:0,rep:0,playing:false,token:0,track:null,mode:gOn()?'track':'parts'};
   lpPlay();
+  lpMedia(c);
 }
 function lpPlay(){
   if(!lp) return;
   if(gOn()) gPrime();
   lp.playing=true;lp.token++;lpIcons();
-  lpRun(lp.token);
+  if(lp.mode==='track') lpPlayTrack(lp.token);else lpRun(lp.token);
 }
-function lpPause(){if(!lp) return;lp.playing=false;lp.token++;lpHalt();lpIcons();lpMark(-1)}
-function lpStop(){if(lp){lp.playing=false;lp.token++}lpHalt();lp=null}
+function lpPause(){
+  if(!lp) return;lp.playing=false;lp.token++;
+  if(lp.mode==='track'){try{gAudio.pause()}catch(e){}}else lpHalt();
+  lpIcons();lpMark(-1);
+}
+function lpStop(){
+  if(lp){lp.playing=false;lp.token++;if(lp.mode==='track'){gAudio.ontimeupdate=null;gAudio.onended=null;try{gAudio.loop=false}catch(e){}}}
+  lpHalt();lp=null;
+}
+const lpTracks=new Map();   // card key → Promise<{url, marks:[{s,e,i}]}>
+const lpKey=c=>gVoice()+'|'+lpParts(c).map(p=>p.t).join('\u0001');
+function lpTrackFor(c){
+  const k=lpKey(c);
+  if(!lpTracks.has(k)){const pr=lpBuild(c);lpTracks.set(k,pr);pr.catch(()=>lpTracks.delete(k));
+    if(lpTracks.size>12){const first=lpTracks.keys().next().value;lpTracks.get(first).then(t=>URL.revokeObjectURL(t.url)).catch(()=>{});lpTracks.delete(first)}}
+  return lpTracks.get(k);
+}
+async function lpBuild(c){
+  const parts=lpParts(c);
+  actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const bufs=await Promise.all(parts.map(async p=>{
+    const ko=/[\u3131-\uD79D]/.test(p.t);
+    const url=await gFetchUrl(p.t,ko?'ko-KR-Neural2-A':undefined);
+    const ab=await (await fetch(url)).arrayBuffer();
+    return await new Promise((res,rej)=>{const r=actx.decodeAudioData(ab,res,rej);if(r&&r.then) r.then(res,rej)});
+  }));
+  const sr0=bufs[0].sampleRate,step=sr0>=44100?2:1,sr=sr0/step;      // 24 kHz is plenty for speech
+  const gap=t=>Math.round(t*sr);
+  let len=0;const plan=[];
+  bufs.forEach((b,i)=>{for(let r=0;r<2;r++){const n=Math.floor(b.length/step);plan.push({b,i,at:len,n});len+=n+gap(r===0?.35:(i===bufs.length-1?.9:.45))}});
+  const out=new Int16Array(len),marks=[];
+  for(const x of plan){
+    const ch=x.b.getChannelData(0);
+    for(let k=0;k<x.n;k++){let v=step===2?(ch[k*2]+ch[k*2+1])/2:ch[k];v=Math.max(-1,Math.min(1,v));out[x.at+k]=v<0?v*32768:v*32767}
+    marks.push({s:x.at/sr,e:(x.at+x.n)/sr,i:x.i});
+  }
+  // WAV header
+  const hdr=new DataView(new ArrayBuffer(44)),w=(o,t)=>{for(let i=0;i<t.length;i++) hdr.setUint8(o+i,t.charCodeAt(i))};
+  w(0,'RIFF');hdr.setUint32(4,36+out.byteLength,true);w(8,'WAVEfmt ');hdr.setUint32(16,16,true);hdr.setUint16(20,1,true);hdr.setUint16(22,1,true);
+  hdr.setUint32(24,sr,true);hdr.setUint32(28,sr*2,true);hdr.setUint16(32,2,true);hdr.setUint16(34,16,true);w(36,'data');hdr.setUint32(40,out.byteLength,true);
+  return{url:URL.createObjectURL(new Blob([hdr.buffer,out.buffer],{type:'audio/wav'})),marks};
+}
+async function lpPlayTrack(token){
+  const live=()=>lp&&lp.token===token&&lp.playing;
+  let t;
+  try{t=lp.track||await lpTrackFor(lp.c)}
+  catch(e){gLastError=e.message;if(lp){lp.mode='parts';if(live()) lpRun(token)}return}
+  if(!live()) return;
+  const fresh=lp.track!==t;lp.track=t;
+  gStop();
+  if(fresh||!String(gAudio.src).startsWith(t.url)){gAudio.src=t.url}
+  gAudio.loop=lpLoop==='all';
+  gAudio.playbackRate=voicePref.rate||.9;try{gAudio.preservesPitch=true;gAudio.webkitPreservesPitch=true}catch(e){}
+  gAudio.ontimeupdate=()=>{if(!lp||lp.track!==t) return;const ct=gAudio.currentTime;const m=t.marks.find(m=>ct>=m.s-.05&&ct<m.e+.3);if(m&&m.i!==lp.i){lp.i=m.i;if(document.visibilityState==='visible') lpMark(m.i)}};
+  gAudio.onended=()=>{if(!lp||lp.track!==t||gAudio.loop) return;lp.playing=false;lp.i=-1;lpIcons();lpMark(-1);try{gAudio.currentTime=0}catch(e){}};
+  try{await gAudio.play()}catch(e){if(lp&&live()){lp.playing=false;lpIcons()}return}
+  // get the next card ready so the next swipe starts at once
+  const r=learnRun;if(r&&r.queue[1]) lpTrackFor(r.queue[1]).catch(()=>{});
+}
+// Lock screen / control centre: show the word and let play/pause work from there
+function lpMedia(c){
+  try{
+    if(!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata=new MediaMetadata({title:c.word,artist:'Word Story',album:'Learn',artwork:[{src:'/icons/icon-512.png',sizes:'512x512',type:'image/png'}]});
+    navigator.mediaSession.setActionHandler('play',()=>{if(lp&&!lp.playing) lpPlay()});
+    navigator.mediaSession.setActionHandler('pause',()=>{if(lp&&lp.playing) lpPause()});
+  }catch(e){}
+}
 function lpHalt(){gStop();try{speechSynthesis.cancel()}catch(e){}}
 const lpWait=ms=>new Promise(r=>setTimeout(r,ms));
 // highlight the part being read: parts are in the same order as the word, examples and definitions on the card
@@ -1694,7 +1764,12 @@ function lpDevice(text,ko){
 }
 // Tapping a 🔊 on the card pauses the auto reading so the two don't talk over each other
 document.addEventListener('click',e=>{if(lp&&lp.playing&&e.target.closest('#lnBody [data-say]')) lpPause()},true);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'&&lp&&lp.playing) lpPause()});
+// The device voice can't keep talking in the background; the Google track can, so it keeps going
+document.addEventListener('visibilitychange',()=>{
+  if(!lp) return;
+  if(document.visibilityState!=='visible'){if(lp.playing&&lp.mode!=='track') lpPause()}
+  else if(lp.playing) lpMark(lp.i);
+});
 
 // Ta-da: a quick rising arpeggio and a bright chord
 function fanfare(){
