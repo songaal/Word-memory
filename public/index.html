@@ -114,6 +114,10 @@ textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 .word h2{font:900 30px/1.1 var(--f-ui);margin:0}
 .word .addw{margin-left:auto}
 .ph{font:400 14px var(--f-mono);color:var(--muted)}
+.ctool{width:32px;height:28px;flex:none;padding:0;border:1px solid var(--line);background:none;color:var(--accent);border-radius:9px;display:inline-grid;place-items:center;cursor:pointer;-webkit-appearance:none;appearance:none}
+.ctool svg{width:15px;height:15px}
+.ctool.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.lread{background:var(--gold-soft);border-radius:8px;box-shadow:0 0 0 4px var(--gold-soft);transition:background .2s}
 .play{border:1px solid var(--line);background:none;color:var(--fg);border-radius:20px;padding:3px 12px;font:500 12px var(--f-ui);cursor:pointer}
 .say{border:0;background:none;color:var(--accent);cursor:pointer;font-size:12px;padding:0 4px;font-style:normal}
 .tr{border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;padding:1px 4px;border-radius:6px;vertical-align:-3px;line-height:0}
@@ -535,7 +539,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.33.2</span> · <span class="version-date">2026/10/21</span></p>
+          <p class="note"><span class="version-tag">v2.34.0</span> · <span class="version-date">2026/10/21</span></p>
         </div>
       </div></div>
     </div>
@@ -663,6 +667,12 @@ button.chip:active{filter:brightness(.92)}
   <div class="lstage" id="lnStage"></div>
   <div id="lnFootWrap"><div class="lfoot"><button class="btn danger" id="lnAgain" type="button">← Again</button><button class="btn" id="lnGot" type="button">↑ Got it</button></div>
   <div class="lhint">Swipe up when you know it · swipe left to see it again later</div></div>
+</div>
+<div class="sheet hideback" id="pracSheet" hidden style="z-index:70">
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="pracTitle">
+    <div class="sheet-head"><b id="pracTitle">Typing practice</b><button class="x" id="pracX" type="button" aria-label="Close">✕</button></div>
+    <div class="sheet-body" id="pracBody"></div>
+  </div>
 </div>
 <div class="sheet" id="pop" hidden style="z-index:60">
   <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="popTitle">
@@ -1299,7 +1309,7 @@ function cardHTML(c,opts={}){
     add=inList?`<button class="btn ghost addw" type="button" disabled>✓ In your list</button>`:`<button class="btn addw" data-add="${esc(c.word)}" type="button">+ Add</button>`;
   }
   return `<div class="word"><h2>${esc(c.word)}</h2><span class="ph">${esc(c.phonetic||'')}</span>
-    <button class="play" data-kind="word" data-say="${esc(c.word)}" data-audio="${esc(c.audio||'')}" type="button">🔊 Listen</button>
+    <button class="play" data-kind="word" data-say="${esc(c.word)}" data-audio="${esc(c.audio||'')}" type="button">🔊 Listen</button>${opts.tools===false?'':`<button class="ctool" data-cplay="${esc(c.word)}" type="button" aria-label="Play">${LP_PLAY}</button><button class="ctool" data-cprac="${esc(c.word)}" type="button" aria-label="Typing practice">${PRAC_ICON}</button>`}
     ${c.sample?'<span class="tag">Sample</span>':''}${add}</div>${m}${s}`;
 }
 
@@ -1462,10 +1472,7 @@ function renderHome(){
     </div>`;
   const goWords=()=>{show('test');testPane='schedule';renderTestTab();startTest()};
   if($('homeStart')) $('homeStart').onclick=goWords;
-  if($('homeLearn')) $('homeLearn').onclick=()=>{
-    if(!lset.length||lnAll) startLearn('list',[...cards].sort((a,b)=>{const x=wordSummary(a).due,y=wordSummary(b).due;return x<y?-1:x>y?1:a.word.localeCompare(b.word)}));
-    else startLearn('today',lset);
-  };
+  if($('homeLearn')) $('homeLearn').onclick=learnNow;
   $('homeStory').onclick=()=>{
     if(!stories.length){show('dict');dictPane='story';storyView=null;renderDict();openStoryForm();return}
     show('test');testPane='story';renderTestTab();
@@ -1476,6 +1483,12 @@ function renderHome(){
 // ---------- learn ----------
 // Today's learning = words with a sentence due today, plus words already learned today (so the set stays put
 // after the test). Learning marks c.learned = today; no schedule changes.
+// Home's learn button and Words → Words' Learn: continue today's set where it stopped; when it's done (or empty), learn all words
+function learnNow(){
+  const lset=todayLearnSet(),t=today(),all=lset.length&&lset.every(c=>c.learned===t);
+  if(!lset.length||all){const o=listOrder();startLearn('list',o.map(w=>cards.find(c=>c.word===w)))}
+  else startLearn('today',lset);
+}
 function todayLearnSet(){return cards.filter(c=>c.learned===today()||itemsOf(c).some(it=>isDue(it.d)))}
 let learnRun=null;
 const lnT={ms:0,since:0,iv:null};
@@ -1491,7 +1504,7 @@ function startLearn(kind,list){
   const pre=list.length-queue.length;
   learnRun={kind,words:list.map(c=>c.word),queue,total:list.length,done:pre,learnedNow:new Set(),busy:false,done_:false};
   lnT.ms=0;lnT.since=0;clearInterval(lnT.iv);lnT.iv=setInterval(lnTick,500);lnResume();lnTick();
-  try{stopReading()}catch(_){}
+  try{stopReading()}catch(_){}try{crStop()}catch(_){}
   $('learn').hidden=false;$('lnFootWrap').hidden=false;
   lnCount();lnNext();
 }
@@ -1503,7 +1516,7 @@ function lnNext(){
   const r=learnRun,st=$('lnStage');
   if(!r.queue.length){lnFinish();return}
   const c=r.queue[0];
-  st.innerHTML=`<div class="lcard enter" id="lnCard"><div class="lbody" id="lnBody">${cardHTML(c)}</div><div class="lmore" id="lnMore" hidden></div>
+  st.innerHTML=`<div class="lcard enter" id="lnCard"><div class="lbody" id="lnBody">${cardHTML(c,{tools:false})}</div><div class="lmore" id="lnMore" hidden></div>
     <div class="lctl"><button type="button" id="lpPlay" aria-label="Pause"></button><button type="button" id="lpLoop" aria-label="Repeat"></button><button type="button" id="lpPrac" aria-label="Typing practice">${PRAC_ICON}</button></div></div>`;
   $('lpPrac').onclick=()=>openPractice(c);
   $('lpPlay').onclick=()=>{lp&&lp.playing?lpPause():lpPlay()};
@@ -1715,20 +1728,24 @@ async function lpPlayTrack(token){
 // Right → green + ding-ding, wrong → red with the answer; after a second it's blank again (next example).
 // Only examples, no definitions; the count lives only while the popup is open.
 const PRAC_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
+// Typing practice has its own sheet, pinned to the top, above everything (word sheets, popups, learn mode)
+let pracOnClose=null;
+function openPracSheet(html){$('pracBody').innerHTML=html;$('pracSheet').hidden=false;pracOnClose=null}
+function closePracSheet(){$('pracSheet').hidden=true;$('pracBody').innerHTML='';const f=pracOnClose;pracOnClose=null;if(f) f()}
+$('pracX').onclick=closePracSheet;
 function openPractice(c){
   const exs=itemsOf(c).filter(it=>!it.noEx).map(it=>it.d);
-  if(!exs.length){openSheet('Typing practice',`<div class="card"><p class="note" style="font-size:14px">This word has no example sentence that uses it, so there is nothing to fill in yet.</p></div>`);return}
+  if(!exs.length){openPracSheet(`<div class="card"><p class="note" style="font-size:14px">This word has no example sentence that uses it, so there is nothing to fill in yet.</p></div>`);return}
   const wasPlaying=!!(lp&&lp.playing);if(wasPlaying) lpPause();
   const pr={k:0,n:0,ok:0,busy:false,form:'',forms:[]};
-  openSheet('Typing practice',`<div class="card prac" style="position:relative">
+  openPracSheet(`<div class="card prac" style="position:relative">
     <div class="pcount"><span id="prN"></span><span class="ok" id="prOk"></span></div>
     <div class="qsent" id="prSent"></div>
     <input class="pin" id="prIn" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-label="Missing word">
     <div class="prow2"><button class="btn" id="prCheck" type="button">Check</button><button class="btn ghost" id="prClose" type="button">Close</button></div>
     <p class="note" style="text-align:center">Type the missing word and press Enter.</p>
   </div>`);
-  $('sheet').classList.add('hideback');   // don't show the card (with the answer) behind the practice
-  sheetOnClose=()=>{$('sheet').classList.remove('hideback');if(wasPlaying&&lp&&$('lnCard')) lpPlay()};
+  pracOnClose=()=>{if(wasPlaying&&lp&&$('lnCard')) lpPlay()};
   const inp=$('prIn');
   const count=()=>{$('prN').textContent=`Practiced ${pr.n}`;$('prOk').textContent=`✓ ${pr.ok}`};
   const slots=(txt,cls)=>{const g=$('prSent').querySelector('.gapw');if(!g) return;
@@ -1758,13 +1775,48 @@ function openPractice(c){
   inp.addEventListener('focus',()=>slots(inp.value));inp.addEventListener('blur',()=>{if(!pr.busy) slots(inp.value)});
   $('prSent').addEventListener('click',()=>inp.focus());
   $('prCheck').onclick=check;
-  $('prClose').onclick=closeSheet;
+  $('prClose').onclick=closePracSheet;
   // tapping Check must not take the focus away from the field (that would close the keyboard)
   ['pointerdown','mousedown','touchstart'].forEach(ev=>$('prCheck').addEventListener(ev,e=>{e.preventDefault()},{passive:false}));
   $('prCheck').addEventListener('touchend',e=>{e.preventDefault();check()},{passive:false});
-  inp.addEventListener('blur',()=>{if($('prIn')&&!$('sheet').hidden) setTimeout(()=>{if($('prIn')&&document.activeElement!==inp&&pr.busy) inp.focus()},0)});
+  inp.addEventListener('blur',()=>{if($('prIn')&&!$('pracSheet').hidden) setTimeout(()=>{if($('prIn')&&document.activeElement!==inp&&pr.busy) inp.focus()},0)});
   count();show();inp.focus();
 }
+// ---- ▶ on any word card (outside learn mode): read the card once (word, examples, definitions, similar words; each twice) ----
+let cr=null;
+function crMark(me,i){
+  if(!me.el||!me.el.isConnected) return;
+  const els=[me.el.querySelector('.word h2'),...me.el.querySelectorAll('.ex, .def, .syn')];
+  els.forEach((e,k)=>e&&e.classList.toggle('lread',k===i));
+}
+function crStop(){
+  if(!cr) return;const me=cr;cr=null;lpHalt();crMark(me,-1);
+  if(me.btn.isConnected){me.btn.innerHTML=LP_PLAY;me.btn.classList.remove('on');me.btn.setAttribute('aria-label','Play')}
+}
+async function crPlay(btn,c){
+  if(cr&&cr.btn===btn){crStop();return}
+  crStop();if(lp&&lp.playing) lpPause();try{stopReading()}catch(_){}
+  if(gOn()) gPrime();
+  const me={btn,c,el:btn.closest('.card')||btn.closest('.word').parentElement};cr=me;
+  btn.innerHTML=LP_PAUSE;btn.classList.add('on');btn.setAttribute('aria-label','Pause');
+  const parts=lpParts(c),live=()=>cr===me&&btn.isConnected;
+  for(let i=0;i<parts.length;i++) for(let r=0;r<2;r++){
+    if(!live()) return;
+    crMark(me,i);
+    try{await lpSay(parts[i])}catch(_){}
+    if(!live()) return;
+    await lpWait(r?450:350);
+  }
+  if(cr===me) crStop();
+}
+document.addEventListener('click',e=>{
+  const p=e.target.closest('[data-cplay]'),q=e.target.closest('[data-cprac]');
+  if(!p&&!q){if(cr&&e.target.closest('[data-say]')) crStop();return}
+  e.stopPropagation();
+  const w=(p||q).dataset[p?'cplay':'cprac'],c=findCard(w);if(!c) return;
+  if(p) crPlay(p,c);else{crStop();openPractice(c)}
+},true);
+
 // Lock screen / control centre: show the word and let play/pause work from there
 function lpMedia(c){
   try{
@@ -2379,17 +2431,17 @@ document.addEventListener('click',e=>{
 });
 // Quick word entry popup (bottom sheet). Opens above anything else, e.g. on top of "Add words".
 function openPop(c){$('popTitle').textContent=c.word;$('popBody').innerHTML=`<div class="card">${cardHTML(c,{add:true})}</div>`;$('pop').hidden=false;$('popBody').scrollTop=0}
-function closePop(){$('pop').hidden=true;$('popBody').innerHTML='';try{speechSynthesis.cancel()}catch(e){}}
+function closePop(){try{crStop()}catch(_){}$('pop').hidden=true;$('popBody').innerHTML='';try{speechSynthesis.cancel()}catch(e){}}
 $('popX').onclick=closePop;
 $('pop').addEventListener('click',e=>{if(e.target===$('pop')) closePop()});
 
 // ---------- sheet ----------
 function openSheet(title,html){sheetOnClose=null;$('sheet').classList.remove('hideback');$('sheetTitle').textContent=title;$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
 let sheetOnClose=null;
-function closeSheet(){$('sheet').hidden=true;$('sheetBody').innerHTML='';try{speechSynthesis.cancel()}catch(e){}const f=sheetOnClose;sheetOnClose=null;if(f) f()}
+function closeSheet(){try{crStop()}catch(_){}$('sheet').hidden=true;$('sheetBody').innerHTML='';try{speechSynthesis.cancel()}catch(e){}const f=sheetOnClose;sheetOnClose=null;if(f) f()}
 $('sheetX').onclick=closeSheet;
 $('sheet').addEventListener('click',e=>{if(e.target===$('sheet')) closeSheet()});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape') return;if(!$('pop').hidden) closePop();else if(!$('sheet').hidden) closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape') return;if(!$('pracSheet').hidden) closePracSheet();else if(!$('pop').hidden) closePop();else if(!$('sheet').hidden) closeSheet()});
 
 // ---------- dict: search ----------
 let dictPane='search',searchResults=[];   // [{q, card} | {q, error}]
@@ -2569,11 +2621,19 @@ async function saveStory(){
   storyView=s.id;try{history.pushState({story:s.id},'')}catch(e){}
   renderStories();$('storyScroll').scrollTop=0;
 }
+// Scroll el to the top of scroller, adding room under the content (on pad) when it's near the end
+function scrollToTopOf(scroller,el,pad){
+  pad.style.paddingBottom='0px';
+  const sr=scroller.getBoundingClientRect(),top=el.getBoundingClientRect().top-sr.top+scroller.scrollTop;
+  const need=scroller.clientHeight-(scroller.scrollHeight-top)+8;
+  pad.style.paddingBottom=Math.max(0,need)+'px';
+  scroller.scrollTo({top:top-8,behavior:'smooth'});
+}
 function renderSearch(scrollTop){
   const b=$('searchBody');
-  b.innerHTML=searchResults.length?[...searchResults].reverse().map(r=>r.card?`<div class="sgroup" data-si="${searchResults.indexOf(r)}"><div class="card">${cardHTML(r.card,{add:true})}</div><div class="synstack">${(r.stack||[]).map(c=>`<div class="card">${cardHTML(c,{add:true})}</div>`).join('')}</div></div>`:r.pending?`<div class="bubble">Looking up "${esc(r.q)}"…</div>`:`<div class="bubble err">${esc(r.error)}</div>`).join('')
+  b.innerHTML=searchResults.length?searchResults.map(r=>r.card?`<div class="sgroup" data-si="${searchResults.indexOf(r)}"><div class="card">${cardHTML(r.card,{add:true})}</div><div class="synstack">${(r.stack||[]).map(c=>`<div class="card">${cardHTML(c,{add:true})}</div>`).join('')}</div></div>`:r.pending?`<div class="bubble">Looking up "${esc(r.q)}"…</div>`:`<div class="bubble err">${esc(r.error)}</div>`).join('')
     :`<div class="empty">Search for any word. It won't be added to your study list until you tap <b>+ Add</b>.</div>`;
-  if(scrollTop) $('searchScroll').scrollTop=0;   // newest result is at the top
+  if(scrollTop){const last=b.lastElementChild;if(last) scrollToTopOf($('searchScroll'),last,b)}   // newest result is at the end: bring it to the top
 }
 $('searchForm').addEventListener('submit',e=>{
   e.preventDefault();
@@ -2602,10 +2662,7 @@ document.addEventListener('click',async e=>{
   const group=b.closest('.sgroup,#sheetBody,#popBody');if(!group) return;
   e.stopPropagation();
   const scroller=group.classList.contains('sgroup')?$('searchScroll'):group;
-  // room under the last card so it can always reach the top of the view
-  const room=()=>{const st=group.querySelector('.synstack');if(!st||!st.lastElementChild) return;st.style.paddingBottom='0px';
-    const need=scroller.clientHeight-st.lastElementChild.offsetHeight-24;st.style.paddingBottom=Math.max(0,need)+'px'};
-  const toTop=el=>{room();const sr=scroller.getBoundingClientRect(),r=el.getBoundingClientRect();scroller.scrollTo({top:scroller.scrollTop+(r.top-sr.top)-8,behavior:'smooth'})};
+  const toTop=el=>scrollToTopOf(scroller,el,group.classList.contains('sgroup')?$('searchBody'):group.querySelector('.synstack')||group);
   let stack=group.querySelector('.synstack');
   if(!stack){stack=document.createElement('div');stack.className='synstack';group.appendChild(stack)}
   // already on screen in this group? just go to it
@@ -2639,7 +2696,7 @@ function renderList(){
         :`<button class="li" type="button" data-open="${esc(c.word)}"><span class="w">${esc(c.word)}${c.sample?' <span class="tag">Sample</span>':''}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${dueLabel(s.due)}</span></button>`).join('')}</div>`
       :`<div class="card empty">No words yet. Tap + to add some, or search in the Search tab.</div>`}`;
   if(listSel){$('selCancel').onclick=()=>{listSel=null;renderList()};$('selAll').onclick=()=>{listSel=listSel.size===cards.length?new Set():new Set(cards.map(c=>c.word));renderList()}}
-  else{$('bulkBtn').onclick=openBulk;if($('selBtn')) $('selBtn').onclick=()=>{listSel=new Set();renderList()};if($('learnBtn')) $('learnBtn').onclick=()=>startLearn('list',sorted.map(x=>x.c))}
+  else{$('bulkBtn').onclick=openBulk;if($('selBtn')) $('selBtn').onclick=()=>{listSel=new Set();renderList()};if($('learnBtn')) $('learnBtn').onclick=learnNow}
   renderSelBar();
 }
 function renderSelBar(){
