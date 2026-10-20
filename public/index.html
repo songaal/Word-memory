@@ -510,7 +510,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.29.1</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.29.2</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -1615,6 +1615,7 @@ function lpParts(c){
     if(d.ex) parts.push({t:d.ex,kind:'ex'});
     if(d.d) parts.push({t:d.d,kind:'def'});
   }
+  if((c.synonyms||[]).length) parts.push({t:c.synonyms.join(', '),kind:'syn'});
   return parts;
 }
 function lpStart(c){
@@ -1635,7 +1636,7 @@ const lpWait=ms=>new Promise(r=>setTimeout(r,ms));
 // highlight the part being read: parts are in the same order as the word, examples and definitions on the card
 function lpMark(i){
   const b=$('lnBody');if(!b) return;
-  const els=[b.querySelector('.word h2'),...b.querySelectorAll('.ex, .def')];
+  const els=[b.querySelector('.word h2'),...b.querySelectorAll('.ex, .def, .syn')];
   els.forEach((el,k)=>el&&el.classList.toggle('lread',k===i));
   const el=els[i];
   if(el&&i>0){const br=b.getBoundingClientRect(),r=el.getBoundingClientRect();if(r.top<br.top+10||r.bottom>br.bottom-10) b.scrollTo({top:b.scrollTop+(r.top-br.top)-br.height*.25,behavior:'smooth'})}
