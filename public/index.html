@@ -191,6 +191,9 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .lcard .lctl button.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 3px 0 var(--blue-d,#1899d6)}
 .lcard .lctl svg{width:24px;height:24px}
 .sheet.hideback{background:var(--bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+/* typing practice: pinned to the top like the test, so the keyboard opening/closing doesn't move it */
+.sheet.hideback{justify-content:flex-start}
+.sheet.hideback .sheet-panel{border-radius:0 0 18px 18px;padding-top:env(safe-area-inset-top,0px);padding-bottom:0;box-shadow:0 6px 24px #0002}
 .prac .pcount{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 .prac .pcount span{font:800 13px var(--f-ui);border-radius:99px;padding:5px 12px;background:var(--line);color:var(--muted);font-variant-numeric:tabular-nums}
 .prac .pcount .ok{background:var(--good-soft);color:var(--good)}
@@ -518,7 +521,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.31.0</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.31.1</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
