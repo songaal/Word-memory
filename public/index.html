@@ -510,7 +510,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.29.0</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.29.1</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -1649,7 +1649,7 @@ async function lpRun(token){
     try{await lpSay(part)}catch(e){}
     if(!live()) return;
     lp.rep++;
-    if(lp.rep<2){await lpWait(300);continue}
+    if(lp.rep<2){await lpWait(350);continue}
     lp.rep=0;lp.i++;
     if(lp.i>=lp.parts.length){
       lp.i=0;
@@ -1661,8 +1661,9 @@ async function lpRun(token){
 // One part, resolved when it has been read (or stopped)
 function lpSay(part){
   const ko=/[\u3131-\uD79D]/.test(part.t);
-  if(part.kind==='word'&&part.audio) return lpAudio(part.audio).catch(()=>lpDevice(part.t,false));
-  if(gOn()&&part.kind!=='word') return gSay(part.t,ko?'ko-KR-Neural2-A':undefined).catch(e=>{gLastError=e.message;return lpDevice(part.t,ko)});
+  // One engine for the whole card: switching between the device voice / dictionary file and the Google
+  // voice makes iOS duck (lower) the next clip for a moment, so the word uses the same voice as the rest.
+  if(gOn()) return gSay(part.t,ko?'ko-KR-Neural2-A':undefined).catch(e=>{gLastError=e.message;return lpDevice(part.t,ko)});
   return lpDevice(part.t,ko);
 }
 function lpAudio(url){
