@@ -259,6 +259,11 @@ button.chip:active{filter:brightness(.92)}
 .jenhbar select{flex:1;min-width:0;font:700 13px var(--f-ui);color:var(--fg);background:var(--card);border:2px solid var(--line);border-radius:10px;padding:7px 6px}
 .jenhbar .btn{padding:8px 14px;font-size:13px;flex:none}
 .jenhbar .msg{flex-basis:100%;min-height:0}
+.qrbox{width:210px;height:210px;display:grid;place-items:center;background:#fff;border-radius:14px;padding:6px}
+.qrbox svg{width:100%;height:100%}
+.totpkey{font:700 16px var(--f-mono);letter-spacing:.06em;word-break:break-all;background:var(--line);padding:8px 12px;border-radius:10px;user-select:text;-webkit-user-select:text}
+.authic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--line);color:var(--muted);flex:none}
+.authic.on{background:var(--good-soft);color:var(--good)}.authic svg{width:24px;height:24px}
 .prac .pcount{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 .prac .pcount span{font:800 13px var(--f-ui);border-radius:99px;padding:5px 12px;background:var(--line);color:var(--muted);font-variant-numeric:tabular-nums}
 .prac .pcount .ok{background:var(--good-soft);color:var(--good)}
@@ -504,8 +509,9 @@ button.chip:active{filter:brightness(.92)}
 .gatebox p{margin:0;color:var(--muted)}
 .emailbox{display:flex;flex-direction:column;gap:10px;width:100%}
 .erow{display:flex;gap:8px;width:100%}
-.erow input{flex:1;min-width:0;font:600 16px var(--f-ui);color:var(--fg);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:10px 12px;outline:none}
-.erow input:focus{border-color:var(--accent)}
+.einput,.erow input{flex:1;min-width:0;font:600 16px var(--f-ui);color:var(--fg);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:10px 12px;outline:none}
+.einput:focus,.erow input:focus{border-color:var(--accent)}
+.einput{width:100%}
 .erow .btn{flex:none;padding-left:16px;padding-right:16px}
 #codeIn{letter-spacing:.4em;text-align:center;font:800 20px var(--f-mono)}
 #gsiBtn{min-height:44px;display:flex;justify-content:center}
@@ -519,11 +525,11 @@ button.chip:active{filter:brightness(.92)}
     <p>Learn words through example sentences. Sign in with Google to keep your words and review schedule on every device.</p>
     <div id="gsiBtn"></div>
     <div class="msg" id="gateMsg"></div>
-    <button class="linkbtn" id="emailOpen" type="button">Sign in with an email code</button>
+    <button class="linkbtn" id="emailOpen" type="button">Sign in with an authenticator app</button>
     <div class="emailbox" id="emailBox" hidden>
-      <p class="note" style="text-align:center">For accounts that have signed in with Google before. We email you a 5-digit code.</p>
-      <div class="erow"><input type="email" id="emailIn" placeholder="you@gmail.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="send"><button class="btn" id="emailSend" type="button">Send code</button></div>
-      <div class="erow" id="codeRow" hidden><input id="codeIn" inputmode="numeric" maxlength="5" placeholder="5-digit code" autocomplete="one-time-code" enterkeyhint="go"><button class="btn" id="codeGo" type="button">Sign in</button></div>
+      <p class="note" style="text-align:center">For accounts that set up an authenticator app (Authy, Google Authenticator) in Me → Settings.</p>
+      <input class="einput" type="email" id="emailIn" placeholder="Your Google email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
+      <div class="erow"><input id="codeIn" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code" enterkeyhint="go"><button class="btn" id="codeGo" type="button">Sign in</button></div>
       <div class="msg" id="emailMsg"></div>
     </div>
     <button class="btn ghost" id="guestBtn" type="button">Continue without signing in</button>
@@ -614,9 +620,14 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.36.0</span> · <span class="version-date">2026/10/21</span></p>
+          <p class="note"><span class="version-tag">v2.37.0</span> · <span class="version-date">2026/10/21</span></p>
         </div>
       </div></div>
+    </div>
+    <!-- Me: Authenticator app page -->
+    <div class="mepage" id="me-auth" hidden>
+      <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>Authenticator app</h2><span class="back-spacer"></span></div>
+      <div class="scroll"><div class="stack" id="authBody"></div></div>
     </div>
     <!-- Me: Language settings page -->
     <div class="mepage" id="me-lang" hidden>
@@ -1049,45 +1060,34 @@ async function onCredential(resp){
     loadCloud();
   }catch(e){$('gateMsg').className='msg err';$('gateMsg').textContent="Sign-in didn't work. Please try again."}
 }
-// Email-code sign-in (only for accounts that signed in with Google before)
-let emailAddr='';
-const emailErr=(code,d)=>({notlinked:'This email hasn’t signed in with Google here yet. Sign in with Google once first.',notconfigured:'Email sign-in isn’t set up yet.',
-  wait:`Please wait ${d&&d.seconds||60} seconds before asking for a new code.`,sendfailed:'Couldn’t send the email. Try again later.',invalid:'Check the email address.',
-  expired:'That code has expired. Ask for a new one.',locked:'Too many wrong tries. Ask for a new code.',wrong:`Wrong code. ${d&&d.left||0} tries left.`})[code]||'Something went wrong. Please try again.';
-async function emailSend(){
-  const m=$('emailMsg'),e=$('emailIn').value.trim().toLowerCase();
-  if(!e){$('emailIn').focus();return}
-  $('emailSend').disabled=true;m.className='msg';m.textContent='Sending…';
-  try{
-    const r=await fetch('/api/auth/email/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e})});
-    const d=await r.json().catch(()=>({}));
-    if(!r.ok){m.className='msg err';m.textContent=emailErr(d.error,d);return}
-    emailAddr=e;$('codeRow').hidden=false;$('codeIn').value='';$('codeIn').focus();
-    m.className='msg';m.textContent=`We sent a code to ${e}. Check your inbox (and spam).`;
-  }catch(_){m.className='msg err';m.textContent='You seem to be offline. Check your connection.'}
-  finally{$('emailSend').disabled=false}
-}
+// Authenticator-app sign-in (TOTP): Google email + the app's 6-digit code; only for accounts that set it up
+const totpErr=(code,d)=>({notset:'No authenticator is set up for this email. Sign in with Google and set it up in Me → Settings.',
+  wrong:`Wrong code. ${d&&d.left!=null?d.left:''} tries left.`,used:'That code was already used. Wait for the next one.',
+  locked:'Too many wrong tries. Wait 10 minutes and try again.',invalid:'Check the email address.'})[code]||'Something went wrong. Please try again.';
 async function codeGo(){
-  const m=$('emailMsg'),c=$('codeIn').value.replace(/\D/g,'');
-  if(c.length!==5){$('codeIn').focus();return}
+  const m=$('emailMsg'),e=$('emailIn').value.trim().toLowerCase(),c=$('codeIn').value.replace(/\D/g,'');
+  if(!e){$('emailIn').focus();return}
+  if(c.length!==6){$('codeIn').focus();return}
   $('codeGo').disabled=true;m.className='msg';m.textContent='Signing in…';
   try{
-    const r=await fetch('/api/auth/email/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:emailAddr,code:c})});
+    const r=await fetch('/api/auth/totp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e,code:c})});
     const d=await r.json().catch(()=>({}));
-    if(!r.ok){m.className='msg err';m.textContent=emailErr(d.error,d);if(d.error==='locked'||d.error==='expired'){$('codeRow').hidden=true}return}
+    if(!r.ok){m.className='msg err';m.textContent=totpErr(d.error,d);$('codeIn').value='';return}
+    lsSet('wm.totpEmail',e);
     session=d.session;user=d.user;acct='cloud';
     lsSet('wm.session',session);lsSet('wm.user',JSON.stringify(user));lsDel('wm.guest');
-    m.textContent='';$('emailBox').hidden=true;$('codeRow').hidden=true;
+    m.textContent='';$('emailBox').hidden=true;$('codeIn').value='';
     loadCloud();
   }catch(_){m.className='msg err';m.textContent='You seem to be offline. Check your connection.'}
   finally{$('codeGo').disabled=false}
 }
 function initEmailLogin(){   // called at start (after $ exists)
-  $('emailOpen').onclick=()=>{$('emailBox').hidden=!$('emailBox').hidden;if(!$('emailBox').hidden) $('emailIn').focus()};
-  $('emailSend').onclick=emailSend;$('codeGo').onclick=codeGo;
-  $('emailIn').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();emailSend()}});
+  $('emailOpen').onclick=()=>{$('emailBox').hidden=!$('emailBox').hidden;if($('emailBox').hidden) return;
+    const last=lsGet('wm.totpEmail');if(last&&!$('emailIn').value) $('emailIn').value=last;($('emailIn').value?$('codeIn'):$('emailIn')).focus()};
+  $('codeGo').onclick=codeGo;
+  $('emailIn').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('codeIn').focus()}});
   $('codeIn').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();codeGo()}});
-  $('codeIn').addEventListener('input',()=>{$('codeIn').value=$('codeIn').value.replace(/\D/g,'').slice(0,5);if($('codeIn').value.length===5) codeGo()});
+  $('codeIn').addEventListener('input',()=>{$('codeIn').value=$('codeIn').value.replace(/\D/g,'').slice(0,6);if($('codeIn').value.length===6&&$('emailIn').value.trim()) codeGo()});
 }
 function endSession(){
   lsDel('wm.session');lsDel('wm.user');session=null;user=null;acct=null;
@@ -1387,6 +1387,7 @@ function chime(){
 
 // ---------- translation ----------
 // Google Cloud Translation, called from the browser with the user's own API key.
+const LOCK_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><circle cx="12" cy="16" r="1.3" fill="currentColor"/></svg>';
 const LANG_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>';
 const AI_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>';
 const TR_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h8M8 3v2M5.5 5c.8 3 3.2 5.6 6 7M10.5 5c-.9 3.6-3.3 6.5-6.5 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/></svg>';
@@ -3456,11 +3457,13 @@ function bulkResult(added,skipped,failed,updated=[]){
 const SETTINGS_MENU=[
   {id:'translate',title:'Google Translate',icon:TR_ICON,value:()=>settings.translateKey?['On','on']:['Not set',''],render:()=>renderSettings()},
   {id:'ai',title:'AI',icon:AI_ICON,value:()=>aiKey()?[AI[aiProv()].name,'on']:['Not set',''],render:()=>renderAi()},
+  {id:'auth',title:'Authenticator app',icon:LOCK_ICON,value:()=>acct!=='cloud'?['','']:totpOn===true?['On','on']:totpOn===false?['Off','']:['',''],render:()=>renderAuth()},
   {id:'lang',title:'Language',icon:LANG_ICON,value:()=>[LANG==='ko'?'한국어':'English',''],render:()=>renderLang()},
   {id:'voice',title:'Voice',icon:SPK_ICON,value:()=>{if(gOn()) return ['Google · '+gVoice().replace(/^en-(US|GB|AU)-(Chirp3-HD|Neural2)-/,''),'on'];const v=pickVoice();return [v?v.name.replace(/\s*\(.*\)$/,'').slice(0,18):'Default','']},render:()=>renderVoice()},
 ];
 let mePage='main';
 function renderMe(){
+  if(acct==='cloud'&&totpOn===null&&!totpAsked){totpAsked=true;totpRefresh().then(()=>{if(curTab==='me'&&mePage==='main') renderMe()})}
   const p=$('profile');
   if(acct==='cloud'){
     p.innerHTML=`<div class="avatar">${user.picture?`<img src="${esc(user.picture)}" alt="" referrerpolicy="no-referrer">`:esc((user.name||user.email||'?')[0].toUpperCase())}</div>
@@ -3489,6 +3492,71 @@ document.addEventListener('click',e=>{
     if(history.state&&history.state.me) history.back();else{openMePage('main',false);renderMe()}
   }
 });
+// Authenticator app page (TOTP): set up with a QR code / key, confirm with a code, turn off
+let totpOn=null,totpSetupData=null,totpAsked=false;
+async function totpRefresh(){
+  if(acct!=='cloud') return;
+  try{const r=await api('/api/totp');if(r.ok){const d=await r.json();totpOn=!!d.enabled;totpCreated=d.created}}catch(_){}
+}
+let totpCreated=null;
+function loadQRLib(){
+  if(window.qrcode) return Promise.resolve();
+  const tryUrl=u=>new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=u;sc.onload=res;sc.onerror=rej;document.head.appendChild(sc)});
+  return tryUrl('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js').catch(()=>tryUrl('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'));
+}
+async function renderAuth(msg){
+  const b=$('authBody');
+  if(acct!=='cloud'){b.innerHTML=`<div class="card"><p class="note" style="font-size:14px">Sign in with Google first. Then you can add an authenticator app and sign in with its code.</p></div>`;return}
+  if(totpOn===null){b.innerHTML=`<div class="card"><p class="note">Loading…</p></div>`;await totpRefresh();if(mePage!=='auth') return}
+  if(totpSetupData){
+    const sd=totpSetupData,key=sd.secret.replace(/(.{4})/g,'$1 ').trim();
+    b.innerHTML=`<div class="card" style="align-items:center;text-align:center">
+        <span class="label">1 · Scan with your authenticator app</span>
+        <div class="qrbox" id="qrBox"><span class="note">Loading QR code…</span></div>
+        <span class="label" style="margin-top:6px">Or type this key</span>
+        <code class="totpkey" id="totpKey">${esc(key)}</code>
+        <button class="linkbtn" id="totpCopy" type="button">Copy key</button>
+      </div>
+      <div class="card"><span class="label">2 · Enter the 6-digit code it shows</span>
+        <div class="erow"><input id="totpCode" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code"><button class="btn" id="totpOk" type="button">Confirm</button></div>
+        <div class="msg" id="totpMsg"></div>
+        <button class="linkbtn" id="totpCancel" type="button">Cancel</button></div>`;
+    loadQRLib().then(()=>{if(!$('qrBox')) return;const q=qrcode(0,'M');q.addData(sd.uri);q.make();$('qrBox').innerHTML=q.createSvgTag({cellSize:5,margin:2,scalable:true})})
+      .catch(()=>{if($('qrBox')) $('qrBox').innerHTML='<span class="note">Couldn’t load the QR code. Type the key instead.</span>'});
+    $('totpCopy').onclick=()=>{try{navigator.clipboard.writeText(sd.secret);toast('Copied')}catch(_){}};
+    $('totpCancel').onclick=()=>{totpSetupData=null;renderAuth()};
+    const ok=async()=>{const c=$('totpCode').value.replace(/\D/g,'');if(c.length!==6){$('totpCode').focus();return}
+      $('totpOk').disabled=true;
+      try{const r=await api('/api/totp/confirm',{method:'POST',body:JSON.stringify({code:c})});const d=await r.json().catch(()=>({}));
+        if(!r.ok){$('totpMsg').className='msg err';$('totpMsg').textContent=d.error==='expired'?'Setup timed out. Start again.':'That code didn’t match. Check the app and try again.';$('totpCode').value='';return}
+        totpSetupData=null;totpOn=true;totpCreated=new Date().toISOString();lsSet('wm.totpEmail',(user.email||'').toLowerCase());renderAuth('done');
+      }catch(_){$('totpMsg').className='msg err';$('totpMsg').textContent='You seem to be offline. Check your connection.'}
+      finally{if($('totpOk')) $('totpOk').disabled=false}};
+    $('totpOk').onclick=ok;
+    $('totpCode').addEventListener('input',()=>{$('totpCode').value=$('totpCode').value.replace(/\D/g,'').slice(0,6);if($('totpCode').value.length===6) ok()});
+    return;
+  }
+  const since=totpCreated?new Date(totpCreated).toLocaleDateString(LOC(),{year:'numeric',month:'short',day:'numeric'}):'';
+  b.innerHTML=`<div class="card">
+      <div class="row" style="gap:12px;align-items:center"><span class="authic ${totpOn?'on':''}">${LOCK_ICON}</span>
+        <div><div style="font:800 17px var(--f-ui)">${totpOn?'Authenticator is on':'Authenticator is off'}</div>
+        <div class="note">${totpOn?(since?`Set up ${esc(since)} · `:'')+'sign in with your email and the app’s code':'Add Authy or Google Authenticator to sign in with a code instead of Google'}</div></div></div>
+      ${msg==='done'?'<div class="msg ok">All set. Next time, choose “Sign in with an authenticator app” on the sign-in screen.</div>':''}
+      <button class="btn ${totpOn?'ghost':''} block" id="totpStart" type="button">${totpOn?'Set up again':'Set up'}</button>
+      ${totpOn?'<button class="btn danger block" id="totpOffBtn" type="button">Turn off</button>':''}
+    </div>
+    <p class="note" style="padding:0 4px">Sign-in: your Google email (${esc(user.email||'')}) + the 6-digit code from the app. Google sign-in keeps working too.</p>`;
+  $('totpStart').onclick=async()=>{
+    $('totpStart').disabled=true;
+    try{const r=await api('/api/totp/setup',{method:'POST',body:'{}'});const d=await r.json().catch(()=>({}));if(!r.ok) throw new Error(d.error);totpSetupData=d;renderAuth()}
+    catch(_){toast('Something went wrong. Please try again.');if($('totpStart')) $('totpStart').disabled=false}
+  };
+  if($('totpOffBtn')) $('totpOffBtn').onclick=()=>{
+    openSheet('Turn off the authenticator?',`<div class="card qconfirm"><p>You won’t be able to sign in with a code until you set it up again. Google sign-in keeps working.</p><button class="btn ghost block" id="toNo" type="button">Cancel</button><button class="btn danger block" id="toYes" type="button">Turn off</button></div>`);
+    $('toNo').onclick=closeSheet;
+    $('toYes').onclick=async()=>{closeSheet();try{await api('/api/totp',{method:'DELETE'});totpOn=false;totpCreated=null}catch(_){}renderAuth()};
+  };
+}
 // Language page
 function renderLang(){
   const opts=[['auto',`System default (${DEVICE_LANG==='ko'?'한국어':'English'})`],['en','English'],['ko','한국어']];
@@ -3901,11 +3969,17 @@ const I18N_KO={
 '+ Add':'+ 추가','✓ In your list':'✓ 목록에 있음','Similar words':'비슷한 단어','Add words':'단어 추가','Add a story':'스토리 추가','Tap words to pick them':'단어를 탭해서 고르세요',
 'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Photo of a word list':'단어장 사진으로 만들기','EN–EN':'영영','Learn':'학습',"Today's learning":'오늘의 학습','Start learning':'학습 시작','Continue learning':'이어서 학습','Learn again':'다시 학습','Learn all words':'전체 단어 학습','Test now':'바로 테스트','All learned! Start the words test below.':'다 외웠어요! 아래에서 단어 테스트를 시작하세요.','All learned today!':'오늘 학습 완료!','Start story test':'스토리 테스트 시작',
 'No words due today. Learn any of your words.':'오늘 복습할 단어는 없어요. 아무 단어나 학습해 보세요.','All learned! Test them while they are fresh.':'다 외웠어요! 기억날 때 바로 테스트해 봐요.',
-'← Again':'← 다시','Sign in with an email code':'이메일 코드로 로그인','For accounts that have signed in with Google before. We email you a 5-digit code.':'Google로 로그인한 적 있는 계정만 쓸 수 있어요. 5자리 코드를 이메일로 보내드려요.',
-'Send code':'코드 받기','5-digit code':'5자리 코드','Sending…':'보내는 중…',
-'This email hasn’t signed in with Google here yet. Sign in with Google once first.':'이 이메일은 아직 Google로 로그인한 적이 없어요. 먼저 Google로 한 번 로그인해 주세요.',
-'Email sign-in isn’t set up yet.':'이메일 로그인이 아직 설정되지 않았어요.','Couldn’t send the email. Try again later.':'이메일을 보내지 못했어요. 잠시 후 다시 시도해 주세요.','Check the email address.':'이메일 주소를 확인해 주세요.',
-'That code has expired. Ask for a new one.':'코드가 만료됐어요. 새 코드를 받아주세요.','Too many wrong tries. Ask for a new code.':'너무 많이 틀렸어요. 새 코드를 받아주세요.','Writing':'글쓰기','Journal':'일기','Translate':'번역','EN → KO':'영 → 한','KO → EN':'한 → 영','Google Translate':'Google 번역','Translating…':'번역 중…','Copy':'복사','Copied':'복사했어요','Recent':'최근 번역',
+'← Again':'← 다시','Sign in with an authenticator app':'인증 앱으로 로그인','For accounts that set up an authenticator app (Authy, Google Authenticator) in Me → Settings.':'나 → 설정에서 인증 앱(Authy, Google Authenticator)을 연결한 계정만 쓸 수 있어요.',
+'Your Google email':'Google 이메일','6-digit code':'6자리 코드','Check the email address.':'이메일 주소를 확인해 주세요.',
+'No authenticator is set up for this email. Sign in with Google and set it up in Me → Settings.':'이 이메일에는 인증 앱이 연결돼 있지 않아요. Google로 로그인한 뒤 나 → 설정에서 연결해 주세요.',
+'That code was already used. Wait for the next one.':'이미 사용한 코드예요. 다음 코드를 기다려 주세요.','Too many wrong tries. Wait 10 minutes and try again.':'너무 많이 틀렸어요. 10분 뒤에 다시 시도해 주세요.',
+'Authenticator app':'인증 앱','Off':'꺼짐','Loading…':'불러오는 중…','Sign in with Google first. Then you can add an authenticator app and sign in with its code.':'먼저 Google로 로그인하세요. 그다음 인증 앱을 연결하면 코드로 로그인할 수 있어요.',
+'1 · Scan with your authenticator app':'1 · 인증 앱으로 스캔하세요','Loading QR code…':'QR 코드 불러오는 중…','Or type this key':'또는 이 키를 입력하세요','Copy key':'키 복사',
+'2 · Enter the 6-digit code it shows':'2 · 앱에 나온 6자리 코드를 입력하세요','Confirm':'확인','Couldn’t load the QR code. Type the key instead.':'QR 코드를 불러오지 못했어요. 키를 직접 입력하세요.',
+'Setup timed out. Start again.':'설정 시간이 지났어요. 다시 시작하세요.','That code didn’t match. Check the app and try again.':'코드가 맞지 않아요. 앱을 확인하고 다시 입력하세요.',
+'Authenticator is on':'인증 앱 사용 중','Authenticator is off':'인증 앱 꺼짐','Add Authy or Google Authenticator to sign in with a code instead of Google':'Authy나 Google Authenticator를 연결하면 Google 대신 코드로 로그인할 수 있어요',
+'All set. Next time, choose “Sign in with an authenticator app” on the sign-in screen.':'설정 완료! 다음부터 로그인 화면에서 “인증 앱으로 로그인”을 고르세요.','Set up':'연결하기','Set up again':'다시 연결하기','Turn off':'끄기',
+'Turn off the authenticator?':'인증 앱을 끌까요?','You won’t be able to sign in with a code until you set it up again. Google sign-in keeps working.':'다시 연결하기 전까지 코드로 로그인할 수 없어요. Google 로그인은 그대로 돼요.','Writing':'글쓰기','Journal':'일기','Translate':'번역','EN → KO':'영 → 한','KO → EN':'한 → 영','Google Translate':'Google 번역','Translating…':'번역 중…','Copy':'복사','Copied':'복사했어요','Recent':'최근 번역',
 'Type English to translate…':'번역할 영어를 입력하세요…','Type Korean to translate…':'번역할 한국어를 입력하세요…','Translator':'번역기','Add your Google Translate key in Me → Settings.':'나 → 설정에서 Google 번역 키를 넣어주세요.',
 'Newest first':'최신순','No entries yet.':'아직 일기가 없어요.','Tap the pen to write your first one.':'펜 버튼을 눌러 첫 일기를 써보세요.','Untitled':'제목 없음','New entry':'새 일기',
 'Done':'완료','Delete this entry?':'이 일기를 삭제할까요?','Write in English…':'영어로 써보세요…','English only — Korean can’t be typed here':'영어로만 쓸 수 있어요 — 한글은 입력되지 않아요',
@@ -4021,9 +4095,10 @@ const I18N_KO_RE=[
 [/^(\d+) entr(?:y|ies)$/,'일기 $1개'],
 [/^(.+) is improving your writing…$/,'$1가 글을 다듬는 중…'],
 [/^Enhanced · (.+)$/,'다듬은 글 · $1'],
-[/^Please wait (\d+) seconds before asking for a new code\.$/,'새 코드는 $1초 뒤에 받을 수 있어요.'],
-[/^Wrong code\. (\d+) tries left\.$/,'코드가 틀렸어요. $1번 남았어요.'],
-[/^We sent a code to (.+)\. Check your inbox \(and spam\)\.$/,'$1로 코드를 보냈어요. 받은편지함(과 스팸함)을 확인하세요.'],
+[/^Wrong code\. (\d*) ?tries left\.$/,'코드가 틀렸어요. $1번 남았어요.'],
+[/^Set up (.+) · sign in with your email and the app’s code$/,'$1 연결 · 이메일과 앱 코드로 로그인'],
+[/^sign in with your email and the app’s code$/,'이메일과 앱 코드로 로그인'],
+[/^Sign-in: your Google email \((.*)\) \+ the 6-digit code from the app\. Google sign-in keeps working too\.$/,'로그인: Google 이메일($1) + 앱의 6자리 코드. Google 로그인도 그대로 돼요.'],
 [/^Delete (\d+) words?\?$/,'단어 $1개를 삭제할까요?'],
 [/^(?:This word|These words) and (?:its 1 sentence|their (\d+) sentences) will be removed with their review schedule\. Stories keep their text\.$/,(m,n)=>'이 단어와 예문 '+(n||1)+'개가 복습 일정과 함께 삭제돼요. 스토리 본문은 그대로 남아요.'],
 [/^Sentence (\d+)$/,'예문 $1'],[/^Delete "(.+)"\?$/,'“$1”을(를) 삭제할까요?'],

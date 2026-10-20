@@ -17,7 +17,8 @@ import { FREQ_WORDS } from './freq.js';
 //   wm:words:<sub>     → { cards, seed, log, history, stories, updatedAt }
 //   wm:settings:<sub>  → { translateKey, aiProvider, openaiKey/Model, geminiKey/Model, claudeKey/Model }   (the user's own Google Translate / OpenAI keys)
 //   wm:email:<email>   → the Google account behind that address (set at Google sign-in / app start)
-//   wm:otp:<email>     → pending email sign-in code (hashed, 10 minutes)
+//   wm:totp:<sub>      → authenticator-app secret {secret, lastStep, created}; wm:totpPending:<sub> during setup;
+//   wm:totpTry:<email> → wrong sign-in tries (10 minutes)
 //   wm:journal:<sub>   → journal entries (merged per entry on save)
 //   wm:dict3:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
 //
@@ -39,8 +40,11 @@ export default {
     try {
       if (pathname === '/api/auth/login' && method === 'POST') return await login(request, env);
       if (pathname === '/api/auth/logout' && method === 'POST') return await logout(request, env);
-      if (pathname === '/api/auth/email/start' && method === 'POST') return await emailStart(request, env);
-      if (pathname === '/api/auth/email/verify' && method === 'POST') return await emailVerify(request, env);
+      if (pathname === '/api/auth/totp' && method === 'POST') return await totpLogin(request, env);
+      if (pathname === '/api/totp' && method === 'GET') return await totpStatus(request, env);
+      if (pathname === '/api/totp/setup' && method === 'POST') return await totpSetup(request, env);
+      if (pathname === '/api/totp/confirm' && method === 'POST') return await totpConfirm(request, env);
+      if (pathname === '/api/totp' && method === 'DELETE') return await totpOff(request, env);
       if (pathname === '/api/me' && method === 'GET') return await me(request, env);
       if (pathname === '/api/words' && method === 'GET') return await getWords(request, env);
       if (pathname === '/api/words' && method === 'PUT') return await putWords(request, env);
@@ -99,7 +103,7 @@ async function newSession(env, user) {
   await env.WORDS.put(`wm:sess:${session}`, JSON.stringify(user), { expirationTtl: SESSION_TTL });
   return session;
 }
-// Email-code sign-in works only for addresses that signed in with Google before: email → that Google account
+// Authenticator sign-in works only for addresses that signed in with Google before: email → that Google account
 async function linkEmail(env, user) {
   if (!user || !user.email) return;
   const k = `wm:email:${user.email.toLowerCase()}`;
@@ -108,64 +112,93 @@ async function linkEmail(env, user) {
     await env.WORDS.put(k, JSON.stringify(user));
 }
 
-// ── Email code sign-in (sent from the owner's Gmail through the Gmail API) ──
-// wm:otp:<email> → { hash, tries, sentAt } for 10 minutes; 5 wrong tries end it; one new code per minute.
-const OTP_TTL = 600, OTP_TRIES = 5;
+// ── Authenticator-app sign-in (TOTP, RFC 6238: 6 digits, 30 s, SHA-1 — Authy, Google Authenticator…) ──
+// Set up while signed in with Google: wm:totpPending:<sub> (15 min) → confirmed with a code → wm:totp:<sub> {secret, lastStep, created}.
+// Sign-in: email (must have signed in with Google: wm:email:<email>) + current code; ±1 step for clock drift;
+// a used step can't be reused; 5 wrong tries per email per 10 minutes (wm:totpTry:<email>).
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const normEmail = e => String(e || '').trim().toLowerCase();
-async function sha(s) {
-  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+function b32encode(bytes) {
+  let bits = 0, val = 0, out = '';
+  for (const b of bytes) { val = (val << 8) | b; bits += 8; while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5; } }
+  if (bits > 0) out += B32[(val << (5 - bits)) & 31];
+  return out;
 }
-async function emailStart(request, env) {
+function b32decode(str) {
+  let bits = 0, val = 0; const out = [];
+  for (const c of str.replace(/=+$/, '').toUpperCase()) { const i = B32.indexOf(c); if (i < 0) continue; val = (val << 5) | i; bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } }
+  return new Uint8Array(out);
+}
+async function totpAt(secret, step) {
+  const key = await crypto.subtle.importKey('raw', b32decode(secret), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
+  const msg = new ArrayBuffer(8); const dv = new DataView(msg);
+  dv.setUint32(0, Math.floor(step / 2 ** 32)); dv.setUint32(4, step >>> 0);
+  const h = new Uint8Array(await crypto.subtle.sign('HMAC', key, msg));
+  const o = h[19] & 15;
+  const n = ((h[o] & 127) << 24 | h[o + 1] << 16 | h[o + 2] << 8 | h[o + 3]) % 1000000;
+  return String(n).padStart(6, '0');
+}
+// returns the matching step (or 0) within ±1 step of now
+async function totpCheck(secret, code, now = Date.now()) {
+  code = String(code || '').replace(/\D/g, '');
+  if (code.length !== 6) return 0;
+  const cur = Math.floor(now / 30000);
+  for (const st of [cur, cur - 1, cur + 1]) if (await totpAt(secret, st) === code) return st;
+  return 0;
+}
+async function totpStatus(request, env) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
+  const t = await env.WORDS.get(`wm:totp:${user.sub}`, 'json').catch(() => null);
+  return json({ enabled: !!t, created: t ? t.created : null, email: user.email || '' });
+}
+async function totpSetup(request, env) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
+  if (!user.email) return json({ error: 'noemail' }, 400);
+  const secret = b32encode(crypto.getRandomValues(new Uint8Array(20)));
+  await env.WORDS.put(`wm:totpPending:${user.sub}`, JSON.stringify({ secret }), { expirationTtl: 900 });
+  const label = encodeURIComponent('Word Story:' + user.email);
+  return json({ secret, uri: `otpauth://totp/${label}?secret=${secret}&issuer=Word%20Story&algorithm=SHA1&digits=6&period=30` });
+}
+async function totpConfirm(request, env) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
   let body; try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
-  const email = normEmail(body && body.email);
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 120) return json({ error: 'invalid' }, 400);
-  if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) return json({ error: 'notconfigured' }, 503);
-  const user = await env.WORDS.get(`wm:email:${email}`, 'json').catch(() => null);
-  if (!user) return json({ error: 'notlinked' }, 404);
-  const k = `wm:otp:${email}`;
-  const cur = await env.WORDS.get(k, 'json').catch(() => null);
-  if (cur && Date.now() - cur.sentAt < 60000) return json({ error: 'wait', seconds: Math.ceil((60000 - (Date.now() - cur.sentAt)) / 1000) }, 429);
-  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 100000;
-  const code = String(n).padStart(5, '0');
-  try { await sendGmail(env, email, `Word Story sign-in code: ${code}`, `Your Word Story sign-in code is ${code}\n\nIt works for 10 minutes. If you didn't ask for it, you can ignore this email.`); }
-  catch (e) { return json({ error: 'sendfailed', detail: String(e && e.message || e).slice(0, 200) }, 502); }
-  await env.WORDS.put(k, JSON.stringify({ hash: await sha(email + ':' + code), tries: 0, sentAt: Date.now() }), { expirationTtl: OTP_TTL });
+  const pend = await env.WORDS.get(`wm:totpPending:${user.sub}`, 'json').catch(() => null);
+  if (!pend) return json({ error: 'expired' }, 400);
+  const st = await totpCheck(pend.secret, body && body.code);
+  if (!st) return json({ error: 'wrong' }, 400);
+  await env.WORDS.put(`wm:totp:${user.sub}`, JSON.stringify({ secret: pend.secret, lastStep: st, created: new Date().toISOString() }));
+  await env.WORDS.delete(`wm:totpPending:${user.sub}`);
+  await linkEmail(env, user);
   return json({ ok: true });
 }
-async function emailVerify(request, env) {
-  let body; try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
-  const email = normEmail(body && body.email), code = String((body && body.code) || '').replace(/\D/g, '');
-  const k = `wm:otp:${email}`;
-  const cur = await env.WORDS.get(k, 'json').catch(() => null);
-  if (!cur) return json({ error: 'expired' }, 400);
-  if (cur.hash !== await sha(email + ':' + code)) {
-    cur.tries = (cur.tries || 0) + 1;
-    if (cur.tries >= OTP_TRIES) { await env.WORDS.delete(k); return json({ error: 'locked' }, 400); }
-    const left = Math.max(60, OTP_TTL - Math.floor((Date.now() - cur.sentAt) / 1000));
-    await env.WORDS.put(k, JSON.stringify(cur), { expirationTtl: left });
-    return json({ error: 'wrong', left: OTP_TRIES - cur.tries }, 400);
-  }
-  await env.WORDS.delete(k);
-  const user = await env.WORDS.get(`wm:email:${email}`, 'json').catch(() => null);
-  if (!user) return json({ error: 'notlinked' }, 404);
-  return json({ session: await newSession(env, user), user });
+async function totpOff(request, env) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
+  await env.WORDS.delete(`wm:totp:${user.sub}`);
+  return json({ ok: true });
 }
-// Gmail API: refresh token (gmail.send scope) → access token → send a plain-text message from the owner's Gmail
-async function sendGmail(env, to, subject, text) {
-  const tr = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ client_id: env.GMAIL_CLIENT_ID, client_secret: env.GMAIL_CLIENT_SECRET, refresh_token: env.GMAIL_REFRESH_TOKEN, grant_type: 'refresh_token' }),
-  });
-  const tj = await tr.json().catch(() => ({}));
-  if (!tr.ok || !tj.access_token) throw new Error('token: ' + (tj.error_description || tj.error || tr.status));
-  const b64 = str => btoa(unescape(encodeURIComponent(str)));
-  const mime = [`To: ${to}`, `Subject: =?UTF-8?B?${b64(subject)}?=`, 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64(text)].join('\r\n');
-  const raw = b64(mime).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const sr = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-    method: 'POST', headers: { Authorization: 'Bearer ' + tj.access_token, 'Content-Type': 'application/json' }, body: JSON.stringify({ raw }),
-  });
-  if (!sr.ok) { const ej = await sr.json().catch(() => ({})); throw new Error('send: ' + ((ej.error && ej.error.message) || sr.status)); }
+async function totpLogin(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+  const email = normEmail(body && body.email);
+  if (!email || email.length > 120) return json({ error: 'invalid' }, 400);
+  const tk = `wm:totpTry:${email}`;
+  const tries = await env.WORDS.get(tk, 'json').catch(() => null);
+  if (tries && tries.n >= 5) return json({ error: 'locked' }, 429);
+  const user = await env.WORDS.get(`wm:email:${email}`, 'json').catch(() => null);
+  const t = user ? await env.WORDS.get(`wm:totp:${user.sub}`, 'json').catch(() => null) : null;
+  const st = t ? await totpCheck(t.secret, body && body.code) : 0;
+  if (!t || !st || st <= (t.lastStep || 0)) {
+    const n = (tries ? tries.n : 0) + 1;
+    await env.WORDS.put(tk, JSON.stringify({ n }), { expirationTtl: 600 });
+    return json({ error: !t ? 'notset' : st && st <= (t.lastStep || 0) ? 'used' : 'wrong', left: Math.max(0, 5 - n) }, 400);
+  }
+  t.lastStep = st;
+  await env.WORDS.put(`wm:totp:${user.sub}`, JSON.stringify(t));
+  if (tries) await env.WORDS.delete(tk);
+  return json({ session: await newSession(env, user), user });
 }
 
 async function logout(request, env) {
