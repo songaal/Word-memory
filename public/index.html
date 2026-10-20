@@ -194,6 +194,10 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 /* typing practice: pinned to the top like the test, so the keyboard opening/closing doesn't move it */
 .sheet.hideback{justify-content:flex-start}
 .sheet.hideback .sheet-panel{border-radius:0 0 18px 18px;padding-top:env(safe-area-inset-top,0px);padding-bottom:0;box-shadow:0 6px 24px #0002}
+.wnav{position:relative;padding-left:26px;padding-right:26px}
+.wnav .wn-edge{position:absolute;top:50%;transform:translateY(-50%);width:22px;height:56px;border-radius:12px;display:grid;place-items:center;font:900 22px var(--f-ui);color:var(--muted);background:var(--line);opacity:.6;pointer-events:none}
+.wnav .wn-edge.l{left:4px}.wnav .wn-edge.r{right:4px}
+.wnav .wn-count{position:absolute;top:10px;right:14px;font:800 12px var(--f-ui);color:var(--muted);font-variant-numeric:tabular-nums}
 .prac .pcount{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 .prac .pcount span{font:800 13px var(--f-ui);border-radius:99px;padding:5px 12px;background:var(--line);color:var(--muted);font-variant-numeric:tabular-nums}
 .prac .pcount .ok{background:var(--good-soft);color:var(--good)}
@@ -522,7 +526,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.31.4</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.32.0</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -2645,10 +2649,13 @@ $('listBody').addEventListener('click',e=>{
   const o=e.target.closest('[data-open]');
   if(o) openWord(o.dataset.open);
 });
+// Word list order (same as the Words list): due first, then A–Z
+function listOrder(){return [...cards].map(c=>({c,s:wordSummary(c)})).sort((a,b)=>a.s.due<b.s.due?-1:a.s.due>b.s.due?1:a.c.word.localeCompare(b.c.word)).map(x=>x.c.word)}
 function openWord(word,confirm){
   const c=cards.find(x=>x.word===word);if(!c) return;
   const its=itemsOf(c);
-  openSheet(c.word,`<div class="card">${cardHTML(c)}</div>
+  const order=listOrder(),idx=order.indexOf(c.word);
+  openSheet(c.word,`<div class="card wnav" id="wnavCard">${order.length>1?`<span class="wn-edge l" aria-hidden="true">‹</span><span class="wn-edge r" aria-hidden="true">›</span><span class="wn-count">${idx+1} / ${order.length}</span>`:''}${cardHTML(c)}</div>
     <div class="card" style="margin-top:12px">
       <span class="label">Schedule</span>
       ${its.map((it,i)=>`<div class="row" style="justify-content:space-between;font-size:14px"><span>${it.noEx?'Definition':'Sentence '+(i+1)}</span><span><span class="st">${stageLabel(it.d.stage)}</span> <span class="note" style="display:inline">${dueLabel(it.d.due)}</span></span></div>`).join('')}
@@ -2656,6 +2663,13 @@ function openWord(word,confirm){
         ?`<span class="note">Delete "${esc(c.word)}"?</span><button class="btn" style="background:var(--bad);border-color:var(--bad)" id="delYes" type="button">Delete</button><button class="btn ghost" id="delNo" type="button">Cancel</button>`
         :`<button class="linkbtn" style="color:var(--bad)" id="delAsk" type="button">Delete word</button>`}</div>
     </div>`);
+  // Tap the left / right edge of the card for the previous / next word in the list
+  if(order.length>1) $('wnavCard').addEventListener('click',e=>{
+    if(e.target.closest('button,a,input,[data-pop]')) return;
+    const r=$('wnavCard').getBoundingClientRect(),x=e.clientX-r.left,edge=Math.min(64,r.width*.2);
+    if(x<edge) openWord(order[(idx-1+order.length)%order.length]);
+    else if(x>r.width-edge) openWord(order[(idx+1)%order.length]);
+  });
   if(confirm){$('delYes').onclick=()=>{cards=cards.filter(x=>x!==c);save();closeSheet();renderList();renderBadge()};$('delNo').onclick=()=>openWord(word)}
   else $('delAsk').onclick=()=>{openWord(word,true);$('sheetBody').scrollTop=$('sheetBody').scrollHeight};
 }
