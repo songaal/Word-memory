@@ -133,6 +133,11 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .synblock{display:flex;flex-direction:column;gap:6px;padding-top:14px;border-top:1px solid var(--line)}
 .syn{display:flex;flex-wrap:wrap;gap:8px}
 .chip{font:500 17px/1.3 var(--f-ui);padding:5px 14px;border-radius:16px;background:var(--accent-soft);color:var(--fg)}
+button.chip{border:0;cursor:pointer;-webkit-appearance:none;appearance:none}
+button.chip:active{filter:brightness(.92)}
+.synstack{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.synstack:empty{display:none}
+.synstack .card{border-color:var(--accent-soft)}
 
 /* ---- home ---- */
 .hhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -530,7 +535,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.32.2</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.33.0</span> · <span class="version-date">2026/10/21</span></p>
         </div>
       </div></div>
     </div>
@@ -1287,7 +1292,7 @@ function cardHTML(c,opts={}){
   const exHTML=(d,gi,di)=>`<span class="ex">“${esc(d.ex).replace(wordRe(c.word),m=>'<strong>'+m+'</strong>')}” <button class="say" data-kind="ex" data-say="${esc(d.ex)}" type="button" aria-label="Play example sentence">🔊</button><button class="tr" data-tr="${esc(c.word)}|${gi}|${di}" type="button" aria-pressed="false" aria-label="Show Korean translation" title="Korean translation">${TR_ICON}</button><span class="ko" hidden></span></span>`;
   const defHTML=(d,solo)=>`<span class="def${solo?' solo':''}">${esc(d.d)} <button class="say" data-say="${esc(d.d)}" type="button" aria-label="Play definition">🔊</button></span>`;
   const m=c.meanings.map((g,gi)=>`<div><div class="pos">${esc(g.pos||'')}</div><ol class="defs">${g.defs.map((d,di)=>`<li>${d.ex?exHTML(d,gi,di)+defHTML(d,false):defHTML(d,true)}</li>`).join('')}</ol></div>`).join('');
-  const s=(c.synonyms||[]).length?`<div class="synblock"><div class="label">Similar words</div><div class="syn">${c.synonyms.map(x=>`<span class="chip">${esc(x)}</span>`).join('')}</div></div>`:'';
+  const s=(c.synonyms||[]).length?`<div class="synblock"><div class="label">Similar words</div><div class="syn">${c.synonyms.map(x=>`<button class="chip" type="button" data-syn="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>`:'';
   let add='';
   if(opts.add){
     const inList=cards.some(x=>x.word===c.word);
@@ -1328,6 +1333,9 @@ document.addEventListener('click',async e=>{
     cards.unshift(c);save();renderBadge();
     if(!$('pop').hidden) openPop(c);
     if(curTab==='dict'&&dictPane==='search') renderSearch(false);
+    // a card stacked in a sheet: just swap its button
+    if(add.isConnected){add.outerHTML='<button class="btn ghost addw" type="button" disabled>✓ In your list</button>'}
+    if(curTab==='dict'&&dictPane==='list') renderList();
   }
 });
 
@@ -2567,11 +2575,14 @@ function renderSearch(scrollTop){
     :`<div class="empty">Search for any word. It won't be added to your study list until you tap <b>+ Add</b>.</div>`;
   if(scrollTop) $('searchScroll').scrollTop=0;   // newest result is at the top
 }
-$('searchForm').addEventListener('submit',async e=>{
+$('searchForm').addEventListener('submit',e=>{
   e.preventDefault();
   const q=$('searchIn').value.trim().toLowerCase();
   if(!q) return;
   $('searchIn').value='';
+  runSearch(q);
+});
+async function runSearch(q){
   searchResults=searchResults.filter(r=>r.card);   // drop old 'not found' warnings
   const entry={q,pending:true};searchResults.push(entry);
   if(searchResults.length>20) searchResults.shift();
@@ -2582,7 +2593,29 @@ $('searchForm').addEventListener('submit',async e=>{
   }catch(err){entry.error=lookupErr(err.message,q)}
   entry.pending=false;
   renderSearch(true);
-});
+}
+// Tapping a similar word: in the Dictionary it's searched (newest on top); in a word card sheet its entry
+// is looked up and stacked under the cards already there, so you can keep following similar words.
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-syn]');if(!b) return;
+  const w=b.dataset.syn.trim().toLowerCase();if(!w) return;
+  if(b.closest('#searchBody')){runSearch(w);return}
+  const body=b.closest('#sheetBody,#popBody');if(!body) return;
+  e.stopPropagation();
+  let stack=body.querySelector('.synstack');
+  if(!stack){stack=document.createElement('div');stack.className='synstack';body.appendChild(stack)}
+  // already on screen? just go to it
+  const shown=[...body.querySelectorAll('.word h2')].find(h=>h.textContent.trim().toLowerCase()===w);
+  if(shown){shown.closest('.card').scrollIntoView({behavior:'smooth',block:'start'});return}
+  const box=document.createElement('div');box.className='card';box.innerHTML=`<div class="bubble">Looking up "${esc(w)}"…</div>`;
+  stack.appendChild(box);box.scrollIntoView({behavior:'smooth',block:'start'});
+  try{
+    const c=findCard(w)||await lookup(w);
+    if(!box.isConnected) return;
+    if(!findCard(c.word)) tapCache[c.word]=c;     // so 🔊 / translate / + Add find it
+    box.innerHTML=cardHTML(c,{add:true});
+  }catch(err){if(box.isConnected){box.className='bubble err';box.textContent=lookupErr(err.message,w)}}
+},true);
 
 // ---------- dict: word list ----------
 // Select mode: pick words, then make a story from them with ChatGPT
@@ -2650,6 +2683,7 @@ function openWord(word,confirm){
   const its=itemsOf(c);
   const order=listOrder(),idx=order.indexOf(c.word);
   openSheet(c.word,`<div class="card wnav" id="wnavCard">${order.length>1?`<span class="wn-edge l" aria-hidden="true">‹</span><span class="wn-edge r" aria-hidden="true">›</span><span class="wn-count">${idx+1} / ${order.length}</span>`:''}${cardHTML(c)}</div>
+    <div class="synstack" id="synStack"></div>
     <div class="card" style="margin-top:12px">
       <span class="label">Schedule</span>
       ${its.map((it,i)=>`<div class="row" style="justify-content:space-between;font-size:14px"><span>${it.noEx?'Definition':'Sentence '+(i+1)}</span><span><span class="st">${stageLabel(it.d.stage)}</span> <span class="note" style="display:inline">${dueLabel(it.d.due)}</span></span></div>`).join('')}
