@@ -522,7 +522,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.31.3</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.31.4</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -1476,7 +1476,7 @@ const lnT={ms:0,since:0,iv:null};
 const lnSecs=()=>Math.floor((lnT.ms+(lnT.since?Date.now()-lnT.since:0))/1000);
 function lnTick(){if(!learnRun) return;const s=lnSecs();$('lnTmr').textContent='⏱ '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function lnPause(){if(lnT.since){lnT.ms+=Date.now()-lnT.since;lnT.since=0}}
-function lnResume(){if(learnRun&&!learnRun.done&&!lnT.since&&document.visibilityState==='visible') lnT.since=Date.now()}
+function lnResume(){if(learnRun&&!learnRun.done_&&!lnT.since&&document.visibilityState==='visible') lnT.since=Date.now()}
 document.addEventListener('visibilitychange',()=>{document.visibilityState==='visible'?lnResume():lnPause()});
 function startLearn(kind,list){
   list=list.filter(Boolean);if(!list.length) return;
@@ -1498,8 +1498,8 @@ function lnNext(){
   if(!r.queue.length){lnFinish();return}
   const c=r.queue[0];
   st.innerHTML=`<div class="lcard enter" id="lnCard"><div class="lbody" id="lnBody">${cardHTML(c)}</div><div class="lmore" id="lnMore" hidden></div>
-    <div class="lctl"><button type="button" id="lpPlay" aria-label="Pause"></button><button type="button" id="lpLoop" aria-label="Repeat"></button>${itemsOf(c).some(it=>!it.noEx)?'<button type="button" id="lpPrac" aria-label="Typing practice">'+PRAC_ICON+'</button>':''}</div></div>`;
-  if($('lpPrac')) $('lpPrac').onclick=()=>openPractice(c);
+    <div class="lctl"><button type="button" id="lpPlay" aria-label="Pause"></button><button type="button" id="lpLoop" aria-label="Repeat"></button><button type="button" id="lpPrac" aria-label="Typing practice">${PRAC_ICON}</button></div></div>`;
+  $('lpPrac').onclick=()=>openPractice(c);
   $('lpPlay').onclick=()=>{lp&&lp.playing?lpPause():lpPlay()};
   $('lpLoop').onclick=()=>{lpLoop=lpLoop==='all'?'one':'all';lsSet('wm.lpLoop',lpLoop);lpIcons();if(lp&&lp.mode==='track') gAudio.loop=lpLoop==='all'};
   lpStart(c);
@@ -1710,7 +1710,8 @@ async function lpPlayTrack(token){
 // Only examples, no definitions; the count lives only while the popup is open.
 const PRAC_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
 function openPractice(c){
-  const exs=itemsOf(c).filter(it=>!it.noEx).map(it=>it.d);if(!exs.length) return;
+  const exs=itemsOf(c).filter(it=>!it.noEx).map(it=>it.d);
+  if(!exs.length){openSheet('Typing practice',`<div class="card"><p class="note" style="font-size:14px">This word has no example sentence that uses it, so there is nothing to fill in yet.</p></div>`);return}
   const wasPlaying=!!(lp&&lp.playing);if(wasPlaying) lpPause();
   const pr={k:0,n:0,ok:0,busy:false,form:'',forms:[]};
   openSheet('Typing practice',`<div class="card prac" style="position:relative">
@@ -3375,7 +3376,7 @@ const I18N_KO={
 '+ Add':'+ 추가','✓ In your list':'✓ 목록에 있음','Similar words':'비슷한 단어','Add words':'단어 추가','Add a story':'스토리 추가','Tap words to pick them':'단어를 탭해서 고르세요',
 'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Photo of a word list':'단어장 사진으로 만들기','EN–EN':'영영','Learn':'학습',"Today's learning":'오늘의 학습','Start learning':'학습 시작','Continue learning':'이어서 학습','Learn again':'다시 학습','Learn all words':'전체 단어 학습','Test now':'바로 테스트',
 'No words due today. Learn any of your words.':'오늘 복습할 단어는 없어요. 아무 단어나 학습해 보세요.','All learned! Test them while they are fresh.':'다 외웠어요! 기억날 때 바로 테스트해 봐요.',
-'← Again':'← 다시','Typing practice':'타이핑 연습','Type the missing word and press Enter.':'빈칸에 들어갈 단어를 입력하고 엔터를 누르세요.','Missing word':'빈칸','Play':'재생','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
+'← Again':'← 다시','Typing practice':'타이핑 연습','This word has no example sentence that uses it, so there is nothing to fill in yet.':'이 단어가 들어간 예문이 없어서 연습할 빈칸이 없어요.','Type the missing word and press Enter.':'빈칸에 들어갈 단어를 입력하고 엔터를 누르세요.','Missing word':'빈칸','Play':'재생','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
 'Great job!':'잘했어요!','Ready for a quick test?':'바로 테스트해 볼까요?','Later':'나중에','Learned words':'학습한 단어','Example level':'예문 수준','Claude ran out of room for this photo. Try a photo with fewer words.':'사진 내용이 너무 많아 Claude 응답이 잘렸어요. 단어가 더 적게 나오게 찍어 보세요.','Keep photo examples':'사진 예문 그대로 쓰기','Very easy':'아주 쉬움','Easy':'쉬움','Medium':'보통','Intermediate':'중상','High':'어려움',
 'Definitions in Korean. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 한국어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.',
 'Definitions in English. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 영어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.','EN–KO':'영한','📷 Photo':'📷 사진','Definitions in':'정의 언어',

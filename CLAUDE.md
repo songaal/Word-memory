@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.31.3</span> · <span class="version-date">2026/10/20</span>
+<span class="version-tag">v2.31.4</span> · <span class="version-date">2026/10/20</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.31.3 — 2026/10/20**
+**Current version: v2.31.4 — 2026/10/20**
 
 ## Architecture
 
