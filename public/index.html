@@ -526,7 +526,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.32.0</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.32.1</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -2670,7 +2670,12 @@ function openWord(word,confirm){
     if(x<edge) openWord(order[(idx-1+order.length)%order.length]);
     else if(x>r.width-edge) openWord(order[(idx+1)%order.length]);
   });
-  if(confirm){$('delYes').onclick=()=>{cards=cards.filter(x=>x!==c);save();closeSheet();renderList();renderBadge()};$('delNo').onclick=()=>openWord(word)}
+  if(confirm){$('delYes').onclick=()=>{
+      // show the next word in the list instead of closing (close only when nothing is left)
+      const nextW=order.length>1?order[(idx+1)%order.length]:null;
+      cards=cards.filter(x=>x!==c);save();renderList();renderBadge();
+      if(nextW&&cards.some(x=>x.word===nextW)) openWord(nextW);else closeSheet();
+    };$('delNo').onclick=()=>openWord(word)}
   else $('delAsk').onclick=()=>{openWord(word,true);$('sheetBody').scrollTop=$('sheetBody').scrollHeight};
 }
 
