@@ -198,6 +198,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .prac .pcount span{font:800 13px var(--f-ui);border-radius:99px;padding:5px 12px;background:var(--line);color:var(--muted);font-variant-numeric:tabular-nums}
 .prac .pcount .ok{background:var(--good-soft);color:var(--good)}
 .prac .qsent{margin:6px 0 4px}
+.prac .prow2{display:grid;grid-template-columns:3fr 1fr;gap:10px}
 .prac .gapw.pok{background:var(--good-soft);box-shadow:0 0 0 2px var(--good)}.prac .gapw.pok .gs{color:var(--good);border-bottom-color:var(--good)}
 .prac .gapw.pno{background:var(--bad-soft);box-shadow:0 0 0 2px var(--bad)}.prac .gapw.pno .gs{color:var(--bad);border-bottom-color:var(--bad)}
 .prac .pin{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px}
@@ -521,7 +522,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.31.2</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.31.3</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -1716,7 +1717,7 @@ function openPractice(c){
     <div class="pcount"><span id="prN"></span><span class="ok" id="prOk"></span></div>
     <div class="qsent" id="prSent"></div>
     <input class="pin" id="prIn" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-label="Missing word">
-    <button class="btn block" id="prCheck" type="button">Check</button>
+    <div class="prow2"><button class="btn" id="prCheck" type="button">Check</button><button class="btn ghost" id="prClose" type="button">Close</button></div>
     <p class="note" style="text-align:center">Type the missing word and press Enter.</p>
   </div>`);
   $('sheet').classList.add('hideback');   // don't show the card (with the answer) behind the practice
@@ -1750,6 +1751,7 @@ function openPractice(c){
   inp.addEventListener('focus',()=>slots(inp.value));inp.addEventListener('blur',()=>{if(!pr.busy) slots(inp.value)});
   $('prSent').addEventListener('click',()=>inp.focus());
   $('prCheck').onclick=check;
+  $('prClose').onclick=closeSheet;
   // tapping Check must not take the focus away from the field (that would close the keyboard)
   ['pointerdown','mousedown','touchstart'].forEach(ev=>$('prCheck').addEventListener(ev,e=>{e.preventDefault()},{passive:false}));
   $('prCheck').addEventListener('touchend',e=>{e.preventDefault();check()},{passive:false});
