@@ -521,7 +521,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.31.1</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.31.2</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -1715,7 +1715,7 @@ function openPractice(c){
   openSheet('Typing practice',`<div class="card prac" style="position:relative">
     <div class="pcount"><span id="prN"></span><span class="ok" id="prOk"></span></div>
     <div class="qsent" id="prSent"></div>
-    <input class="pin" id="prIn" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="Missing word">
+    <input class="pin" id="prIn" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-label="Missing word">
     <button class="btn block" id="prCheck" type="button">Check</button>
     <p class="note" style="text-align:center">Type the missing word and press Enter.</p>
   </div>`);
@@ -1737,6 +1737,7 @@ function openPractice(c){
     if(pr.busy) return;
     const v=inp.value.trim().toLowerCase();if(!v){inp.focus();return}
     pr.busy=true;pr.n++;
+    inp.focus();   // stay in the field (inside the tap/Enter) so the keyboard never goes away
     const ok=pr.forms.includes(v)||v===c.word.toLowerCase();
     if(ok){pr.ok++;chime()}
     slots(pr.form,ok?'pok':'pno');
@@ -1749,6 +1750,10 @@ function openPractice(c){
   inp.addEventListener('focus',()=>slots(inp.value));inp.addEventListener('blur',()=>{if(!pr.busy) slots(inp.value)});
   $('prSent').addEventListener('click',()=>inp.focus());
   $('prCheck').onclick=check;
+  // tapping Check must not take the focus away from the field (that would close the keyboard)
+  ['pointerdown','mousedown','touchstart'].forEach(ev=>$('prCheck').addEventListener(ev,e=>{e.preventDefault()},{passive:false}));
+  $('prCheck').addEventListener('touchend',e=>{e.preventDefault();check()},{passive:false});
+  inp.addEventListener('blur',()=>{if($('prIn')&&!$('sheet').hidden) setTimeout(()=>{if($('prIn')&&document.activeElement!==inp&&pr.busy) inp.focus()},0)});
   count();show();inp.focus();
 }
 // Lock screen / control centre: show the word and let play/pause work from there
