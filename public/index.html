@@ -211,6 +211,54 @@ button.chip:active{filter:brightness(.92)}
 .wnav .wn-edge{position:absolute;top:50%;transform:translateY(-50%);width:22px;height:56px;border-radius:12px;display:grid;place-items:center;font:900 22px var(--f-ui);color:var(--muted);background:var(--line);opacity:.6;pointer-events:none}
 .wnav .wn-edge.l{left:4px}.wnav .wn-edge.r{right:4px}
 .wnav .wn-count{position:absolute;top:10px;right:14px;font:800 12px var(--f-ui);color:var(--muted);font-variant-numeric:tabular-nums}
+.fab{position:absolute;right:var(--gutter-r);bottom:16px;width:58px;height:58px;border-radius:50%;border:0;background:var(--brand);color:var(--on-brand);display:grid;place-items:center;box-shadow:0 5px 0 var(--brand-d),0 8px 20px #0002;cursor:pointer;z-index:2}
+.fab svg{width:26px;height:26px}.fab:active{transform:translateY(3px);box-shadow:0 2px 0 var(--brand-d)}
+.toast{position:fixed;left:50%;top:calc(var(--vvtop,0px) + env(safe-area-inset-top,0px) + 12px);transform:translateX(-50%);z-index:90;background:var(--fg);color:var(--bg);font:800 14px var(--f-ui);padding:9px 16px;border-radius:99px;box-shadow:0 6px 20px #0003;max-width:90vw;text-align:center}
+/* Translate */
+.trbox textarea{width:100%;min-height:110px;resize:vertical;font:400 17px/1.5 var(--f-ui)}
+.trrow{display:flex;gap:10px;align-items:center}
+.trrow select{flex:1;min-width:0;font:700 14px var(--f-ui);color:var(--fg);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:10px}
+.trrow .btn{flex:none;padding-left:22px;padding-right:22px}
+.trout{font:400 18px/1.6 var(--f-ui);white-space:pre-wrap;user-select:text;-webkit-user-select:text}
+.trout.err{color:var(--bad);font-size:14px}
+.trtools{display:flex;gap:8px;justify-content:flex-end}
+.trh{display:flex;flex-direction:column;gap:2px;text-align:left;border:0;background:none;padding:10px 4px;border-bottom:1px solid var(--line);cursor:pointer;color:var(--fg)}
+.trh .a{font:700 14px var(--f-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trh .b{font:400 13px var(--f-ui);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Journal list (Day One style) */
+.jncount{display:flex;align-items:baseline;justify-content:space-between;padding:2px 4px}
+.jncount b{font:900 22px var(--f-ui)}.jncount span{font:700 13px var(--f-ui);color:var(--muted)}
+.jnmonth{font:900 13px var(--f-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 4px 0}
+.jitem{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:start;text-align:left;border:2px solid var(--line);background:var(--card);border-radius:16px;padding:12px 14px;cursor:pointer;color:var(--fg);width:100%}
+.jitem .jd{display:flex;flex-direction:column;align-items:center;line-height:1}
+.jitem .jd b{font:900 28px var(--f-ui);color:var(--accent)}.jitem .jd span{font:800 11px var(--f-ui);color:var(--muted);text-transform:uppercase;margin-top:4px}
+.jitem .jt{font:800 16px/1.3 var(--f-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jitem .js{font:400 14px/1.45 var(--f-ui);color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:2px}
+.jitem .jm{font:700 12px var(--f-ui);color:var(--muted);margin-top:6px}
+.jempty{text-align:center;color:var(--muted);font:700 15px/1.6 var(--f-ui);padding:40px 10px}
+/* Journal editor */
+.jed{position:fixed;left:0;right:0;top:var(--vvtop,0px);height:var(--vvh,100%);z-index:47;background:var(--card);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.jhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px var(--gutter-r) 8px var(--gutter-l);border-bottom:1px solid var(--line)}
+.jdate{position:relative;font:800 14px var(--f-ui);color:var(--muted);text-align:center}
+.jdate input{position:absolute;inset:0;opacity:0;width:100%;font-size:16px}
+.jscroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px var(--gutter-r) 24px var(--gutter-l)}
+.jeditor{max-width:640px;margin:0 auto;min-height:40vh;outline:none;font:400 18px/1.7 var(--f-word);color:var(--fg);user-select:text;-webkit-user-select:text;word-wrap:break-word}
+.jeditor:empty::before{content:attr(data-ph);color:var(--muted)}
+.jeditor ul,.jeditor ol{padding-left:1.4em;margin:.3em 0}
+.jenh{max-width:640px;margin:22px auto 0;border:2px solid var(--purple);border-radius:16px;padding:12px 14px;background:var(--purple-soft)}
+.jenh-h{font:800 12px var(--f-ui);color:var(--purple-d,var(--purple));margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.jenh-ed{min-height:3em}
+.jenh-ed .ins{background:#58cc0233;border-radius:4px;box-shadow:0 0 0 2px #58cc0233}
+.jenh-b{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:10px}
+.jtool{display:flex;align-items:center;gap:6px;padding:8px var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 8px) var(--gutter-l);border-top:1px solid var(--line);background:var(--bar)}
+.jtool button{flex:none;height:38px;min-width:42px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);font:700 17px var(--f-ui);display:grid;place-items:center;cursor:pointer;-webkit-appearance:none;appearance:none;touch-action:manipulation}
+.jtool button svg{width:20px;height:20px}
+.jtool .jsp{flex:1}
+.jtool .jenhbtn{padding:0 12px;font-size:14px;font-weight:800;color:var(--purple-d,var(--purple));border-color:var(--purple)}
+.jenhbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px var(--gutter-r) 4px var(--gutter-l);border-top:1px solid var(--line);background:var(--bar)}
+.jenhbar select{flex:1;min-width:0;font:700 13px var(--f-ui);color:var(--fg);background:var(--card);border:2px solid var(--line);border-radius:10px;padding:7px 6px}
+.jenhbar .btn{padding:8px 14px;font-size:13px;flex:none}
+.jenhbar .msg{flex-basis:100%;min-height:0}
 .prac .pcount{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 .prac .pcount span{font:800 13px var(--f-ui);border-radius:99px;padding:5px 12px;background:var(--line);color:var(--muted);font-variant-numeric:tabular-nums}
 .prac .pcount .ok{background:var(--good-soft);color:var(--good)}
@@ -228,7 +276,7 @@ button.chip:active{filter:brightness(.92)}
 .learn .ldone .big{font-size:84px;line-height:1;animation:pop .6s cubic-bezier(.2,.9,.3,1.4)}
 .learn .ldone h2{font:900 30px var(--f-ui);margin:4px 0 0;color:var(--purple)}
 .learn .ldone p{font:700 16px/1.5 var(--f-ui);color:var(--muted);margin:0}
-.learn .ldone .q{font:900 19px var(--f-ui);color:var(--ink);margin-top:14px}
+.learn .ldone .q{font:900 19px var(--f-ui);color:var(--fg);margin-top:14px}
 .learn .ldone .btns{display:flex;flex-direction:column;gap:10px;width:100%;max-width:360px;margin-top:6px}
 .learn canvas.confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 .tcard{border-radius:18px;border:2px solid var(--line);background:var(--card);padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
@@ -454,6 +502,12 @@ button.chip:active{filter:brightness(.92)}
 .gatebox{margin:auto;max-width:420px;width:calc(100% - 32px);text-align:center;align-items:center}
 .gatebox h1{font:700 30px/1.2 var(--f-word);margin:0}
 .gatebox p{margin:0;color:var(--muted)}
+.emailbox{display:flex;flex-direction:column;gap:10px;width:100%}
+.erow{display:flex;gap:8px;width:100%}
+.erow input{flex:1;min-width:0;font:600 16px var(--f-ui);color:var(--fg);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:10px 12px;outline:none}
+.erow input:focus{border-color:var(--accent)}
+.erow .btn{flex:none;padding-left:16px;padding-right:16px}
+#codeIn{letter-spacing:.4em;text-align:center;font:800 20px var(--f-mono)}
 #gsiBtn{min-height:44px;display:flex;justify-content:center}
 </style>
 </head>
@@ -465,6 +519,13 @@ button.chip:active{filter:brightness(.92)}
     <p>Learn words through example sentences. Sign in with Google to keep your words and review schedule on every device.</p>
     <div id="gsiBtn"></div>
     <div class="msg" id="gateMsg"></div>
+    <button class="linkbtn" id="emailOpen" type="button">Sign in with an email code</button>
+    <div class="emailbox" id="emailBox" hidden>
+      <p class="note" style="text-align:center">For accounts that have signed in with Google before. We email you a 5-digit code.</p>
+      <div class="erow"><input type="email" id="emailIn" placeholder="you@gmail.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="send"><button class="btn" id="emailSend" type="button">Send code</button></div>
+      <div class="erow" id="codeRow" hidden><input id="codeIn" inputmode="numeric" maxlength="5" placeholder="5-digit code" autocomplete="one-time-code" enterkeyhint="go"><button class="btn" id="codeGo" type="button">Sign in</button></div>
+      <div class="msg" id="emailMsg"></div>
+    </div>
     <button class="btn ghost" id="guestBtn" type="button">Continue without signing in</button>
     <p class="note">Without signing in, words are saved only in this browser.</p>
   </div>
@@ -525,6 +586,20 @@ button.chip:active{filter:brightness(.92)}
     </div>
   </section>
 
+  <!-- Writing (translate, journal) -->
+  <section class="screen" id="s-write" hidden>
+    <div class="bar"><h1>Writing</h1></div>
+    <div class="seg" role="tablist">
+      <button role="tab" id="wseg-tr" aria-selected="true" type="button">Translate</button>
+      <button role="tab" id="wseg-jn" aria-selected="false" type="button">Journal</button>
+    </div>
+    <div class="pane" id="pane-tr"><div class="scroll"><div class="stack" id="trBody"></div></div></div>
+    <div class="pane" id="pane-jn" hidden style="position:relative">
+      <div class="scroll" id="jnScroll"><div class="stack" id="jnBody"></div></div>
+      <button class="fab" id="jnNew" type="button" aria-label="New entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button>
+    </div>
+  </section>
+
   <!-- Me -->
   <section class="screen" id="s-me" hidden>
     <!-- Me: main page -->
@@ -539,7 +614,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.35.1</span> · <span class="version-date">2026/10/21</span></p>
+          <p class="note"><span class="version-tag">v2.36.0</span> · <span class="version-date">2026/10/21</span></p>
         </div>
       </div></div>
     </div>
@@ -651,6 +726,8 @@ button.chip:active{filter:brightness(.92)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="f" x="4" y="3" width="16" height="18" rx="2"/><path class="cut" d="m8.5 12 2.5 2.5 4.5-5"/></svg>Test<span class="n" id="dueBadge" hidden></span></button>
     <button role="tab" id="tab-dict" aria-selected="false" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/><path class="cut" d="M9 8h7M9 11.5h5"/></svg>Words</button>
+    <button role="tab" id="tab-write" aria-selected="false" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M4 20h4L19 9l-4-4L4 16z"/><path class="cut" d="M13.5 6.5l4 4"/></svg>Writing</button>
     <button role="tab" id="tab-me" aria-selected="false" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="f" cx="12" cy="8" r="4"/><path class="f" d="M4 21c0-4 3.6-7 8-7s8 3 8 7z"/></svg>Me</button>
   </nav>
@@ -668,6 +745,31 @@ button.chip:active{filter:brightness(.92)}
   <div id="lnFootWrap"><div class="lfoot"><button class="btn danger" id="lnAgain" type="button">← Again</button><button class="btn" id="lnGot" type="button">↑ Got it</button></div>
   <div class="lhint">Swipe up when you know it · swipe left to see it again later</div></div>
 </div>
+<div class="jed" id="jed" hidden>
+  <div class="jhead">
+    <button class="linkbtn" id="jedDone" type="button">Done</button>
+    <label class="jdate"><span id="jedDateTxt"></span><input type="datetime-local" id="jedDateIn" aria-label="Date"></label>
+    <button class="linkbtn" id="jedDel" type="button" style="color:var(--bad)">Delete</button>
+  </div>
+  <div class="jscroll" id="jedScroll">
+    <div class="jeditor" id="jedBody" contenteditable="true" spellcheck="true" autocapitalize="sentences" data-ph="Write in English…"></div>
+    <div class="jenh" id="jenh" hidden>
+      <div class="jenh-h"><span id="jenhInfo"></span></div>
+      <div class="jeditor jenh-ed" id="jenhEd" contenteditable="true" spellcheck="true"></div>
+      <div class="jenh-b"><button class="btn ghost" id="jenhNo" type="button">Discard</button><button class="btn" id="jenhOk" type="button">Apply</button></div>
+    </div>
+  </div>
+  <div class="jenhbar" id="jenhBar" hidden></div>
+  <div class="jtool" id="jedTool">
+    <button type="button" data-fmt="bold" aria-label="Bold"><b>B</b></button>
+    <button type="button" data-fmt="italic" aria-label="Italic"><i>I</i></button>
+    <button type="button" data-fmt="insertUnorderedList" aria-label="Bullet list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="7" r="1.2" fill="currentColor"/><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="5" cy="17" r="1.2" fill="currentColor"/><path d="M10 7h10M10 12h10M10 17h10"/></svg></button>
+    <button type="button" data-fmt="insertOrderedList" aria-label="Numbered list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M10 7h10M10 12h10M10 17h10"/><text x="2.5" y="9" font-size="7" font-weight="800" fill="currentColor" stroke="none">1</text><text x="2.5" y="14.5" font-size="7" font-weight="800" fill="currentColor" stroke="none">2</text><text x="2.5" y="20" font-size="7" font-weight="800" fill="currentColor" stroke="none">3</text></svg></button>
+    <span class="jsp"></span>
+    <button type="button" class="jenhbtn" id="jedEnh" aria-label="Enhance">✨ Enhance</button>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
 <div class="sheet hideback" id="pracSheet" hidden style="z-index:70">
   <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="pracTitle">
     <div class="sheet-head"><b id="pracTitle">Typing practice</b><button class="x" id="pracX" type="button" aria-label="Close">✕</button></div>
@@ -946,6 +1048,46 @@ async function onCredential(resp){
     $('gateMsg').textContent='';
     loadCloud();
   }catch(e){$('gateMsg').className='msg err';$('gateMsg').textContent="Sign-in didn't work. Please try again."}
+}
+// Email-code sign-in (only for accounts that signed in with Google before)
+let emailAddr='';
+const emailErr=(code,d)=>({notlinked:'This email hasn’t signed in with Google here yet. Sign in with Google once first.',notconfigured:'Email sign-in isn’t set up yet.',
+  wait:`Please wait ${d&&d.seconds||60} seconds before asking for a new code.`,sendfailed:'Couldn’t send the email. Try again later.',invalid:'Check the email address.',
+  expired:'That code has expired. Ask for a new one.',locked:'Too many wrong tries. Ask for a new code.',wrong:`Wrong code. ${d&&d.left||0} tries left.`})[code]||'Something went wrong. Please try again.';
+async function emailSend(){
+  const m=$('emailMsg'),e=$('emailIn').value.trim().toLowerCase();
+  if(!e){$('emailIn').focus();return}
+  $('emailSend').disabled=true;m.className='msg';m.textContent='Sending…';
+  try{
+    const r=await fetch('/api/auth/email/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){m.className='msg err';m.textContent=emailErr(d.error,d);return}
+    emailAddr=e;$('codeRow').hidden=false;$('codeIn').value='';$('codeIn').focus();
+    m.className='msg';m.textContent=`We sent a code to ${e}. Check your inbox (and spam).`;
+  }catch(_){m.className='msg err';m.textContent='You seem to be offline. Check your connection.'}
+  finally{$('emailSend').disabled=false}
+}
+async function codeGo(){
+  const m=$('emailMsg'),c=$('codeIn').value.replace(/\D/g,'');
+  if(c.length!==5){$('codeIn').focus();return}
+  $('codeGo').disabled=true;m.className='msg';m.textContent='Signing in…';
+  try{
+    const r=await fetch('/api/auth/email/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:emailAddr,code:c})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){m.className='msg err';m.textContent=emailErr(d.error,d);if(d.error==='locked'||d.error==='expired'){$('codeRow').hidden=true}return}
+    session=d.session;user=d.user;acct='cloud';
+    lsSet('wm.session',session);lsSet('wm.user',JSON.stringify(user));lsDel('wm.guest');
+    m.textContent='';$('emailBox').hidden=true;$('codeRow').hidden=true;
+    loadCloud();
+  }catch(_){m.className='msg err';m.textContent='You seem to be offline. Check your connection.'}
+  finally{$('codeGo').disabled=false}
+}
+function initEmailLogin(){   // called at start (after $ exists)
+  $('emailOpen').onclick=()=>{$('emailBox').hidden=!$('emailBox').hidden;if(!$('emailBox').hidden) $('emailIn').focus()};
+  $('emailSend').onclick=emailSend;$('codeGo').onclick=codeGo;
+  $('emailIn').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();emailSend()}});
+  $('codeIn').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();codeGo()}});
+  $('codeIn').addEventListener('input',()=>{$('codeIn').value=$('codeIn').value.replace(/\D/g,'').slice(0,5);if($('codeIn').value.length===5) codeGo()});
 }
 function endSession(){
   lsDel('wm.session');lsDel('wm.user');session=null;user=null;acct=null;
@@ -1266,14 +1408,15 @@ async function translateManyKo(texts){
   if(!r.ok) throw new Error((j.error&&j.error.message)||('Google Translate error (HTTP '+r.status+').'));
   return j.data.translations.map(t=>t.translatedText);
 }
-async function translateKo(text){
+async function translateKo(text){return translateText(text,'en','ko')}
+async function translateText(text,source,target){
   const k=settings.translateKey;
   if(!k) throw new Error('nokey');
   let r;
   try{
     r=await fetch('https://translation.googleapis.com/language/translate/v2?key='+encodeURIComponent(k),{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({q:text,source:'en',target:'ko',format:'text'})});
+      body:JSON.stringify({q:text,source,target,format:'text'})});
   }catch(e){throw new Error('Could not reach Google Translate. Check your connection.')}
   const j=await r.json().catch(()=>({}));
   if(!r.ok) throw new Error((j.error&&j.error.message)||('Google Translate error (HTTP '+r.status+').'));
@@ -1334,7 +1477,7 @@ document.addEventListener('click',async e=>{
 });
 
 // ---------- tabs ----------
-const TABS=['home','test','dict','me'];
+const TABS=['home','test','dict','write','me'];
 let curTab='home';
 // Words tab: the tab bar slides away while scrolling down and back on scrolling up
 let tbHidden=false,tbIgnore=0;
@@ -1367,6 +1510,7 @@ function show(name){
   if(name==='test') renderTestTab();else document.body.classList.remove('intest');
   if(name==='dict'){renderDict();if(dictPane==='search') $('searchIn').focus()}
   if(name==='me') renderMe();
+  if(name==='write') renderWrite();
 }
 for(const t of TABS) $('tab-'+t).onclick=()=>show(t);
 function renderBadge(){
@@ -1911,6 +2055,286 @@ function confetti(cv){
     if(k<3.3) requestAnimationFrame(f);else ctx.clearRect(0,0,W,H);
   })(t0);
 }
+
+// ---------- writing: translate + journal ----------
+let writePane=lsGet('wm.writePane')==='jn'?'jn':'tr';
+function toast(msg,ms=1800){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.tm);toast.tm=setTimeout(()=>{t.hidden=true},ms)}
+function renderWrite(){
+  $('wseg-tr').setAttribute('aria-selected',writePane==='tr');$('wseg-jn').setAttribute('aria-selected',writePane==='jn');
+  $('pane-tr').hidden=writePane!=='tr';$('pane-jn').hidden=writePane!=='jn';
+  if(writePane==='tr') renderTranslate();else{renderJournal();jnLoad()}
+}
+$('wseg-tr').onclick=()=>{writePane='tr';lsSet('wm.writePane','tr');renderWrite()};
+$('wseg-jn').onclick=()=>{writePane='jn';lsSet('wm.writePane','jn');renderWrite()};
+
+// ---- Translate: EN→KO / KO→EN with Google (default) or an AI that has a key ----
+let trPref=(()=>{try{return JSON.parse(lsGet('wm.trPref'))||{}}catch(_){return {}}})();
+trPref.dir=trPref.dir==='ko-en'?'ko-en':'en-ko';trPref.eng=trPref.eng||'google';
+let trDraft='',trResult=null;   // {text, out, err, eng, dir}
+const trHist=()=>{try{return JSON.parse(lsGet('wm.trHist'))||[]}catch(_){return []}};
+function renderTranslate(){
+  const ais=aiChoices();
+  if(trPref.eng!=='google'&&!ais.some(a=>a.p===trPref.eng)) trPref.eng='google';
+  const en=trPref.dir==='en-ko';
+  const h=trHist();
+  $('trBody').innerHTML=`<div class="card trbox">
+      <div class="seg" role="radiogroup" style="margin:0"><button type="button" data-trdir="en-ko" aria-selected="${en}">EN → KO</button><button type="button" data-trdir="ko-en" aria-selected="${!en}">KO → EN</button></div>
+      <textarea id="trIn" rows="4" placeholder="${en?'Type English to translate…':'Type Korean to translate…'}" ${en?'autocapitalize="sentences"':''}>${esc(trDraft)}</textarea>
+      <div class="trrow"><select id="trEng" aria-label="Translator"><option value="google">Google Translate</option>${ais.map(a=>`<option value="${a.p}">${esc(a.label)}</option>`).join('')}</select>
+        <button class="btn" id="trGo" type="button">Translate</button></div>
+    </div>
+    ${trResult?`<div class="card"><div class="trout${trResult.err?' err':''}" id="trOut">${esc(trResult.err||trResult.out)}</div>
+      ${trResult.err?'':`<div class="trtools">${trResult.dir==='ko-en'?`<button class="hintbtn trbtn" id="trSay" type="button">${SPK_ICON}<span>Listen</span></button>`:''}<button class="hintbtn trbtn" id="trCopy" type="button"><span>Copy</span></button></div>`}</div>`:''}
+    ${h.length?`<div class="card"><span class="label">Recent</span>${h.map((x,i)=>`<button class="trh" type="button" data-trh="${i}"><span class="a">${esc(x.text)}</span><span class="b">${esc(x.out)}</span></button>`).join('')}</div>`:''}`;
+  $('trEng').value=trPref.eng;
+  $('trIn').addEventListener('input',e=>{trDraft=e.target.value});
+  $('trEng').onchange=e=>{trPref.eng=e.target.value;lsSet('wm.trPref',JSON.stringify(trPref))};
+  document.querySelectorAll('[data-trdir]').forEach(b=>b.onclick=()=>{trPref.dir=b.dataset.trdir;lsSet('wm.trPref',JSON.stringify(trPref));renderTranslate()});
+  $('trGo').onclick=runTranslate;
+  if($('trSay')) $('trSay').onclick=()=>sayExample(trResult.out);
+  if($('trCopy')) $('trCopy').onclick=()=>{try{navigator.clipboard.writeText(trResult.out);toast('Copied')}catch(_){}};
+  document.querySelectorAll('[data-trh]').forEach(b=>b.onclick=()=>{const x=trHist()[+b.dataset.trh];if(!x) return;trDraft=x.text;trPref.dir=x.dir;trResult={...x};renderTranslate()});
+}
+async function runTranslate(){
+  const text=$('trIn').value.trim();if(!text){$('trIn').focus();return}
+  trDraft=$('trIn').value;
+  const dir=trPref.dir,eng=trPref.eng,[src,tgt]=dir==='en-ko'?['en','ko']:['ko','en'];
+  const btn=$('trGo');btn.disabled=true;btn.textContent='Translating…';
+  try{
+    let out;
+    if(eng==='google'){
+      if(!settings.translateKey) throw new Error('Add your Google Translate key in Me → Settings.');
+      out=await translateText(text,src,tgt);
+    }else{
+      const sys=`You are a professional translator. Translate the user's text from ${src==='en'?'English':'Korean'} into natural, fluent ${tgt==='en'?'English':'Korean'}. Keep the meaning, tone and line breaks. Do not explain or add anything. Return JSON: {"translation":"..."}`;
+      out=String(parseAIJson(await aiComplete(sys,text,eng),AI[eng].name).translation||'').trim();
+      if(!out) throw new Error(`${AI[eng].name} sent back an empty translation. Try again.`);
+    }
+    trResult={text,out,dir,eng};
+    const h=trHist().filter(x=>!(x.text===text&&x.dir===dir));h.unshift({text,out,dir,eng});lsSet('wm.trHist',JSON.stringify(h.slice(0,20)));
+  }catch(e){trResult={text,err:e.message,dir,eng}}
+  renderTranslate();
+}
+
+// ---- Journal: entries {id, at, html, updated, deleted?}; synced per entry (server merges by `updated`) ----
+let jn=null,jnShown=40,jnLoadedAt=0,jnPushT=null,jnEdit=null;
+const jnKey=()=>'wm.journal.'+(acct==='cloud'&&user?user.sub:'guest');
+function jnLocal(){if(!jn){try{jn=JSON.parse(lsGet(jnKey()))||{entries:[]}}catch(_){jn={entries:[]}}}return jn}
+function jnSaveLocal(){lsSet(jnKey(),JSON.stringify(jnLocal()))}
+function jnMerge(remote){
+  const m=new Map(jnLocal().entries.map(e=>[e.id,e]));
+  for(const r of remote||[]){const l=m.get(r.id);if(!l||r.updated>l.updated){if(jnEdit&&jnEdit.id===r.id&&l) continue;m.set(r.id,r)}}
+  jn.entries=[...m.values()];
+}
+async function jnLoad(force){
+  if(acct!=='cloud'||(!force&&Date.now()-jnLoadedAt<15000)) return;
+  jnLoadedAt=Date.now();
+  try{const r=await api('/api/journal');if(!r.ok) return;const d=await r.json();jnMerge(d.entries);jnSaveLocal();if(curTab==='write'&&writePane==='jn'&&!jnEdit) renderJournal()}catch(_){}
+}
+function jnPush(){
+  jnSaveLocal();
+  if(acct!=='cloud') return;
+  clearTimeout(jnPushT);
+  jnPushT=setTimeout(async()=>{
+    try{const r=await api('/api/journal',{method:'PUT',body:JSON.stringify({entries:jnLocal().entries})});
+      if(r.ok){const d=await r.json();jnMerge(d.entries);jnSaveLocal()}}catch(_){}
+  },1200);
+}
+const jnText=html=>{const d=document.createElement('div');d.innerHTML=html.replace(/<(div|p|li|br)[^>]*>/gi,'\n$&');return d.textContent.replace(/[ \t]+/g,' ').trim()};
+function renderJournal(){
+  const list=jnLocal().entries.filter(e=>!e.deleted).sort((a,b)=>a.at<b.at?1:-1);
+  const b=$('jnBody');
+  if(!list.length){b.innerHTML=`<div class="jempty">No entries yet.<br>Tap the pen to write your first one.</div>`;return}
+  let html=`<div class="jncount"><b>${plural(list.length,'entry','entries')}</b><span>Newest first</span></div>`,month='';
+  for(const e of list.slice(0,jnShown)){
+    const d=new Date(e.at),m=d.toLocaleDateString(LOC(),{year:'numeric',month:'long'});
+    if(m!==month){month=m;html+=`<div class="jnmonth">${esc(m)}</div>`}
+    const t=jnText(e.html),lines=t.split('\n').map(x=>x.trim()).filter(Boolean);
+    html+=`<button class="jitem" type="button" data-jn="${e.id}"><span class="jd"><b>${d.getDate()}</b><span>${esc(d.toLocaleDateString(LOC(),{weekday:'short'}))}</span></span>
+      <span style="min-width:0"><div class="jt">${esc(lines[0]||'Untitled')}</div>${lines.length>1?`<div class="js">${esc(lines.slice(1).join(' ').slice(0,220))}</div>`:''}<div class="jm">${esc(d.toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'}))}</div></span></button>`;
+  }
+  if(list.length>jnShown) html+=`<div id="jnMore" class="jempty" style="padding:16px">…</div>`;
+  b.innerHTML=html;
+  const more=$('jnMore');
+  if(more){const io=new IntersectionObserver(es=>{if(es.some(x=>x.isIntersecting)){io.disconnect();jnShown+=40;renderJournal()}},{root:$('jnScroll')});io.observe(more)}
+}
+$('jnBody').addEventListener('click',e=>{const it=e.target.closest('[data-jn]');if(it){const en=jnLocal().entries.find(x=>x.id===it.dataset.jn);if(en) openJournal(en)}});
+$('jnNew').onclick=()=>{const now=new Date();openJournal({id:now.getTime().toString(36)+Math.random().toString(36).slice(2,6),at:now.toISOString(),html:'',updated:Date.now(),fresh:true})};
+
+// Only these tags survive (bold, italic, lists, lines); everything else is unwrapped
+function jnSanitize(html){
+  const t=document.createElement('template');t.innerHTML=html;
+  const OK=new Set(['DIV','P','BR','B','STRONG','I','EM','UL','OL','LI']);
+  const walk=n=>{for(const c of [...n.childNodes]){
+    if(c.nodeType===1){walk(c);if(!OK.has(c.tagName)){c.replaceWith(...c.childNodes)}else{for(const a of [...c.attributes]) c.removeAttribute(a.name)}}
+    else if(c.nodeType!==3) c.remove()}};
+  walk(t.content);
+  return t.innerHTML.replace(/[ㄱ-ㆎ가-힣]/g,'');
+}
+const HANGUL=/[ㄱ-ㆎ가-힣]/;
+function jnStripHangul(el){
+  let hit=false;const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;
+  while((n=w.nextNode())) if(HANGUL.test(n.data)){hit=true;n.data=n.data.replace(/[ㄱ-ㆎ가-힣]/g,'')}
+  return hit;
+}
+function jnDateLabel(iso){const d=new Date(iso);return d.toLocaleDateString(LOC(),{weekday:'short',month:'short',day:'numeric',year:'numeric'})+' · '+d.toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'})}
+const toLocalInput=iso=>{const d=new Date(iso),z=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`};
+let jnSaveT=null;
+function openJournal(e){
+  jnEdit=e;
+  $('jedBody').innerHTML=jnSanitize(e.html||'');
+  $('jedDateTxt').textContent=jnDateLabel(e.at);$('jedDateIn').value=toLocalInput(e.at);
+  $('jenh').hidden=true;$('jenhBar').hidden=true;
+  $('jed').hidden=false;$('jedScroll').scrollTop=0;
+  try{crStop();stopReading()}catch(_){}
+  if(e.fresh) $('jedBody').focus();   // inside the tap, so the iOS keyboard opens
+}
+function jnCommit(){
+  const e=jnEdit;if(!e) return;
+  const html=jnSanitize($('jedBody').innerHTML).trim();
+  if(html===(e.html||'')&&!e.fresh&&!e.dateChanged) return;
+  if(!jnText(html)&&e.fresh) return;   // a new entry stays unsaved until it has text
+  e.html=html;e.updated=Date.now();delete e.dateChanged;
+  if(e.fresh){delete e.fresh;jnLocal().entries.push(e)}
+  jnPush();
+}
+function closeJournal(){
+  clearTimeout(jnSaveT);jnCommit();
+  $('jed').hidden=true;$('jedBody').blur();jnEdit=null;
+  if(curTab==='write') renderJournal();
+}
+$('jedDone').onclick=closeJournal;
+$('jedDel').onclick=()=>{
+  const e=jnEdit;if(!e) return;
+  openSheet('Delete this entry?',`<div class="card qconfirm"><p>${esc(jnDateLabel(e.at))}</p><button class="btn ghost block" id="jdNo" type="button">Cancel</button><button class="btn danger block" id="jdYes" type="button">Delete</button></div>`);
+  $('jdNo').onclick=closeSheet;
+  $('jdYes').onclick=()=>{closeSheet();if(!e.fresh){Object.assign(e,{deleted:true,html:'',updated:Date.now()});jnPush()}jnEdit=null;$('jed').hidden=true;renderJournal()};
+};
+$('jedDateIn').addEventListener('change',ev=>{const v=ev.target.value;if(!v||!jnEdit) return;jnEdit.at=new Date(v).toISOString();jnEdit.dateChanged=true;$('jedDateTxt').textContent=jnDateLabel(jnEdit.at);jnCommit()});
+// English, numbers and symbols only: Korean is blocked (typed, composed or pasted)
+const jnNoKo=()=>toast('English only — Korean can’t be typed here');
+$('jedBody').addEventListener('beforeinput',ev=>{if(ev.data&&HANGUL.test(ev.data)&&ev.cancelable){ev.preventDefault();jnNoKo()}});
+['input','compositionend'].forEach(t=>$('jedBody').addEventListener(t,()=>{if(jnStripHangul($('jedBody'))) jnNoKo();clearTimeout(jnSaveT);jnSaveT=setTimeout(jnCommit,1000)}));
+$('jedBody').addEventListener('paste',ev=>{
+  ev.preventDefault();let t=(ev.clipboardData||window.clipboardData).getData('text/plain')||'';
+  if(HANGUL.test(t)){t=t.replace(/[ㄱ-ㆎ가-힣]/g,'');jnNoKo()}
+  document.execCommand('insertText',false,t);
+});
+// formatting buttons keep the selection (no focus change)
+$('jedTool').addEventListener('mousedown',ev=>{if(ev.target.closest('button')) ev.preventDefault()});
+$('jedTool').addEventListener('pointerdown',ev=>{if(ev.target.closest('[data-fmt]')) ev.preventDefault()});
+$('jedTool').addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-fmt]');if(!b) return;
+  if(!$('jedBody').contains(document.getSelection().anchorNode)) $('jedBody').focus();
+  document.execCommand(b.dataset.fmt,false,null);
+  clearTimeout(jnSaveT);jnSaveT=setTimeout(jnCommit,1000);
+});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'&&jnEdit) jnCommit()});
+
+// ---- Enhance: AI rewrites the entry (or the selected part) at a CEFR level and tone; result is editable, Apply replaces ----
+const ENH_LEVELS=['A1','A2','B1','B2','C1','C2'],ENH_TONES=['Casual','Neutral','Formal','Academic'];
+let enhRange=null,enhSrc='';
+// editor HTML ⇄ light markup the AI keeps: "- " bullets, "1. " numbers, **bold**, *italic*, one block per line
+function jnToMarkup(root){
+  const inl=n=>{let o='';for(const c of n.childNodes){
+    if(c.nodeType===3) o+=c.data.replace(/\s*\n\s*/g,' ');
+    else if(c.nodeType===1){const t=c.tagName;
+      if(t==='B'||t==='STRONG'){const x=inl(c);o+=x.trim()?'**'+x.trim()+'**':x}
+      else if(t==='I'||t==='EM'){const x=inl(c);o+=x.trim()?'*'+x.trim()+'*':x}
+      else if(t!=='BR') o+=inl(c)}}return o};
+  // one line per block (div/p/li), <br> splits lines, an empty block is an empty line
+  const out=[];
+  const walk=n=>{let cur='',has=false;
+    const flush=()=>{if(has){out.push(cur.trim());cur='';has=false}};
+    for(const c of n.childNodes){
+      const t=c.nodeType===1?c.tagName:'';
+      if(t==='UL'||t==='OL'){flush();[...c.children].forEach((li,i)=>out.push((t==='UL'?'- ':(i+1)+'. ')+inl(li).trim()))}
+      else if(t==='DIV'||t==='P'){flush();const before=out.length;walk(c);if(out.length===before) out.push('')}
+      else if(t==='BR'){if(has) flush();else out.push('')}
+      else{const x=c.nodeType===3?c.data.replace(/\s*\n\s*/g,' '):inl({childNodes:[c]});if(x.trim()||has){cur+=x;has=true}}
+    }
+    flush();
+  };
+  walk(root);
+  while(out.length&&!out[out.length-1]) out.pop();
+  return out.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+const wordsOf=md=>md.split('\n').map(l=>l.replace(/^\s*(-|\d+\.)\s+/,'')).join(' ').replace(/\*+/g,'').split(/\s+/).filter(Boolean);
+function lcsKeep(a,b){
+  const n=a.length,m=b.length;if(n*m>2500000) return new Set(b.map((_,i)=>i));
+  const dp=Array.from({length:n+1},()=>new Uint16Array(m+1));
+  for(let i=n-1;i>=0;i--) for(let j=m-1;j>=0;j--) dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  const keep=new Set();let i=0,j=0;
+  while(i<n&&j<m){if(a[i]===b[j]){keep.add(j);i++;j++}else if(dp[i+1][j]>=dp[i][j+1]) i++;else j++}
+  return keep;
+}
+function markupToHTML(md,keep){
+  let wi=0;
+  const inline=line=>{let o='',bold=false,it=false;
+    for(const t of line.match(/\*\*|\*|\s+|[^\s*]+/g)||[]){
+      if(t==='**'){o+=bold?'</b>':'<b>';bold=!bold}
+      else if(t==='*'){o+=it?'</i>':'<i>';it=!it}
+      else if(/^\s+$/.test(t)) o+=' ';
+      else{const w=esc(t);o+=keep&&!keep.has(wi)?`<span class="ins">${w}</span>`:w;wi++}}
+    if(it) o+='</i>';if(bold) o+='</b>';return o};
+  let html='',list='';
+  const close=()=>{if(list){html+=`</${list}>`;list=''}};
+  for(const raw of md.split('\n')){
+    const ul=raw.match(/^\s*-\s+(.*)$/),ol=raw.match(/^\s*\d+\.\s+(.*)$/);
+    if(ul||ol){const tag=ul?'ul':'ol';if(list!==tag){close();html+=`<${tag}>`;list=tag}html+=`<li>${inline((ul||ol)[1])}</li>`}
+    else{close();html+=raw.trim()?`<div>${inline(raw)}</div>`:'<div><br></div>'}
+  }
+  close();return html;
+}
+$('jedEnh').addEventListener('mousedown',ev=>ev.preventDefault());
+$('jedEnh').onclick=()=>{
+  const bar=$('jenhBar');
+  if(!bar.hidden){bar.hidden=true;return}
+  const sel=document.getSelection();
+  enhRange=sel.rangeCount&&!sel.isCollapsed&&$('jedBody').contains(sel.getRangeAt(0).commonAncestorContainer)?sel.getRangeAt(0).cloneRange():null;
+  const ais=aiChoices();
+  if(!ais.length){bar.innerHTML=`<div class="msg err">Pick an AI and add its API key first. <button class="linkbtn" type="button" id="enhGoAi">Open AI settings</button></div>`;bar.hidden=false;
+    $('enhGoAi').onclick=()=>{closeJournal();show('me');openMePage('ai',true)};return}
+  const lv=lsGet('wm.enhLvl')||'B1',tn=lsGet('wm.enhTone')||'Neutral';let ai=lsGet('wm.enhAI');if(!ais.some(a=>a.p===ai)) ai=aiProv();
+  bar.innerHTML=`<select id="enhLvl" aria-label="Level">${ENH_LEVELS.map(x=>`<option${x===lv?' selected':''}>${x}</option>`).join('')}</select>
+    <select id="enhTone" aria-label="Tone">${ENH_TONES.map(x=>`<option value="${x}"${x===tn?' selected':''}>${x}</option>`).join('')}</select>
+    <select id="enhAI" aria-label="AI">${ais.map(a=>`<option value="${a.p}"${a.p===ai?' selected':''}>${esc(a.label)}</option>`).join('')}</select>
+    <button class="btn purple" id="enhGo" type="button">${enhRange?'Enhance selection':'Enhance'}</button><div class="msg" id="enhMsg"></div>`;
+  bar.hidden=false;
+  ['enhLvl','enhTone','enhAI'].forEach(id=>$(id).onchange=()=>lsSet({enhLvl:'wm.enhLvl',enhTone:'wm.enhTone',enhAI:'wm.enhAI'}[id],$(id).value));
+  $('enhGo').onclick=runEnhance;
+};
+async function runEnhance(){
+  const lv=$('enhLvl').value,tn=$('enhTone').value,p=$('enhAI').value,msg=$('enhMsg'),btn=$('enhGo');
+  const frag=enhRange?(()=>{const d=document.createElement('div');d.appendChild(enhRange.cloneContents());return d})():$('jedBody');
+  enhSrc=jnToMarkup(frag);
+  if(!enhSrc.trim()){msg.className='msg err';msg.textContent='Write something first.';return}
+  btn.disabled=true;msg.className='msg';msg.textContent=`${AI[p].name} is improving your writing…`;
+  try{
+    const sys=`You are a friendly English writing coach. Rewrite the learner's text so it is natural, correct English at CEFR level ${lv} (use vocabulary and grammar a ${lv} learner can understand) in a ${tn.toLowerCase()} tone. Keep the meaning, the writer's ideas and voice, and the same order. Fix grammar, word choice and awkward phrasing; do not add new content. Keep the formatting markers exactly: lines starting with "- " are bullet points, lines starting with "1. ", "2. " are numbered items, **bold** and *italic* marks, and one line per paragraph. Always answer in English. Return JSON: {"text":"..."}`;
+    const out=String(parseAIJson(await aiComplete(sys,enhSrc,p),AI[p].name).text||'').trim();
+    if(!out) throw new Error(`${AI[p].name} sent back nothing. Try again.`);
+    const keep=lcsKeep(wordsOf(enhSrc),wordsOf(out));
+    $('jenhEd').innerHTML=markupToHTML(out,keep);
+    $('jenhInfo').textContent=`Enhanced · ${lv} · ${tn} · ${AI[p].name} (${aiModel(p)})${enhRange?' · selection':''}`;
+    $('jenh').hidden=false;$('jenhBar').hidden=true;
+    setTimeout(()=>$('jenh').scrollIntoView({behavior:'smooth',block:'start'}),50);
+  }catch(e){msg.className='msg err';msg.textContent=e.message}
+  finally{btn.disabled=false}
+}
+$('jenhEd').addEventListener('beforeinput',ev=>{if(ev.data&&HANGUL.test(ev.data)&&ev.cancelable){ev.preventDefault();jnNoKo()}});
+$('jenhEd').addEventListener('input',()=>{if(jnStripHangul($('jenhEd'))) jnNoKo()});
+$('jenhNo').onclick=()=>{$('jenh').hidden=true;enhRange=null};
+$('jenhOk').onclick=()=>{
+  const html=jnSanitize($('jenhEd').innerHTML);
+  if(enhRange&&$('jedBody').contains(enhRange.commonAncestorContainer)){
+    const t=document.createElement('template');t.innerHTML=html;
+    // a single line goes in as inline text, so it doesn't break the paragraph it replaces
+    const nodes=t.content.children.length===1&&t.content.firstElementChild.tagName==='DIV'?[...t.content.firstElementChild.childNodes]:[...t.content.childNodes];
+    enhRange.deleteContents();const f=document.createDocumentFragment();nodes.forEach(n=>f.appendChild(n));enhRange.insertNode(f);
+  }else $('jedBody').innerHTML=html;
+  $('jenh').hidden=true;enhRange=null;jnCommit();toast('Applied');
+};
 
 // ---------- test ----------
 // Practice rule: a sentence already answered today (and not due) is practice and keeps its schedule.
@@ -3242,8 +3666,8 @@ function aiTest(p){
   return aiFetch(p,'https://api.anthropic.com/v1/models/'+m,{headers:claudeHeaders(k)},20000);
 }
 // system + user prompt → reply text
-async function aiComplete(system,user){
-  const p=aiProv(),k=aiKey(p),model=aiModel(p);
+async function aiComplete(system,user,p=aiProv()){
+  const k=aiKey(p),model=aiModel(p);
   if(p==='gemini'){
     const j=await aiFetch(p,`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(k)}`,{method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{responseMimeType:'application/json'}})});
@@ -3257,8 +3681,14 @@ async function aiComplete(system,user){
     return j.choices[0].message.content;
   }
   const j=await aiFetch(p,'https://api.anthropic.com/v1/messages',{method:'POST',headers:claudeHeaders(k),
-    body:JSON.stringify({model,max_tokens:2000,system,messages:[{role:'user',content:user}]})});
+    body:JSON.stringify({model,max_tokens:4000,system,messages:[{role:'user',content:user}]})});
   return (j.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('');
+}
+// AIs with a key, for pickers: [{p, label}]
+function aiChoices(){return AI_ORDER.filter(p=>settings[AI[p].key]).map(p=>({p,label:`${AI[p].name} · ${aiModel(p)}`}))}
+function parseAIJson(txt,ai){
+  try{const t=txt.replace(/^[\s\S]*?```(?:json)?\s*|\s*```[\s\S]*$/g,'');return JSON.parse(t.slice(t.search(/[\[{]/)))}
+  catch(_){throw new Error(`${ai} sent back something unexpected. Try again.`)}
 }
 // prompt + JPEG images (base64) → reply text, with the AI in use
 async function aiVision(prompt,imgs){
@@ -3471,7 +3901,16 @@ const I18N_KO={
 '+ Add':'+ 추가','✓ In your list':'✓ 목록에 있음','Similar words':'비슷한 단어','Add words':'단어 추가','Add a story':'스토리 추가','Tap words to pick them':'단어를 탭해서 고르세요',
 'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Photo of a word list':'단어장 사진으로 만들기','EN–EN':'영영','Learn':'학습',"Today's learning":'오늘의 학습','Start learning':'학습 시작','Continue learning':'이어서 학습','Learn again':'다시 학습','Learn all words':'전체 단어 학습','Test now':'바로 테스트','All learned! Start the words test below.':'다 외웠어요! 아래에서 단어 테스트를 시작하세요.','All learned today!':'오늘 학습 완료!','Start story test':'스토리 테스트 시작',
 'No words due today. Learn any of your words.':'오늘 복습할 단어는 없어요. 아무 단어나 학습해 보세요.','All learned! Test them while they are fresh.':'다 외웠어요! 기억날 때 바로 테스트해 봐요.',
-'← Again':'← 다시','Typing practice':'타이핑 연습','This word has no example sentence that uses it, so there is nothing to fill in yet.':'이 단어가 들어간 예문이 없어서 연습할 빈칸이 없어요.','Type the missing word and press Enter.':'빈칸에 들어갈 단어를 입력하고 엔터를 누르세요.','Missing word':'빈칸','Play':'재생','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
+'← Again':'← 다시','Sign in with an email code':'이메일 코드로 로그인','For accounts that have signed in with Google before. We email you a 5-digit code.':'Google로 로그인한 적 있는 계정만 쓸 수 있어요. 5자리 코드를 이메일로 보내드려요.',
+'Send code':'코드 받기','5-digit code':'5자리 코드','Sending…':'보내는 중…',
+'This email hasn’t signed in with Google here yet. Sign in with Google once first.':'이 이메일은 아직 Google로 로그인한 적이 없어요. 먼저 Google로 한 번 로그인해 주세요.',
+'Email sign-in isn’t set up yet.':'이메일 로그인이 아직 설정되지 않았어요.','Couldn’t send the email. Try again later.':'이메일을 보내지 못했어요. 잠시 후 다시 시도해 주세요.','Check the email address.':'이메일 주소를 확인해 주세요.',
+'That code has expired. Ask for a new one.':'코드가 만료됐어요. 새 코드를 받아주세요.','Too many wrong tries. Ask for a new code.':'너무 많이 틀렸어요. 새 코드를 받아주세요.','Writing':'글쓰기','Journal':'일기','Translate':'번역','EN → KO':'영 → 한','KO → EN':'한 → 영','Google Translate':'Google 번역','Translating…':'번역 중…','Copy':'복사','Copied':'복사했어요','Recent':'최근 번역',
+'Type English to translate…':'번역할 영어를 입력하세요…','Type Korean to translate…':'번역할 한국어를 입력하세요…','Translator':'번역기','Add your Google Translate key in Me → Settings.':'나 → 설정에서 Google 번역 키를 넣어주세요.',
+'Newest first':'최신순','No entries yet.':'아직 일기가 없어요.','Tap the pen to write your first one.':'펜 버튼을 눌러 첫 일기를 써보세요.','Untitled':'제목 없음','New entry':'새 일기',
+'Done':'완료','Delete this entry?':'이 일기를 삭제할까요?','Write in English…':'영어로 써보세요…','English only — Korean can’t be typed here':'영어로만 쓸 수 있어요 — 한글은 입력되지 않아요',
+'Bold':'굵게','Italic':'기울임','Bullet list':'글머리 기호','Numbered list':'번호 목록','✨ Enhance':'✨ 다듬기','Enhance':'다듬기','Enhance selection':'선택 부분 다듬기','Level':'수준','Tone':'톤',
+'Casual':'캐주얼','Neutral':'보통','Formal':'격식','Academic':'학술','Discard':'버리기','Apply':'반영하기','Applied':'반영했어요','Write something first.':'먼저 글을 써주세요.','Typing practice':'타이핑 연습','This word has no example sentence that uses it, so there is nothing to fill in yet.':'이 단어가 들어간 예문이 없어서 연습할 빈칸이 없어요.','Type the missing word and press Enter.':'빈칸에 들어갈 단어를 입력하고 엔터를 누르세요.','Missing word':'빈칸','Play':'재생','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
 'Great job!':'잘했어요!','Ready for a quick test?':'바로 테스트해 볼까요?','Later':'나중에','Learned words':'학습한 단어','Example level':'예문 수준','Claude ran out of room for this photo. Try a photo with fewer words.':'사진 내용이 너무 많아 Claude 응답이 잘렸어요. 단어가 더 적게 나오게 찍어 보세요.','Keep photo examples':'사진 예문 그대로 쓰기','Very easy':'아주 쉬움','Easy':'쉬움','Medium':'보통','Intermediate':'중상','High':'어려움',
 'Definitions in Korean. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 한국어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.',
 'Definitions in English. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 영어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.','EN–KO':'영한','📷 Photo':'📷 사진','Definitions in':'정의 언어',
@@ -3579,6 +4018,12 @@ const I18N_KO_RE=[
 [/^\/ (\d+) learned$/,'/ $1 학습'],
 [/^You learned (\d+) words? in (\d+):(\d\d)\.$/,(m,n,a,b)=>'단어 '+n+'개를 '+(+a?a+'분 ':'')+(+b)+'초 만에 학습했어요.'],
 [/^Practiced (\d+)$/,'연습 $1회'],
+[/^(\d+) entr(?:y|ies)$/,'일기 $1개'],
+[/^(.+) is improving your writing…$/,'$1가 글을 다듬는 중…'],
+[/^Enhanced · (.+)$/,'다듬은 글 · $1'],
+[/^Please wait (\d+) seconds before asking for a new code\.$/,'새 코드는 $1초 뒤에 받을 수 있어요.'],
+[/^Wrong code\. (\d+) tries left\.$/,'코드가 틀렸어요. $1번 남았어요.'],
+[/^We sent a code to (.+)\. Check your inbox \(and spam\)\.$/,'$1로 코드를 보냈어요. 받은편지함(과 스팸함)을 확인하세요.'],
 [/^Delete (\d+) words?\?$/,'단어 $1개를 삭제할까요?'],
 [/^(?:This word|These words) and (?:its 1 sentence|their (\d+) sentences) will be removed with their review schedule\. Stories keep their text\.$/,(m,n)=>'이 단어와 예문 '+(n||1)+'개가 복습 일정과 함께 삭제돼요. 스토리 본문은 그대로 남아요.'],
 [/^Sentence (\d+)$/,'예문 $1'],[/^Delete "(.+)"\?$/,'“$1”을(를) 삭제할까요?'],
@@ -3609,7 +4054,7 @@ const I18N_KO_RE=[
 ];
 // ---------- Korean UI: translate interface text as it is drawn ----------
 // Learning content (sentences, stories, words, definitions, what you type) is never translated.
-const I18N_SKIP='.storytext,.ex,.def,.qsent,.stitle,.si .t,.si .ws,.li .w,.word h2,.ri .top,.ri .sent,.chip,.syn,.pko,.ko,.qdef>div,[data-noi18n]';
+const I18N_SKIP='.jeditor,.jitem .jt,.jitem .js,#trOut,.trh,#trIn,.storytext,.ex,.def,.qsent,.stitle,.si .t,.si .ws,.li .w,.word h2,.ri .top,.ri .sent,.chip,.syn,.pko,.ko,.qdef>div,[data-noi18n]';
 function trText(str){
   const m=/^(\s*)([\s\S]*?)(\s*)$/.exec(str),core=m[2];if(!core) return null;
   let out=I18N_KO[core];
@@ -3642,6 +4087,7 @@ if(LANG==='ko'){
 }
 
 // ---------- start ----------
+initEmailLogin();
 try{speechSynthesis.getVoices()}catch(e){}
 $('guestBtn').onclick=()=>{acct='guest';lsSet('wm.guest','1');loadGuest()};
 $('retryBtn').onclick=()=>loadCloud();

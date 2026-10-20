@@ -16,6 +16,9 @@ import { FREQ_WORDS } from './freq.js';
 //   wm:sess:<session>  → { sub, email, name, picture }   (expires after 60 days)
 //   wm:words:<sub>     → { cards, seed, log, history, stories, updatedAt }
 //   wm:settings:<sub>  → { translateKey, aiProvider, openaiKey/Model, geminiKey/Model, claudeKey/Model }   (the user's own Google Translate / OpenAI keys)
+//   wm:email:<email>   → the Google account behind that address (set at Google sign-in / app start)
+//   wm:otp:<email>     → pending email sign-in code (hashed, 10 minutes)
+//   wm:journal:<sub>   → journal entries (merged per entry on save)
 //   wm:dict3:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
 //
 // Dictionary: Merriam-Webster only (keys are Worker secrets, never in the repo).
@@ -36,10 +39,14 @@ export default {
     try {
       if (pathname === '/api/auth/login' && method === 'POST') return await login(request, env);
       if (pathname === '/api/auth/logout' && method === 'POST') return await logout(request, env);
+      if (pathname === '/api/auth/email/start' && method === 'POST') return await emailStart(request, env);
+      if (pathname === '/api/auth/email/verify' && method === 'POST') return await emailVerify(request, env);
       if (pathname === '/api/me' && method === 'GET') return await me(request, env);
       if (pathname === '/api/words' && method === 'GET') return await getWords(request, env);
       if (pathname === '/api/words' && method === 'PUT') return await putWords(request, env);
       if (pathname === '/api/lookup' && method === 'GET') return await lookup(url, env);
+      if (pathname === '/api/journal' && method === 'GET') return await getJournal(request, env);
+      if (pathname === '/api/journal' && method === 'PUT') return await putJournal(request, env);
       if (pathname === '/api/settings' && method === 'GET') return await getSettings(request, env);
       if (pathname === '/api/settings' && method === 'PUT') return await putSettings(request, env);
       if (pathname.startsWith('/api/')) return json({ error: 'Not found' }, 404);
@@ -84,9 +91,81 @@ async function login(request, env) {
   if (Number(t.exp) * 1000 < Date.now()) return json({ error: 'Token expired' }, 401);
 
   const user = { sub: t.sub, email: t.email || '', name: t.name || t.email || '', picture: t.picture || '' };
+  await linkEmail(env, user);
+  return json({ session: await newSession(env, user), user });
+}
+async function newSession(env, user) {
   const session = crypto.randomUUID();
   await env.WORDS.put(`wm:sess:${session}`, JSON.stringify(user), { expirationTtl: SESSION_TTL });
-  return json({ session, user });
+  return session;
+}
+// Email-code sign-in works only for addresses that signed in with Google before: email → that Google account
+async function linkEmail(env, user) {
+  if (!user || !user.email) return;
+  const k = `wm:email:${user.email.toLowerCase()}`;
+  const cur = await env.WORDS.get(k, 'json').catch(() => null);
+  if (!cur || cur.sub !== user.sub || cur.name !== user.name || cur.picture !== user.picture)
+    await env.WORDS.put(k, JSON.stringify(user));
+}
+
+// ── Email code sign-in (sent from the owner's Gmail through the Gmail API) ──
+// wm:otp:<email> → { hash, tries, sentAt } for 10 minutes; 5 wrong tries end it; one new code per minute.
+const OTP_TTL = 600, OTP_TRIES = 5;
+const normEmail = e => String(e || '').trim().toLowerCase();
+async function sha(s) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+async function emailStart(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+  const email = normEmail(body && body.email);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 120) return json({ error: 'invalid' }, 400);
+  if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) return json({ error: 'notconfigured' }, 503);
+  const user = await env.WORDS.get(`wm:email:${email}`, 'json').catch(() => null);
+  if (!user) return json({ error: 'notlinked' }, 404);
+  const k = `wm:otp:${email}`;
+  const cur = await env.WORDS.get(k, 'json').catch(() => null);
+  if (cur && Date.now() - cur.sentAt < 60000) return json({ error: 'wait', seconds: Math.ceil((60000 - (Date.now() - cur.sentAt)) / 1000) }, 429);
+  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 100000;
+  const code = String(n).padStart(5, '0');
+  try { await sendGmail(env, email, `Word Story sign-in code: ${code}`, `Your Word Story sign-in code is ${code}\n\nIt works for 10 minutes. If you didn't ask for it, you can ignore this email.`); }
+  catch (e) { return json({ error: 'sendfailed', detail: String(e && e.message || e).slice(0, 200) }, 502); }
+  await env.WORDS.put(k, JSON.stringify({ hash: await sha(email + ':' + code), tries: 0, sentAt: Date.now() }), { expirationTtl: OTP_TTL });
+  return json({ ok: true });
+}
+async function emailVerify(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+  const email = normEmail(body && body.email), code = String((body && body.code) || '').replace(/\D/g, '');
+  const k = `wm:otp:${email}`;
+  const cur = await env.WORDS.get(k, 'json').catch(() => null);
+  if (!cur) return json({ error: 'expired' }, 400);
+  if (cur.hash !== await sha(email + ':' + code)) {
+    cur.tries = (cur.tries || 0) + 1;
+    if (cur.tries >= OTP_TRIES) { await env.WORDS.delete(k); return json({ error: 'locked' }, 400); }
+    const left = Math.max(60, OTP_TTL - Math.floor((Date.now() - cur.sentAt) / 1000));
+    await env.WORDS.put(k, JSON.stringify(cur), { expirationTtl: left });
+    return json({ error: 'wrong', left: OTP_TRIES - cur.tries }, 400);
+  }
+  await env.WORDS.delete(k);
+  const user = await env.WORDS.get(`wm:email:${email}`, 'json').catch(() => null);
+  if (!user) return json({ error: 'notlinked' }, 404);
+  return json({ session: await newSession(env, user), user });
+}
+// Gmail API: refresh token (gmail.send scope) → access token → send a plain-text message from the owner's Gmail
+async function sendGmail(env, to, subject, text) {
+  const tr = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: env.GMAIL_CLIENT_ID, client_secret: env.GMAIL_CLIENT_SECRET, refresh_token: env.GMAIL_REFRESH_TOKEN, grant_type: 'refresh_token' }),
+  });
+  const tj = await tr.json().catch(() => ({}));
+  if (!tr.ok || !tj.access_token) throw new Error('token: ' + (tj.error_description || tj.error || tr.status));
+  const b64 = str => btoa(unescape(encodeURIComponent(str)));
+  const mime = [`To: ${to}`, `Subject: =?UTF-8?B?${b64(subject)}?=`, 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64(text)].join('\r\n');
+  const raw = b64(mime).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const sr = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST', headers: { Authorization: 'Bearer ' + tj.access_token, 'Content-Type': 'application/json' }, body: JSON.stringify({ raw }),
+  });
+  if (!sr.ok) { const ej = await sr.json().catch(() => ({})); throw new Error('send: ' + ((ej.error && ej.error.message) || sr.status)); }
 }
 
 async function logout(request, env) {
@@ -98,6 +177,7 @@ async function logout(request, env) {
 async function me(request, env) {
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'Not signed in' }, 401);
+  await linkEmail(env, user).catch(() => {});   // users who signed in with Google before this existed get linked too
   return json({ user });
 }
 
@@ -142,6 +222,41 @@ async function putWords(request, env) {
   return json({ ok: true, updatedAt: record.updatedAt });
 }
 
+// ── Journal ──────────────────────────────────────
+// wm:journal:<sub> → { entries: [{ id, at, html, updated, deleted? }], updatedAt }
+// PUT merges with the stored copy entry by entry (the later `updated` wins; deletions are kept as
+// tombstones for 60 days) so two devices never overwrite each other's entries.
+async function getJournal(request, env) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
+  const data = await env.WORDS.get(`wm:journal:${user.sub}`, 'json').catch(() => null);
+  return json(data || { entries: [], updatedAt: null });
+}
+async function putJournal(request, env) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
+  const text = await request.text();
+  if (text.length > MAX_BODY) return json({ error: 'Journal too large' }, 413);
+  let body;
+  try { body = JSON.parse(text); } catch { return json({ error: 'Invalid JSON' }, 400); }
+  if (!body || !Array.isArray(body.entries)) return json({ error: 'entries array required' }, 400);
+  const key = `wm:journal:${user.sub}`;
+  const cur = await env.WORDS.get(key, 'json').catch(() => null);
+  const byId = new Map();
+  const clean = e => e && typeof e === 'object' && typeof e.id === 'string' && e.id.length <= 40
+    ? { id: e.id, at: String(e.at || ''), html: e.deleted ? '' : String(e.html || '').slice(0, 200000), updated: Number(e.updated) || 0, ...(e.deleted ? { deleted: true } : {}) } : null;
+  for (const e of [...((cur && cur.entries) || []), ...body.entries]) {
+    const c = clean(e); if (!c) continue;
+    const old = byId.get(c.id);
+    if (!old || c.updated >= old.updated) byId.set(c.id, c);
+  }
+  const cutoff = Date.now() - 60 * 86400000;
+  const entries = [...byId.values()].filter(e => !e.deleted || e.updated > cutoff);
+  const record = { entries, updatedAt: new Date().toISOString() };
+  await env.WORDS.put(key, JSON.stringify(record));
+  return json(record);
+}
+
 // ── Settings ─────────────────────────────────────
 // [field, max length] — the user's own API keys and AI choice
 const SETTING_FIELDS = [['translateKey', 200], ['aiProvider', 20], ['openaiKey', 400], ['openaiModel', 80],
@@ -149,6 +264,7 @@ const SETTING_FIELDS = [['translateKey', 200], ['aiProvider', 20], ['openaiKey',
 async function getSettings(request, env) {
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'Not signed in' }, 401);
+  await linkEmail(env, user).catch(() => {});   // links users who signed in with Google before email sign-in existed
   const s = await env.WORDS.get(`wm:settings:${user.sub}`, 'json').catch(() => null);
   const out = {};
   for (const [k] of SETTING_FIELDS) out[k] = (s && s[k]) || '';
