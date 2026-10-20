@@ -254,7 +254,15 @@ button.chip:active{filter:brightness(.92)}
 .jtool button{flex:none;height:38px;min-width:42px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);font:700 17px var(--f-ui);display:grid;place-items:center;cursor:pointer;-webkit-appearance:none;appearance:none;touch-action:manipulation}
 .jtool button svg{width:20px;height:20px}
 .jtool .jsp{flex:1}
-.jtool .jenhbtn{padding:0 12px;font-size:14px;font-weight:800;color:var(--purple-d,var(--purple));border-color:var(--purple)}
+.jtool .jicon{min-width:46px;padding:0}
+.jtool .jicon svg{width:21px;height:21px}
+.jtool .jicon[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.jtool .jenhbtn{font-size:18px;color:var(--purple-d,var(--purple));border-color:var(--purple)}
+.jtr{display:flex;flex-direction:column;gap:6px;padding:8px var(--gutter-r) 6px var(--gutter-l);border-top:1px solid var(--line);background:var(--bar)}
+.jtr input{width:100%;font:600 16px var(--f-ui);color:var(--fg);background:var(--card);border:2px solid var(--line);border-radius:10px;padding:8px 10px;outline:none}
+.jtr input:focus{border-color:var(--accent)}
+.jtrout{min-height:1.5em;font:400 16px/1.45 var(--f-word);color:var(--fg);padding:0 4px;user-select:text;-webkit-user-select:text;white-space:pre-wrap}
+.jtrout.muted{color:var(--muted);font:600 13px var(--f-ui)}.jtrout.err{color:var(--bad);font:600 13px var(--f-ui)}
 .jenhbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px var(--gutter-r) 4px var(--gutter-l);border-top:1px solid var(--line);background:var(--bar)}
 .jenhbar select{flex:1;min-width:0;font:700 13px var(--f-ui);color:var(--fg);background:var(--card);border:2px solid var(--line);border-radius:10px;padding:7px 6px}
 .jenhbar .btn{padding:8px 14px;font-size:13px;flex:none}
@@ -620,7 +628,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.37.1</span> · <span class="version-date">2026/10/21</span></p>
+          <p class="note"><span class="version-tag">v2.38.0</span> · <span class="version-date">2026/10/21</span></p>
         </div>
       </div></div>
     </div>
@@ -771,13 +779,19 @@ button.chip:active{filter:brightness(.92)}
     </div>
   </div>
   <div class="jenhbar" id="jenhBar" hidden></div>
+  <div class="jtr" id="jtr" hidden>
+    <input id="jtrIn" placeholder="Korean → English, press Enter" autocomplete="off" enterkeyhint="go" aria-label="Korean to translate">
+    <div class="jtrout muted" id="jtrMsg">Type Korean and press Enter.</div>
+    <div class="jtrout" id="jtrOut" hidden></div>
+  </div>
   <div class="jtool" id="jedTool">
     <button type="button" data-fmt="bold" aria-label="Bold"><b>B</b></button>
     <button type="button" data-fmt="italic" aria-label="Italic"><i>I</i></button>
     <button type="button" data-fmt="insertUnorderedList" aria-label="Bullet list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="7" r="1.2" fill="currentColor"/><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="5" cy="17" r="1.2" fill="currentColor"/><path d="M10 7h10M10 12h10M10 17h10"/></svg></button>
     <button type="button" data-fmt="insertOrderedList" aria-label="Numbered list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M10 7h10M10 12h10M10 17h10"/><text x="2.5" y="9" font-size="7" font-weight="800" fill="currentColor" stroke="none">1</text><text x="2.5" y="14.5" font-size="7" font-weight="800" fill="currentColor" stroke="none">2</text><text x="2.5" y="20" font-size="7" font-weight="800" fill="currentColor" stroke="none">3</text></svg></button>
     <span class="jsp"></span>
-    <button type="button" class="jenhbtn" id="jedEnh" aria-label="Enhance">✨ Enhance</button>
+    <button type="button" class="jicon" id="jedTr" aria-label="Translate" aria-pressed="false"></button>
+    <button type="button" class="jicon jenhbtn" id="jedEnh" aria-label="Enhance">✨</button>
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -2185,7 +2199,7 @@ function openJournal(e){
   jnEdit=e;
   $('jedBody').innerHTML=jnSanitize(e.html||'');
   $('jedDateTxt').textContent=jnDateLabel(e.at);$('jedDateIn').value=toLocalInput(e.at);
-  $('jenh').hidden=true;$('jenhBar').hidden=true;
+  $('jenh').hidden=true;$('jenhBar').hidden=true;$('jtr').hidden=true;$('jedTr').setAttribute('aria-pressed','false');
   $('jed').hidden=false;$('jedScroll').scrollTop=0;
   try{crStop();stopReading()}catch(_){}
   if(e.fresh) $('jedBody').focus();   // inside the tap, so the iOS keyboard opens
@@ -2287,10 +2301,33 @@ function markupToHTML(md,keep){
   }
   close();return html;
 }
+// Quick Korean → English translate box in the editor (toggle; Enter translates, no button)
+$('jedTr').innerHTML=TR_ICON;
+$('jedTr').addEventListener('mousedown',ev=>ev.preventDefault());
+$('jedTr').onclick=()=>{
+  const box=$('jtr'),open=box.hidden;
+  box.hidden=!open;$('jedTr').setAttribute('aria-pressed',open);
+  if(open){$('jenhBar').hidden=true;$('jtrIn').focus()}
+};
+async function jtrRun(){
+  const t=$('jtrIn').value.trim(),out=$('jtrOut'),msg=$('jtrMsg');if(!t) return;
+  const say=(m,cls)=>{msg.hidden=false;out.hidden=true;msg.className='jtrout '+cls;msg.textContent=m};
+  say('Translating…','muted');
+  let eng=trPref.eng;if(eng!=='google'&&!aiChoices().some(a=>a.p===eng)) eng='google';
+  if(eng==='google'&&!settings.translateKey){const a=aiChoices();if(a.length) eng=aiKey()?aiProv():a[0].p}
+  try{
+    let r;
+    if(eng==='google'){if(!settings.translateKey) throw new Error('Add your Google Translate key in Me → Settings.');r=await translateText(t,'ko','en')}
+    else{r=String(parseAIJson(await aiComplete('You are a professional translator. Translate the user\'s text from Korean into natural, fluent English. Keep the meaning and tone. Do not explain or add anything. Return JSON: {"translation":"..."}',t,eng),AI[eng].name).translation||'').trim()}
+    out.textContent=r;out.hidden=false;msg.hidden=true;
+  }catch(e){say(e.message,'err')}
+}
+$('jtrIn').addEventListener('keydown',ev=>{if(ev.key==='Enter'&&!ev.isComposing){ev.preventDefault();jtrRun()}});
 $('jedEnh').addEventListener('mousedown',ev=>ev.preventDefault());
 $('jedEnh').onclick=()=>{
   const bar=$('jenhBar');
   if(!bar.hidden){bar.hidden=true;return}
+  $('jtr').hidden=true;$('jedTr').setAttribute('aria-pressed','false');
   const sel=document.getSelection();
   enhRange=sel.rangeCount&&!sel.isCollapsed&&$('jedBody').contains(sel.getRangeAt(0).commonAncestorContainer)?sel.getRangeAt(0).cloneRange():null;
   const ais=aiChoices();
@@ -3979,7 +4016,7 @@ const I18N_KO={
 'Setup timed out. Start again.':'설정 시간이 지났어요. 다시 시작하세요.','That code didn’t match. Check the app and try again.':'코드가 맞지 않아요. 앱을 확인하고 다시 입력하세요.',
 'Authenticator is on':'인증 앱 사용 중','Authenticator is off':'인증 앱 꺼짐','Add Authy or Google Authenticator to sign in with a code instead of Google':'Authy나 Google Authenticator를 연결하면 Google 대신 코드로 로그인할 수 있어요',
 'All set. Next time, choose “Sign in with an authenticator app” on the sign-in screen.':'설정 완료! 다음부터 로그인 화면에서 “인증 앱으로 로그인”을 고르세요.','Set up':'연결하기','Set up again':'다시 연결하기','Turn off':'끄기',
-'Turn off the authenticator?':'인증 앱을 끌까요?','You won’t be able to sign in with a code until you set it up again. Google sign-in keeps working.':'다시 연결하기 전까지 코드로 로그인할 수 없어요. Google 로그인은 그대로 돼요.','Writing':'글쓰기','Journal':'일기','Translate':'번역','EN → KO':'영 → 한','KO → EN':'한 → 영','Google Translate':'Google 번역','Translating…':'번역 중…','Copy':'복사','Copied':'복사했어요','Recent':'최근 번역',
+'Turn off the authenticator?':'인증 앱을 끌까요?','You won’t be able to sign in with a code until you set it up again. Google sign-in keeps working.':'다시 연결하기 전까지 코드로 로그인할 수 없어요. Google 로그인은 그대로 돼요.','Writing':'글쓰기','Type Korean and press Enter.':'한국어를 입력하고 Enter를 누르세요.','Korean → English, press Enter':'한국어 입력 후 Enter','Korean to translate':'번역할 한국어','Journal':'일기','Translate':'번역','EN → KO':'영 → 한','KO → EN':'한 → 영','Google Translate':'Google 번역','Translating…':'번역 중…','Copy':'복사','Copied':'복사했어요','Recent':'최근 번역',
 'Type English to translate…':'번역할 영어를 입력하세요…','Type Korean to translate…':'번역할 한국어를 입력하세요…','Translator':'번역기','Add your Google Translate key in Me → Settings.':'나 → 설정에서 Google 번역 키를 넣어주세요.',
 'Newest first':'최신순','No entries yet.':'아직 일기가 없어요.','Tap the pen to write your first one.':'펜 버튼을 눌러 첫 일기를 써보세요.','Untitled':'제목 없음','New entry':'새 일기',
 'Done':'완료','Delete this entry?':'이 일기를 삭제할까요?','Write in English…':'영어로 써보세요…','English only — Korean can’t be typed here':'영어로만 쓸 수 있어요 — 한글은 입력되지 않아요',
@@ -4129,7 +4166,7 @@ const I18N_KO_RE=[
 ];
 // ---------- Korean UI: translate interface text as it is drawn ----------
 // Learning content (sentences, stories, words, definitions, what you type) is never translated.
-const I18N_SKIP='.jeditor,.jitem .jt,.jitem .js,#trOut,.trh,#trIn,.storytext,.ex,.def,.qsent,.stitle,.si .t,.si .ws,.li .w,.word h2,.ri .top,.ri .sent,.chip,.syn,.pko,.ko,.qdef>div,[data-noi18n]';
+const I18N_SKIP='#jtrOut,.jeditor,.jitem .jt,.jitem .js,#trOut,.trh,#trIn,.storytext,.ex,.def,.qsent,.stitle,.si .t,.si .ws,.li .w,.word h2,.ri .top,.ri .sent,.chip,.syn,.pko,.ko,.qdef>div,[data-noi18n]';
 function trText(str){
   const m=/^(\s*)([\s\S]*?)(\s*)$/.exec(str),core=m[2];if(!core) return null;
   let out=I18N_KO[core];
