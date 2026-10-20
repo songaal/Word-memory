@@ -535,7 +535,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.33.0</span> · <span class="version-date">2026/10/21</span></p>
+          <p class="note"><span class="version-tag">v2.33.2</span> · <span class="version-date">2026/10/21</span></p>
         </div>
       </div></div>
     </div>
@@ -2571,7 +2571,7 @@ async function saveStory(){
 }
 function renderSearch(scrollTop){
   const b=$('searchBody');
-  b.innerHTML=searchResults.length?[...searchResults].reverse().map(r=>r.card?`<div class="card">${cardHTML(r.card,{add:true})}</div>`:r.pending?`<div class="bubble">Looking up "${esc(r.q)}"…</div>`:`<div class="bubble err">${esc(r.error)}</div>`).join('')
+  b.innerHTML=searchResults.length?[...searchResults].reverse().map(r=>r.card?`<div class="sgroup" data-si="${searchResults.indexOf(r)}"><div class="card">${cardHTML(r.card,{add:true})}</div><div class="synstack">${(r.stack||[]).map(c=>`<div class="card">${cardHTML(c,{add:true})}</div>`).join('')}</div></div>`:r.pending?`<div class="bubble">Looking up "${esc(r.q)}"…</div>`:`<div class="bubble err">${esc(r.error)}</div>`).join('')
     :`<div class="empty">Search for any word. It won't be added to your study list until you tap <b>+ Add</b>.</div>`;
   if(scrollTop) $('searchScroll').scrollTop=0;   // newest result is at the top
 }
@@ -2599,21 +2599,28 @@ async function runSearch(q){
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-syn]');if(!b) return;
   const w=b.dataset.syn.trim().toLowerCase();if(!w) return;
-  if(b.closest('#searchBody')){runSearch(w);return}
-  const body=b.closest('#sheetBody,#popBody');if(!body) return;
+  const group=b.closest('.sgroup,#sheetBody,#popBody');if(!group) return;
   e.stopPropagation();
-  let stack=body.querySelector('.synstack');
-  if(!stack){stack=document.createElement('div');stack.className='synstack';body.appendChild(stack)}
-  // already on screen? just go to it
-  const shown=[...body.querySelectorAll('.word h2')].find(h=>h.textContent.trim().toLowerCase()===w);
-  if(shown){shown.closest('.card').scrollIntoView({behavior:'smooth',block:'start'});return}
+  const scroller=group.classList.contains('sgroup')?$('searchScroll'):group;
+  // room under the last card so it can always reach the top of the view
+  const room=()=>{const st=group.querySelector('.synstack');if(!st||!st.lastElementChild) return;st.style.paddingBottom='0px';
+    const need=scroller.clientHeight-st.lastElementChild.offsetHeight-24;st.style.paddingBottom=Math.max(0,need)+'px'};
+  const toTop=el=>{room();const sr=scroller.getBoundingClientRect(),r=el.getBoundingClientRect();scroller.scrollTo({top:scroller.scrollTop+(r.top-sr.top)-8,behavior:'smooth'})};
+  let stack=group.querySelector('.synstack');
+  if(!stack){stack=document.createElement('div');stack.className='synstack';group.appendChild(stack)}
+  // already on screen in this group? just go to it
+  const shown=[...group.querySelectorAll('.word h2')].find(h=>h.textContent.trim().toLowerCase()===w);
+  if(shown){toTop(shown.closest('.card'));return}
   const box=document.createElement('div');box.className='card';box.innerHTML=`<div class="bubble">Looking up "${esc(w)}"…</div>`;
-  stack.appendChild(box);box.scrollIntoView({behavior:'smooth',block:'start'});
+  stack.appendChild(box);toTop(box);
   try{
     const c=findCard(w)||await lookup(w);
     if(!box.isConnected) return;
     if(!findCard(c.word)) tapCache[c.word]=c;     // so 🔊 / translate / + Add find it
     box.innerHTML=cardHTML(c,{add:true});
+    const entry=group.dataset.si!=null&&searchResults[+group.dataset.si];
+    if(entry){(entry.stack=entry.stack||[]).push(c)}   // keep it when the results are redrawn
+    toTop(box);
   }catch(err){if(box.isConnected){box.className='bubble err';box.textContent=lookupErr(err.message,w)}}
 },true);
 
@@ -2683,14 +2690,14 @@ function openWord(word,confirm){
   const its=itemsOf(c);
   const order=listOrder(),idx=order.indexOf(c.word);
   openSheet(c.word,`<div class="card wnav" id="wnavCard">${order.length>1?`<span class="wn-edge l" aria-hidden="true">‹</span><span class="wn-edge r" aria-hidden="true">›</span><span class="wn-count">${idx+1} / ${order.length}</span>`:''}${cardHTML(c)}</div>
-    <div class="synstack" id="synStack"></div>
     <div class="card" style="margin-top:12px">
       <span class="label">Schedule</span>
       ${its.map((it,i)=>`<div class="row" style="justify-content:space-between;font-size:14px"><span>${it.noEx?'Definition':'Sentence '+(i+1)}</span><span><span class="st">${stageLabel(it.d.stage)}</span> <span class="note" style="display:inline">${dueLabel(it.d.due)}</span></span></div>`).join('')}
       <div class="row" style="justify-content:flex-end">${confirm
         ?`<span class="note">Delete "${esc(c.word)}"?</span><button class="btn" style="background:var(--bad);border-color:var(--bad)" id="delYes" type="button">Delete</button><button class="btn ghost" id="delNo" type="button">Cancel</button>`
         :`<button class="linkbtn" style="color:var(--bad)" id="delAsk" type="button">Delete word</button>`}</div>
-    </div>`);
+    </div>
+    <div class="synstack" id="synStack"></div>`);
   // Tap the left / right edge of the card for the previous / next word in the list
   if(order.length>1) $('wnavCard').addEventListener('click',e=>{
     if(e.target.closest('button,a,input,[data-pop]')) return;
