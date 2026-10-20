@@ -180,11 +180,18 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 @keyframes lcUp{from{transform:translateY(110%);opacity:.3}to{transform:none;opacity:1}}
 .lcard .lbody{flex:1;overflow:hidden;padding:20px 18px;display:flex;flex-direction:column;gap:12px}
 .lcard .lbody .word h2{font-size:34px}
-.lcard::after{content:"";position:absolute;inset:-2px;border-radius:26px;pointer-events:none;opacity:0}
-.lcard.ok{border-color:var(--green)}.lcard.ok::after{background:var(--green);animation:lcFlash .45s ease-out}
-.lcard.no{border-color:var(--red)}.lcard.no::after{background:var(--red);animation:lcFlash .45s ease-out}
-@keyframes lcFlash{0%{opacity:0}25%{opacity:.45}55%{opacity:.1}75%{opacity:.35}100%{opacity:0}}
-.lcard .lmore{position:absolute;left:0;right:0;bottom:0;height:40px;border-radius:0 0 24px 24px;background:linear-gradient(transparent,var(--card));pointer-events:none}
+.lcard::before,.lcard::after{content:"";position:absolute;inset:-2px;border-radius:26px;pointer-events:none;transition:opacity .12s linear}
+.lcard::after{background:var(--green);opacity:calc(var(--ok,0) * .32)}
+.lcard::before{background:var(--red);opacity:calc(var(--no,0) * .32)}
+.lcard.tup{border-color:var(--green);box-shadow:0 6px 0 var(--green-d)}
+.lcard.tleft{border-color:var(--red);box-shadow:0 6px 0 var(--red-d)}
+.lcard .lctl{display:flex;justify-content:center;gap:18px;padding:8px 0 12px;border-top:2px solid var(--line);position:relative;z-index:1}
+.lcard .lctl button{width:52px;height:52px;border-radius:50%;border:2px solid var(--line);background:var(--card);color:var(--accent);display:grid;place-items:center;cursor:pointer;box-shadow:0 3px 0 var(--line)}
+.lcard .lctl button:active{transform:translateY(3px);box-shadow:none}
+.lcard .lctl button.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 3px 0 var(--blue-d,#1899d6)}
+.lcard .lctl svg{width:24px;height:24px}
+.lbody .lread{background:var(--gold-soft);border-radius:8px;box-shadow:0 0 0 4px var(--gold-soft);transition:background .2s}
+.lcard .lmore{position:absolute;left:0;right:0;bottom:78px;height:40px;border-radius:0 0 24px 24px;background:linear-gradient(transparent,var(--card));pointer-events:none}
 .learn .lfoot{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
 .learn .lfoot .btn{padding:12px 8px;font-size:14px}
 .learn .lhint{text-align:center;font:800 12px var(--f-ui);color:var(--muted);margin-top:8px}
@@ -503,7 +510,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.28.0</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.29.0</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -1090,8 +1097,8 @@ function gErrText(m){
   if(/API key not valid/i.test(m)) return 'The Google API key was rejected.';
   return m;
 }
-async function gFetchUrl(text){
-  const v=gVoice(),k=v+'|'+text;
+async function gFetchUrl(text,voice){
+  const v=voice||gVoice(),k=v+'|'+text;
   if(gMem.has(k)) return gMem.get(k);
   const cacheUrl='/__tts/'+encodeURIComponent(v)+'/'+gHash(text)+'.mp3';
   let blob=null;
@@ -1113,9 +1120,9 @@ async function gFetchUrl(text){
 }
 function gStop(){gPlayToken++;try{gAudio.pause()}catch(e){}}
 // Play one piece of text; resolves when it finishes (or is stopped), rejects on failure
-async function gSay(text){
+async function gSay(text,voice){
   const token=++gPlayToken;
-  const url=await gFetchUrl(text);
+  const url=await gFetchUrl(text,voice);
   if(token!==gPlayToken) return;
   gAudio.src=url;gAudio.playbackRate=voicePref.rate||.9;
   try{gAudio.preservesPitch=true;gAudio.webkitPreservesPitch=true}catch(e){}
@@ -1478,7 +1485,11 @@ function lnNext(){
   const r=learnRun,st=$('lnStage');
   if(!r.queue.length){lnFinish();return}
   const c=r.queue[0];
-  st.innerHTML=`<div class="lcard enter" id="lnCard"><div class="lbody" id="lnBody">${cardHTML(c)}</div><div class="lmore" id="lnMore" hidden></div></div>`;
+  st.innerHTML=`<div class="lcard enter" id="lnCard"><div class="lbody" id="lnBody">${cardHTML(c)}</div><div class="lmore" id="lnMore" hidden></div>
+    <div class="lctl"><button type="button" id="lpPlay" aria-label="Pause"></button><button type="button" id="lpLoop" aria-label="Repeat"></button></div></div>`;
+  $('lpPlay').onclick=()=>{lp&&lp.playing?lpPause():lpPlay()};
+  $('lpLoop').onclick=()=>{lpLoop=lpLoop==='all'?'one':'all';lsSet('wm.lpLoop',lpLoop);lpIcons()};
+  lpStart(c);
   const card=$('lnCard'),body=$('lnBody');
   const more=()=>{$('lnMore').hidden=body.scrollTop+body.clientHeight>=body.scrollHeight-2};
   requestAnimationFrame(more);body.addEventListener('scroll',more);
@@ -1489,7 +1500,7 @@ function lnNext(){
 // The card body scrolls with the same finger while it still has text left in that direction.
 function lnDrag(card,body){
   let g=null;
-  const set=(x,y,anim)=>{card.style.transition=anim?'transform .25s ease':'none';card.style.transform=`translate(${x}px,${y}px) rotate(${x*.04}deg)`};
+  const set=(x,y,anim)=>{card.style.transition=anim?'transform .25s ease':'none';card.style.transform=`translate(${x}px,${y}px) rotate(${x*.04}deg)`;lnTint(card,x,y)};
   card.addEventListener('pointerdown',e=>{
     if(learnRun.busy||e.target.closest('button')) return;
     g={id:e.pointerId,x0:e.clientX,y0:e.clientY,st0:body.scrollTop,mode:null,tx:0,ty:0,hist:[[e.clientX,e.clientY,performance.now()]]};
@@ -1522,17 +1533,29 @@ function lnDrag(card,body){
   };
   card.addEventListener('pointerup',end);card.addEventListener('pointercancel',end);
 }
-function lnThrow(cls,tf,after){
+// While dragging: up tints the card green, left tints it red (stronger the further it goes)
+function lnTint(card,x,y){
+  const up=y<0?Math.min(1,-y/110):0,left=x<0?Math.min(1,-x/100):0;
+  const ok=up>=left?up:0,no=left>up?left:0;
+  card.style.setProperty('--ok',ok);card.style.setProperty('--no',no);
+  card.classList.toggle('tup',ok>.25);card.classList.toggle('tleft',no>.25);
+}
+// Throw the card on from where the finger left it (no pause, no flashing)
+function lnThrow(dir,after){
   const r=learnRun,card=$('lnCard');if(!card||r.busy) return;r.busy=true;
-  card.classList.add(cls);
-  setTimeout(()=>{card.style.transition='transform .38s cubic-bezier(.5,0,.9,.6),opacity .38s';card.style.transform=tf;card.style.opacity='0'},170);
-  setTimeout(()=>{r.busy=false;after();if(learnRun===r) lnNext()},560);
+  lpStop();
+  const m=(card.style.transform.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px/)||[]),x=parseFloat(m[1])||0,y=parseFloat(m[2])||0;
+  if(dir==='up') lnTint(card,x,Math.min(y,-200));else lnTint(card,Math.min(x,-200),y);
+  const tf=dir==='up'?`translate(${x}px,${-window.innerHeight*1.2}px) rotate(${x*.04}deg)`:`translate(${-window.innerWidth*1.3}px,${y+30}px) rotate(-16deg)`;
+  card.style.transition='transform .34s cubic-bezier(.25,.7,.4,1),opacity .34s ease-in';
+  requestAnimationFrame(()=>{card.style.transform=tf;card.style.opacity='0'});
+  setTimeout(()=>{r.busy=false;after();if(learnRun===r) lnNext()},340);
 }
 function lnGot(){
   const r=learnRun;if(!r||r.busy||!r.queue.length) return;
   chime();
   const c=r.queue[0];
-  lnThrow('ok',`translate(${(parseFloat(($('lnCard').style.transform.match(/translate\(([-\d.]+)px/)||[])[1])||0)}px,-130vh) rotate(-4deg)`,()=>{
+  lnThrow('up',()=>{
     r.queue.shift();r.done++;r.learnedNow.add(c.word);
     if(c.learned!==today()){c.learned=today();save()}
     lnCount();
@@ -1540,17 +1563,19 @@ function lnGot(){
 }
 function lnAgain(){
   const r=learnRun;if(!r||r.busy||!r.queue.length) return;
-  lnThrow('no','translate(-130vw,40px) rotate(-18deg)',()=>{r.queue.push(r.queue.shift())});
+  lnThrow('left',()=>{r.queue.push(r.queue.shift())});
 }
 $('lnGot').onclick=lnGot;$('lnAgain').onclick=lnAgain;
 $('lnQuit').onclick=()=>closeLearn();
 function closeLearn(){
+  lpStop();
   clearInterval(lnT.iv);lnPause();learnRun=null;
   $('learn').hidden=true;$('lnStage').innerHTML='';
   try{rerenderCurrent()}catch(_){}
   renderHome();
 }
 function lnFinish(){
+  lpStop();
   const r=learnRun;r.done_=true;lnPause();clearInterval(lnT.iv);lnTick();
   const secs=lnSecs(),n=r.learnedNow.size||r.done;
   $('lnFootWrap').hidden=true;
@@ -1570,6 +1595,105 @@ function lnFinish(){
     else startTest(allItems().filter(it=>words.has(it.c.word)),'Learned words');
   };
 }
+// ---- Learn card reader: word → example 1 → definition 1 → example 2 → … each read twice, then loops ----
+// ▶/⏸ toggles; the repeat button switches between looping the card (default) and reading it once.
+// The repeat choice stays for the next cards; every new card starts reading on its own.
+let lp=null,lpLoop=lsGet('wm.lpLoop')==='one'?'one':'all';
+const LP_PLAY='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+const LP_PAUSE='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2"/></svg>';
+const LP_LOOP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>';
+const LP_LOOP1='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/><path d="M11 10.5l1.5-1v5.5" stroke-width="2"/></svg>';
+function lpIcons(){
+  const p=$('lpPlay'),l=$('lpLoop');if(!p) return;
+  const on=!!(lp&&lp.playing);
+  p.innerHTML=on?LP_PAUSE:LP_PLAY;p.setAttribute('aria-label',on?'Pause':'Play');p.classList.toggle('on',on);
+  l.innerHTML=lpLoop==='one'?LP_LOOP1:LP_LOOP;l.setAttribute('aria-label',lpLoop==='one'?'Read once':'Repeat');
+}
+function lpParts(c){
+  const parts=[{t:c.word,kind:'word',audio:c.audio||''}];
+  for(const g of c.meanings||[]) for(const d of g.defs||[]){
+    if(d.ex) parts.push({t:d.ex,kind:'ex'});
+    if(d.d) parts.push({t:d.d,kind:'def'});
+  }
+  return parts;
+}
+function lpStart(c){
+  lpStop();
+  lp={c,parts:lpParts(c),i:0,rep:0,playing:false,token:0};
+  lpPlay();
+}
+function lpPlay(){
+  if(!lp) return;
+  if(gOn()) gPrime();
+  lp.playing=true;lp.token++;lpIcons();
+  lpRun(lp.token);
+}
+function lpPause(){if(!lp) return;lp.playing=false;lp.token++;lpHalt();lpIcons();lpMark(-1)}
+function lpStop(){if(lp){lp.playing=false;lp.token++}lpHalt();lp=null}
+function lpHalt(){gStop();try{speechSynthesis.cancel()}catch(e){}}
+const lpWait=ms=>new Promise(r=>setTimeout(r,ms));
+// highlight the part being read: parts are in the same order as the word, examples and definitions on the card
+function lpMark(i){
+  const b=$('lnBody');if(!b) return;
+  const els=[b.querySelector('.word h2'),...b.querySelectorAll('.ex, .def')];
+  els.forEach((el,k)=>el&&el.classList.toggle('lread',k===i));
+  const el=els[i];
+  if(el&&i>0){const br=b.getBoundingClientRect(),r=el.getBoundingClientRect();if(r.top<br.top+10||r.bottom>br.bottom-10) b.scrollTo({top:b.scrollTop+(r.top-br.top)-br.height*.25,behavior:'smooth'})}
+  else if(i===0) b.scrollTo({top:0,behavior:'smooth'});
+}
+async function lpRun(token){
+  const live=()=>lp&&lp.token===token&&lp.playing;
+  while(live()){
+    const part=lp.parts[lp.i];
+    lpMark(lp.i);
+    try{await lpSay(part)}catch(e){}
+    if(!live()) return;
+    lp.rep++;
+    if(lp.rep<2){await lpWait(300);continue}
+    lp.rep=0;lp.i++;
+    if(lp.i>=lp.parts.length){
+      lp.i=0;
+      if(lpLoop==='one'){lp.playing=false;lpIcons();lpMark(-1);return}
+      await lpWait(900);
+    }else await lpWait(450);
+  }
+}
+// One part, resolved when it has been read (or stopped)
+function lpSay(part){
+  const ko=/[\u3131-\uD79D]/.test(part.t);
+  if(part.kind==='word'&&part.audio) return lpAudio(part.audio).catch(()=>lpDevice(part.t,false));
+  if(gOn()&&part.kind!=='word') return gSay(part.t,ko?'ko-KR-Neural2-A':undefined).catch(e=>{gLastError=e.message;return lpDevice(part.t,ko)});
+  return lpDevice(part.t,ko);
+}
+function lpAudio(url){
+  return new Promise((res,rej)=>{
+    gStop();const tk=++gPlayToken;
+    gAudio.src=url;gAudio.playbackRate=1;
+    const done=()=>{gAudio.removeEventListener('ended',done);gAudio.removeEventListener('pause',done);gAudio.removeEventListener('error',bad);res()};
+    const bad=()=>{gAudio.removeEventListener('ended',done);gAudio.removeEventListener('pause',done);gAudio.removeEventListener('error',bad);rej(new Error('audio'))};
+    gAudio.addEventListener('ended',done);gAudio.addEventListener('pause',done);gAudio.addEventListener('error',bad);
+    const p=gAudio.play();if(p) p.catch(bad);
+    if(tk!==gPlayToken) res();
+  });
+}
+function lpDevice(text,ko){
+  return new Promise(res=>{
+    try{
+      if(!('speechSynthesis' in window)) return setTimeout(res,600);
+      speechSynthesis.cancel();
+      const u=ko?new SpeechSynthesisUtterance(text):makeUtter(text);
+      if(ko){u.lang='ko-KR';const v=speechSynthesis.getVoices().find(v=>/^ko/i.test(v.lang));if(v) u.voice=v;u.rate=1}
+      let ended=false;const fin=()=>{if(!ended){ended=true;res()}};
+      u.onend=fin;u.onerror=fin;
+      speechSynthesis.speak(u);
+      setTimeout(fin,Math.max(4000,text.length*180));   // safety net if the browser never fires onend
+    }catch(e){res()}
+  });
+}
+// Tapping a 🔊 on the card pauses the auto reading so the two don't talk over each other
+document.addEventListener('click',e=>{if(lp&&lp.playing&&e.target.closest('#lnBody [data-say]')) lpPause()},true);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'&&lp&&lp.playing) lpPause()});
+
 // Ta-da: a quick rising arpeggio and a bright chord
 function fanfare(){
   try{
@@ -3107,7 +3231,7 @@ const I18N_KO={
 '+ Add':'+ 추가','✓ In your list':'✓ 목록에 있음','Similar words':'비슷한 단어','Add words':'단어 추가','Add a story':'스토리 추가','Tap words to pick them':'단어를 탭해서 고르세요',
 'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Photo of a word list':'단어장 사진으로 만들기','EN–EN':'영영','Learn':'학습',"Today's learning":'오늘의 학습','Start learning':'학습 시작','Continue learning':'이어서 학습','Learn again':'다시 학습','Learn all words':'전체 단어 학습','Test now':'바로 테스트',
 'No words due today. Learn any of your words.':'오늘 복습할 단어는 없어요. 아무 단어나 학습해 보세요.','All learned! Test them while they are fresh.':'다 외웠어요! 기억날 때 바로 테스트해 봐요.',
-'← Again':'← 다시','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
+'← Again':'← 다시','Play':'재생','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
 'Great job!':'잘했어요!','Ready for a quick test?':'바로 테스트해 볼까요?','Later':'나중에','Learned words':'학습한 단어','Example level':'예문 수준','Claude ran out of room for this photo. Try a photo with fewer words.':'사진 내용이 너무 많아 Claude 응답이 잘렸어요. 단어가 더 적게 나오게 찍어 보세요.','Keep photo examples':'사진 예문 그대로 쓰기','Very easy':'아주 쉬움','Easy':'쉬움','Medium':'보통','Intermediate':'중상','High':'어려움',
 'Definitions in Korean. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 한국어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.',
 'Definitions in English. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 영어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.','EN–KO':'영한','📷 Photo':'📷 사진','Definitions in':'정의 언어',
