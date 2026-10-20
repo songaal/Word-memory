@@ -1,3 +1,4 @@
+import { FREQ_WORDS } from './freq.js';
 // Cloudflare Worker entry point for Word Story.
 // Static files in public/ are served first; anything else reaches this worker.
 //
@@ -15,12 +16,12 @@
 //   wm:sess:<session>  → { sub, email, name, picture }   (expires after 60 days)
 //   wm:words:<sub>     → { cards, seed, log, history, stories, updatedAt }
 //   wm:settings:<sub>  → { translateKey, aiProvider, openaiKey/Model, geminiKey/Model, claudeKey/Model }   (the user's own Google Translate / OpenAI keys)
-//   wm:dict2:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
+//   wm:dict3:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
 //
 // Dictionary: Merriam-Webster only (keys are Worker secrets, never in the repo).
 //   Learner's  (MW_LEARNER_KEY)   — definitions, example sentences, pronunciation
 //   Thesaurus  (MW_THESAURUS_KEY) — similar words
-//   The app tops up similar words from Datamuse (asked in the browser) when there are fewer than 4.
+//   Similar words: at most 3, the most common ones from the thesaurus's main meaning (FREQ_WORDS); none if MW has none.
 
 const GOOGLE_CLIENT_ID = '719116381133-drmp1g433dj5qfnhp7u5ujbichl7d0j2.apps.googleusercontent.com';
 const SESSION_TTL = 60 * 60 * 24 * 60;
@@ -177,7 +178,7 @@ const UA = 'WordStory/1.0 (https://word-memory.songaal.workers.dev)';
 async function lookup(url, env) {
   const word = (url.searchParams.get('word') || '').trim().toLowerCase();
   if (!/^[a-z][a-z' -]{0,48}$/.test(word)) return json({ error: 'invalid' }, 400);
-  const key = `wm:dict2:${word}`;
+  const key = `wm:dict3:${word}`;
   const fresh = url.searchParams.get('fresh') === '1';
   const debug = url.searchParams.get('debug') === '1';
 
@@ -214,7 +215,7 @@ async function lookup(url, env) {
     phonetic: base.phonetic || '',
     audio: base.audio || '',
     meanings: base.meanings,
-    synonyms: synonyms.slice(0, 10),   // the app tops this up from Datamuse when it's short
+    synonyms: synonyms.slice(0, 3),    // the 3 most common (fromThesaurus ranks them); empty if MW has none
     source: 'learners',
   };
   // Cache only once the Thesaurus has answered, so similar words get filled in later otherwise.
@@ -329,6 +330,15 @@ function stemRe(word) {
 }
 
 // Merriam-Webster Thesaurus: similar words, most relevant sense first.
+let FREQ = null;   // word → rank (0 = most common), built on first use
+function freqRank(w) {
+  if (!FREQ) { FREQ = new Map(); FREQ_WORDS.split(' ').forEach((x, i) => FREQ.set(x, i)); }
+  // multi-word or unknown words count as rare; a phrase ranks by its rarest word
+  const parts = w.split(/[\s-]+/);
+  let r = 0;
+  for (const p of parts) r = Math.max(r, FREQ.has(p) ? FREQ.get(p) : 1e6);
+  return r + (parts.length - 1) * 1000;
+}
 async function fromThesaurus(word, apiKey) {
   if (!apiKey) return { skipped: true, list: [] };
   const r = await getJSON(`https://www.dictionaryapi.com/api/v3/references/thesaurus/json/${encodeURIComponent(word)}?key=${encodeURIComponent(apiKey)}`);
@@ -337,12 +347,14 @@ async function fromThesaurus(word, apiKey) {
   const base = e => String(e.meta.id || '').split(':')[0].toLowerCase();
   let use = entries.filter(e => base(e) === word);
   if (!use.length) use = entries.filter(e => (e.meta.stems || []).map(x => String(x).toLowerCase()).includes(word));
-  // Main sense first (up to 6 words), then the other senses in turn.
+  // Candidates: the main sense's closest words (up to 8; MW lists the closest first), topped up from the
+  // other senses only when the main sense has fewer than 3. Then keep the 3 most common (by FREQ_WORDS rank,
+  // ties keep MW's order) so learners get familiar words.
   const groups = use.flatMap(e => Array.isArray(e.meta.syns) ? e.meta.syns : []);
-  const list = [];
-  const add = w => { if (w && !list.includes(w)) list.push(w); };
-  (groups[0] || []).slice(0, 6).forEach(add);
-  for (let i = 0; i < 10 && list.length < 12; i++) for (const g of groups.slice(1)) add(g[i]);
-  (groups[0] || []).slice(6).forEach(w => list.length < 12 && add(w));
+  const cand = [];
+  const add = w => { w = String(w || '').toLowerCase().trim(); if (w && w !== word && !cand.includes(w)) cand.push(w); };
+  (groups[0] || []).slice(0, 8).forEach(add);
+  for (let i = 0; i < 4 && cand.length < 3; i++) for (const g of groups.slice(1)) if (cand.length < 3) add(g[i]);
+  const list = cand.map((w, i) => ({ w, i, r: freqRank(w) })).sort((a, b) => a.r - b.r || a.i - b.i).slice(0, 3).map(x => x.w);
   return { list };
 }

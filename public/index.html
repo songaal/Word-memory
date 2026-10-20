@@ -539,7 +539,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.34.0</span> · <span class="version-date">2026/10/21</span></p>
+          <p class="note"><span class="version-tag">v2.35.0</span> · <span class="version-date">2026/10/21</span></p>
         </div>
       </div></div>
     </div>
@@ -1052,25 +1052,10 @@ function dueLabel(due){const n=diffDays(due);return n<=0?'Today':n===1?'Tomorrow
 
 // ---------- dictionary lookup ----------
 // Lookups go through our server (Merriam-Webster). Similar words are topped up from
-// Datamuse in the browser, because Datamuse blocks Cloudflare servers.
-async function similarWords(word){
-  const get=async q=>{try{const r=await fetch('https://api.datamuse.com/words?'+q+'='+encodeURIComponent(word)+'&max=10',{signal:AbortSignal.timeout(5000)});return r.ok?await r.json():[]}catch(e){return []}};
-  const [a,b]=await Promise.all([get('rel_syn'),get('ml')]);
-  return [...a,...b].map(x=>x&&x.word).filter(w=>w&&w.split(' ').length<=2);
-}
 function mergeSyn(word,...lists){
   const out=[];
   for(const w of lists.flat()){const t=String(w).toLowerCase().trim();if(t&&t!==word.toLowerCase()&&!out.includes(t)) out.push(t)}
   return out.slice(0,10);
-}
-let synFilling=false;
-async function fillMissingSimilar(){
-  if(synFilling) return;synFilling=true;
-  const todo=(cards||[]).filter(c=>!(c.synonyms||[]).length).slice(0,15);
-  let changed=false;
-  for(const c of todo){const extra=await similarWords(c.word);if(extra.length){c.synonyms=mergeSyn(c.word,extra);changed=true}}
-  synFilling=false;
-  if(changed) save();
 }
 async function lookup(word){
   let r;
@@ -1079,10 +1064,9 @@ async function lookup(word){
   if(r.status===503) throw new Error('unavailable');
   if(!r.ok) throw new Error('http');
   const e=await r.json();
-  const extra=(e.synonyms||[]).length>=4?[]:await similarWords(e.word||word);
   return{word:e.word||word,phonetic:e.phonetic||'',audio:e.audio||'',
     meanings:(e.meanings||[]).map(g=>({pos:g.pos,defs:g.defs.map(d=>newDef(d.d,d.ex))})),
-    synonyms:mergeSyn(e.word||word,e.synonyms||[],extra),added:today()};
+    synonyms:mergeSyn(e.word||word,e.synonyms||[]),added:today()};
 }
 const LOOKUP_ERR={
   notfound:w=>`"${w}" isn't in the dictionary. Check the spelling.`,
@@ -1389,7 +1373,7 @@ function renderBadge(){
   const n=allItems().filter(it=>isDue(it.d)).length;
   $('dueBadge').hidden=!n;$('dueBadge').textContent=n>99?'99+':n;
 }
-function renderAll(){renderBadge();show(curTab);setSync(syncState);setTimeout(fillMissingSimilar,1500)}
+function renderAll(){renderBadge();show(curTab);setSync(syncState)}
 
 // ---------- home ----------
 function streak(){
@@ -2881,7 +2865,7 @@ DEFINITIONS — COPY FROM THE PHOTO (most important rule)
 - "pos": the printed part of speech (v. → verb, n. → noun, adj. → adjective, adv. → adverb); give it yourself only if none is printed.
 
 SIMILAR WORDS
-- English synonyms printed next to the meaning (e.g. "shrewd; wise; perspicacious") go into "similar", copied as printed${ko?'':' (they may also be part of the copied English definition)'}. If none are printed, give 2–4 common ones. Always English.
+- At most 3 words. English synonyms printed next to the meaning (e.g. "shrewd; wise; perspicacious") go into "similar"${ko?'':' (they may also be part of the copied English definition)'}; if more than 3 are printed, keep the 3 most common, everyday ones. If none are printed, give up to 3 common ones (or none). Always English.
 
 EXAMPLES
 - ${keep
@@ -2900,7 +2884,7 @@ function parsePhotoReply(txt,ai){
     if(!o||typeof o!=='object') return null;
     const word=String(o.word||'').trim();if(!word) return null;
     const pairs=(Array.isArray(o.pairs)?o.pairs:[]).map(p=>{const q={example:String(p&&p.example||'').trim(),definition:String(p&&p.definition||'').trim()};const k=String(p&&p.exampleKo||'').trim();if(k&&q.example) q.exampleKo=k;return q}).filter(p=>p.example||p.definition);
-    return{word,pos:String(o.pos||'').trim(),pairs,similar:(Array.isArray(o.similar)?o.similar:[]).map(String).filter(Boolean).slice(0,6)};
+    return{word,pos:String(o.pos||'').trim(),pairs,similar:(Array.isArray(o.similar)?o.similar:[]).map(String).filter(Boolean).slice(0,3)};
   }).filter(o=>o&&o.pairs.length);
 }
 // Each photo is its own request (smaller, faster, and one bad photo doesn't lose the others)
