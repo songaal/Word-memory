@@ -165,6 +165,10 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .lhome .lbar2{grid-column:1/-1;height:12px;border-radius:99px;background:var(--line);overflow:hidden}
 .lhome .lbar2 i{display:block;height:100%;border-radius:99px;background:var(--purple);transition:width .4s}
 .lhome .btn{grid-column:1/-1}
+.srow{border-color:var(--coral);box-shadow:0 4px 0 var(--coral-d)}
+.srow .ti{background:var(--coral-soft)}
+.srow .sn{font:900 15px var(--f-ui);color:var(--coral-d);margin-left:6px;white-space:nowrap}
+.srow .sn small{font-size:13px;color:var(--muted)}
 .lhome .lok{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;background:var(--purple);color:#fff;display:grid;place-items:center;font:900 18px var(--f-ui)}
 /* Learn mode: full screen cards */
 .learn{position:fixed;left:0;right:0;top:var(--vvtop,0px);height:var(--vvh,100%);z-index:45;background:var(--bg);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 10px) var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 12px) var(--gutter-l);overflow:hidden}
@@ -185,11 +189,11 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .lcard::before{background:var(--red);opacity:calc(var(--no,0) * .32)}
 .lcard.tup{border-color:var(--green);box-shadow:0 6px 0 var(--green-d)}
 .lcard.tleft{border-color:var(--red);box-shadow:0 6px 0 var(--red-d)}
-.lcard .lctl{display:flex;justify-content:center;gap:18px;padding:8px 0 12px;border-top:2px solid var(--line);position:relative;z-index:1}
-.lcard .lctl button{width:52px;height:52px;border-radius:50%;border:2px solid var(--line);background:var(--card);color:var(--accent);display:grid;place-items:center;cursor:pointer;box-shadow:0 3px 0 var(--line)}
+.lcard .lctl{display:flex;justify-content:center;gap:12px;padding:8px 0 10px;border-top:2px solid var(--line);position:relative;z-index:1}
+.lcard .lctl button{flex:none;width:46px;height:40px;min-width:46px;padding:0;-webkit-appearance:none;appearance:none;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--accent);display:grid;place-items:center;cursor:pointer;box-shadow:0 3px 0 var(--line)}
 .lcard .lctl button:active{transform:translateY(3px);box-shadow:none}
 .lcard .lctl button.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 3px 0 var(--blue-d,#1899d6)}
-.lcard .lctl svg{width:24px;height:24px}
+.lcard .lctl svg{width:20px;height:20px;flex:none}
 .sheet.hideback{background:var(--bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 /* typing practice: pinned to the top like the test, so the keyboard opening/closing doesn't move it */
 .sheet.hideback{justify-content:flex-start}
@@ -207,7 +211,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .prac .gapw.pno{background:var(--bad-soft);box-shadow:0 0 0 2px var(--bad)}.prac .gapw.pno .gs{color:var(--bad);border-bottom-color:var(--bad)}
 .prac .pin{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px}
 .lbody .lread{background:var(--gold-soft);border-radius:8px;box-shadow:0 0 0 4px var(--gold-soft);transition:background .2s}
-.lcard .lmore{position:absolute;left:0;right:0;bottom:78px;height:40px;border-radius:0 0 24px 24px;background:linear-gradient(transparent,var(--card));pointer-events:none}
+.lcard .lmore{position:absolute;left:0;right:0;bottom:62px;height:40px;border-radius:0 0 24px 24px;background:linear-gradient(transparent,var(--card));pointer-events:none}
 .learn .lfoot{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
 .learn .lfoot .btn{padding:12px 8px;font-size:14px}
 .learn .lhint{text-align:center;font:800 12px var(--f-ui);color:var(--muted);margin-top:8px}
@@ -526,7 +530,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.32.1</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.32.2</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -1411,10 +1415,10 @@ function renderHome(){
     <div class="card lhome" style="position:relative">
       <div class="ti">📚</div>
       <div class="tt">Today's learning</div>
-      <div class="ts">${!lset.length?(cards.length?'No words due today. Learn any of your words.':'Add words in the Words tab to start.'):lnAll?'All learned! Test them while they are fresh.':lnDone?`${lnDone} of ${lset.length} words learned · ${lpct}%`:`${plural(lset.length,'word')} to learn before the test`}</div>
+      <div class="ts">${!lset.length?(cards.length?'No words due today. Learn any of your words.':'Add words in the Words tab to start.'):lnAll?(due?'All learned! Start the words test below.':'All learned today!'):lnDone?`${lnDone} of ${lset.length} words learned · ${lpct}%`:`${plural(lset.length,'word')} to learn before the test`}</div>
       ${lset.length?`<div class="lbar2"><i style="width:${Math.max(lpct,lnDone?6:0)}%"></i></div>`:''}
       ${lnAll?'<span class="lok" aria-hidden="true">✓</span>':''}
-      ${!cards.length?'':lnAll?(due?'<button class="btn" id="homeLearnTest" type="button">Test now</button>':'<button class="btn purple" id="homeLearn" type="button">Learn again</button>'):`<button class="btn purple" id="homeLearn" type="button">${!lset.length?'Learn all words':lnDone?'Continue learning':'Start learning'}</button>`}
+      ${!cards.length?'':lnAll?'':`<button class="btn purple" id="homeLearn" type="button">${!lset.length?'Learn all words':lnDone?'Continue learning':'Start learning'}</button>`}
     </div>
     <div class="card hero${done?' done':''}">
       <div class="label">Today's goal</div>
@@ -1426,19 +1430,11 @@ function renderHome(){
         <div><b>${dueTomorrow}</b>${dueTomorrow===1?'sentence':'sentences'} tomorrow</div>
       </div>`:`<button class="btn block" id="homeStart" type="button">${due?'Start words test':'Practice words'}</button>`}
     </div>
-    <div class="duo">
-      <div class="tcard words">
-        <div class="ti">🔤</div><div class="tt">Words test</div>
-        <div class="tn" style="color:${due?'var(--orange)':'var(--good)'}">${due?due:'✓'}</div>
-        <div class="ts">${due?`${due===1?'sentence':'sentences'} to review`:doneToday?`All done · ${doneToday} answered today`:'Nothing due today'}</div>
-        <button class="btn blue" id="homeWords" type="button">${due?'Review':'Practice'}</button>
-      </div>
-      <div class="tcard story">
-        <div class="ti">📖</div><div class="tt">Story test</div>
-        <div class="tn" style="color:var(--coral-d)">${perfect}<small style="font-size:16px;color:var(--muted)"> / ${stories.length} ★</small></div>
-        <div class="ts">${!stories.length?'Make a story from your words':ns?(ns.last?'Try again: ':'Next: ')+esc(ns.title):'Every story is perfect!'}</div>
-        <button class="btn coral" id="homeStory" type="button">${!stories.length?'Make one':ns?'Start':'Stories'}</button>
-      </div>
+    <div class="card lhome srow" style="position:relative">
+      <div class="ti">📖</div>
+      <div class="tt">Story test <span class="sn">${perfect}<small> / ${stories.length} ★</small></span></div>
+      <div class="ts">${!stories.length?'Make a story from your words':ns?(ns.last?'Try again: ':'Next: ')+esc(ns.title):'Every story is perfect!'}</div>
+      <button class="btn coral" id="homeStory" type="button">${!stories.length?'Make one':ns?'Start story test':'Stories'}</button>
     </div>
     <div class="stats">
       <div class="stat c-orange"><span class="si-ic">🔥</span><div><b>${st}</b><span>Day streak</span></div></div>
@@ -1458,12 +1454,10 @@ function renderHome(){
     </div>`;
   const goWords=()=>{show('test');testPane='schedule';renderTestTab();startTest()};
   if($('homeStart')) $('homeStart').onclick=goWords;
-  if($('homeLearnTest')) $('homeLearnTest').onclick=goWords;
   if($('homeLearn')) $('homeLearn').onclick=()=>{
     if(!lset.length||lnAll) startLearn('list',[...cards].sort((a,b)=>{const x=wordSummary(a).due,y=wordSummary(b).due;return x<y?-1:x>y?1:a.word.localeCompare(b.word)}));
     else startLearn('today',lset);
   };
-  $('homeWords').onclick=goWords;
   $('homeStory').onclick=()=>{
     if(!stories.length){show('dict');dictPane='story';storyView=null;renderDict();openStoryForm();return}
     show('test');testPane='story';renderTestTab();
@@ -3393,7 +3387,7 @@ const I18N_KO={
 // words tab
 'Look up a word':'단어 찾기',"Search for any word. It won't be added to your study list until you tap":'아무 단어나 검색해 보세요. 학습 목록에는 이 버튼을 눌러야 추가돼요:',
 '+ Add':'+ 추가','✓ In your list':'✓ 목록에 있음','Similar words':'비슷한 단어','Add words':'단어 추가','Add a story':'스토리 추가','Tap words to pick them':'단어를 탭해서 고르세요',
-'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Photo of a word list':'단어장 사진으로 만들기','EN–EN':'영영','Learn':'학습',"Today's learning":'오늘의 학습','Start learning':'학습 시작','Continue learning':'이어서 학습','Learn again':'다시 학습','Learn all words':'전체 단어 학습','Test now':'바로 테스트',
+'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Photo of a word list':'단어장 사진으로 만들기','EN–EN':'영영','Learn':'학습',"Today's learning":'오늘의 학습','Start learning':'학습 시작','Continue learning':'이어서 학습','Learn again':'다시 학습','Learn all words':'전체 단어 학습','Test now':'바로 테스트','All learned! Start the words test below.':'다 외웠어요! 아래에서 단어 테스트를 시작하세요.','All learned today!':'오늘 학습 완료!','Start story test':'스토리 테스트 시작',
 'No words due today. Learn any of your words.':'오늘 복습할 단어는 없어요. 아무 단어나 학습해 보세요.','All learned! Test them while they are fresh.':'다 외웠어요! 기억날 때 바로 테스트해 봐요.',
 '← Again':'← 다시','Typing practice':'타이핑 연습','This word has no example sentence that uses it, so there is nothing to fill in yet.':'이 단어가 들어간 예문이 없어서 연습할 빈칸이 없어요.','Type the missing word and press Enter.':'빈칸에 들어갈 단어를 입력하고 엔터를 누르세요.','Missing word':'빈칸','Play':'재생','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
 'Great job!':'잘했어요!','Ready for a quick test?':'바로 테스트해 볼까요?','Later':'나중에','Learned words':'학습한 단어','Example level':'예문 수준','Claude ran out of room for this photo. Try a photo with fewer words.':'사진 내용이 너무 많아 Claude 응답이 잘렸어요. 단어가 더 적게 나오게 찍어 보세요.','Keep photo examples':'사진 예문 그대로 쓰기','Very easy':'아주 쉬움','Easy':'쉬움','Medium':'보통','Intermediate':'중상','High':'어려움',
