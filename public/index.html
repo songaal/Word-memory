@@ -190,6 +190,14 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
 .lcard .lctl button:active{transform:translateY(3px);box-shadow:none}
 .lcard .lctl button.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 3px 0 var(--blue-d,#1899d6)}
 .lcard .lctl svg{width:24px;height:24px}
+.sheet.hideback{background:var(--bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.prac .pcount{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.prac .pcount span{font:800 13px var(--f-ui);border-radius:99px;padding:5px 12px;background:var(--line);color:var(--muted);font-variant-numeric:tabular-nums}
+.prac .pcount .ok{background:var(--good-soft);color:var(--good)}
+.prac .qsent{margin:6px 0 4px}
+.prac .gapw.pok{background:var(--good-soft);box-shadow:0 0 0 2px var(--good)}.prac .gapw.pok .gs{color:var(--good);border-bottom-color:var(--good)}
+.prac .gapw.pno{background:var(--bad-soft);box-shadow:0 0 0 2px var(--bad)}.prac .gapw.pno .gs{color:var(--bad);border-bottom-color:var(--bad)}
+.prac .pin{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px}
 .lbody .lread{background:var(--gold-soft);border-radius:8px;box-shadow:0 0 0 4px var(--gold-soft);transition:background .2s}
 .lcard .lmore{position:absolute;left:0;right:0;bottom:78px;height:40px;border-radius:0 0 24px 24px;background:linear-gradient(transparent,var(--card));pointer-events:none}
 .learn .lfoot{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
@@ -510,7 +518,7 @@ ol.defs li::marker{color:var(--muted);font:500 15px var(--f-mono)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.30.0</span> · <span class="version-date">2026/10/20</span></p>
+          <p class="note"><span class="version-tag">v2.31.0</span> · <span class="version-date">2026/10/20</span></p>
         </div>
       </div></div>
     </div>
@@ -1486,7 +1494,8 @@ function lnNext(){
   if(!r.queue.length){lnFinish();return}
   const c=r.queue[0];
   st.innerHTML=`<div class="lcard enter" id="lnCard"><div class="lbody" id="lnBody">${cardHTML(c)}</div><div class="lmore" id="lnMore" hidden></div>
-    <div class="lctl"><button type="button" id="lpPlay" aria-label="Pause"></button><button type="button" id="lpLoop" aria-label="Repeat"></button></div></div>`;
+    <div class="lctl"><button type="button" id="lpPlay" aria-label="Pause"></button><button type="button" id="lpLoop" aria-label="Repeat"></button>${itemsOf(c).some(it=>!it.noEx)?'<button type="button" id="lpPrac" aria-label="Typing practice">'+PRAC_ICON+'</button>':''}</div></div>`;
+  if($('lpPrac')) $('lpPrac').onclick=()=>openPractice(c);
   $('lpPlay').onclick=()=>{lp&&lp.playing?lpPause():lpPlay()};
   $('lpLoop').onclick=()=>{lpLoop=lpLoop==='all'?'one':'all';lsSet('wm.lpLoop',lpLoop);lpIcons();if(lp&&lp.mode==='track') gAudio.loop=lpLoop==='all'};
   lpStart(c);
@@ -1691,6 +1700,53 @@ async function lpPlayTrack(token){
   try{await gAudio.play()}catch(e){if(lp&&live()){lp.playing=false;lpIcons()}return}
   // get the next card ready so the next swipe starts at once
   const r=learnRun;if(r&&r.queue[1]) lpTrackFor(r.queue[1]).catch(()=>{});
+}
+// ---- Typing practice for one word (from a learn card): fill the blank in its example sentences, over and over ----
+// Right → green + ding-ding, wrong → red with the answer; after a second it's blank again (next example).
+// Only examples, no definitions; the count lives only while the popup is open.
+const PRAC_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
+function openPractice(c){
+  const exs=itemsOf(c).filter(it=>!it.noEx).map(it=>it.d);if(!exs.length) return;
+  const wasPlaying=!!(lp&&lp.playing);if(wasPlaying) lpPause();
+  const pr={k:0,n:0,ok:0,busy:false,form:'',forms:[]};
+  openSheet('Typing practice',`<div class="card prac" style="position:relative">
+    <div class="pcount"><span id="prN"></span><span class="ok" id="prOk"></span></div>
+    <div class="qsent" id="prSent"></div>
+    <input class="pin" id="prIn" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="Missing word">
+    <button class="btn block" id="prCheck" type="button">Check</button>
+    <p class="note" style="text-align:center">Type the missing word and press Enter.</p>
+  </div>`);
+  $('sheet').classList.add('hideback');   // don't show the card (with the answer) behind the practice
+  sheetOnClose=()=>{$('sheet').classList.remove('hideback');if(wasPlaying&&lp&&$('lnCard')) lpPlay()};
+  const inp=$('prIn');
+  const count=()=>{$('prN').textContent=`Practiced ${pr.n}`;$('prOk').textContent=`✓ ${pr.ok}`};
+  const slots=(txt,cls)=>{const g=$('prSent').querySelector('.gapw');if(!g) return;
+    const focused=document.activeElement===inp;g.classList.toggle('focus',focused&&!cls);g.classList.remove('pok','pno');if(cls) g.classList.add(cls);
+    let h='';for(let i=0;i<pr.form.length;i++) h+=`<span class="gs${!cls&&focused&&i===txt.length?' cur':''}">${txt[i]?esc(txt[i]):'&nbsp;'}</span>`;
+    g.querySelector('.gslots').innerHTML=h};
+  const show=()=>{
+    const d=exs[pr.k%exs.length],q=maskSentence(d.ex,c.word);
+    pr.form=q.forms[0];pr.forms=q.forms.map(f=>f.toLowerCase());
+    $('prSent').innerHTML='“'+q.html.replace('\u0000GAP\u0000',`<span class="gapw" data-gap="prIn"><span class="gslots"></span></span>`)+'”';
+    inp.value='';inp.maxLength=pr.form.length;slots('');
+  };
+  const check=()=>{
+    if(pr.busy) return;
+    const v=inp.value.trim().toLowerCase();if(!v){inp.focus();return}
+    pr.busy=true;pr.n++;
+    const ok=pr.forms.includes(v)||v===c.word.toLowerCase();
+    if(ok){pr.ok++;chime()}
+    slots(pr.form,ok?'pok':'pno');
+    $('prSent').querySelectorAll('[data-fill]').forEach(b=>{b.className='fill '+(ok?'ok':'no');b.textContent=b.dataset.fill});
+    count();
+    setTimeout(()=>{if(!$('prSent')) return;pr.busy=false;pr.k++;show();inp.focus()},1000);
+  };
+  inp.addEventListener('input',()=>{if(pr.busy){return}inp.value=inp.value.replace(/\s+/g,'').slice(0,pr.form.length);slots(inp.value)});
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();check()}});
+  inp.addEventListener('focus',()=>slots(inp.value));inp.addEventListener('blur',()=>{if(!pr.busy) slots(inp.value)});
+  $('prSent').addEventListener('click',()=>inp.focus());
+  $('prCheck').onclick=check;
+  count();show();inp.focus();
 }
 // Lock screen / control centre: show the word and let play/pause work from there
 function lpMedia(c){
@@ -2311,8 +2367,9 @@ $('popX').onclick=closePop;
 $('pop').addEventListener('click',e=>{if(e.target===$('pop')) closePop()});
 
 // ---------- sheet ----------
-function openSheet(title,html){$('sheetTitle').textContent=title;$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
-function closeSheet(){$('sheet').hidden=true;$('sheetBody').innerHTML='';try{speechSynthesis.cancel()}catch(e){}}
+function openSheet(title,html){sheetOnClose=null;$('sheet').classList.remove('hideback');$('sheetTitle').textContent=title;$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
+let sheetOnClose=null;
+function closeSheet(){$('sheet').hidden=true;$('sheetBody').innerHTML='';try{speechSynthesis.cancel()}catch(e){}const f=sheetOnClose;sheetOnClose=null;if(f) f()}
 $('sheetX').onclick=closeSheet;
 $('sheet').addEventListener('click',e=>{if(e.target===$('sheet')) closeSheet()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape') return;if(!$('pop').hidden) closePop();else if(!$('sheet').hidden) closeSheet()});
@@ -3308,7 +3365,7 @@ const I18N_KO={
 '+ Add':'+ 추가','✓ In your list':'✓ 목록에 있음','Similar words':'비슷한 단어','Add words':'단어 추가','Add a story':'스토리 추가','Tap words to pick them':'단어를 탭해서 고르세요',
 'Pick words to test or to make a story':'테스트하거나 스토리를 만들 단어를 고르세요','Make a story':'스토리 만들기','Test it':'테스트','Photo of a word list':'단어장 사진으로 만들기','EN–EN':'영영','Learn':'학습',"Today's learning":'오늘의 학습','Start learning':'학습 시작','Continue learning':'이어서 학습','Learn again':'다시 학습','Learn all words':'전체 단어 학습','Test now':'바로 테스트',
 'No words due today. Learn any of your words.':'오늘 복습할 단어는 없어요. 아무 단어나 학습해 보세요.','All learned! Test them while they are fresh.':'다 외웠어요! 기억날 때 바로 테스트해 봐요.',
-'← Again':'← 다시','Play':'재생','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
+'← Again':'← 다시','Typing practice':'타이핑 연습','Type the missing word and press Enter.':'빈칸에 들어갈 단어를 입력하고 엔터를 누르세요.','Missing word':'빈칸','Play':'재생','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
 'Great job!':'잘했어요!','Ready for a quick test?':'바로 테스트해 볼까요?','Later':'나중에','Learned words':'학습한 단어','Example level':'예문 수준','Claude ran out of room for this photo. Try a photo with fewer words.':'사진 내용이 너무 많아 Claude 응답이 잘렸어요. 단어가 더 적게 나오게 찍어 보세요.','Keep photo examples':'사진 예문 그대로 쓰기','Very easy':'아주 쉬움','Easy':'쉬움','Medium':'보통','Intermediate':'중상','High':'어려움',
 'Definitions in Korean. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 한국어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.',
 'Definitions in English. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 영어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.','EN–KO':'영한','📷 Photo':'📷 사진','Definitions in':'정의 언어',
@@ -3415,6 +3472,7 @@ const I18N_KO_RE=[
 [/^(\d+) \/ (\d+) learned$/,'$1 / $2 학습'],
 [/^\/ (\d+) learned$/,'/ $1 학습'],
 [/^You learned (\d+) words? in (\d+):(\d\d)\.$/,(m,n,a,b)=>'단어 '+n+'개를 '+(+a?a+'분 ':'')+(+b)+'초 만에 학습했어요.'],
+[/^Practiced (\d+)$/,'연습 $1회'],
 [/^Delete (\d+) words?\?$/,'단어 $1개를 삭제할까요?'],
 [/^(?:This word|These words) and (?:its 1 sentence|their (\d+) sentences) will be removed with their review schedule\. Stories keep their text\.$/,(m,n)=>'이 단어와 예문 '+(n||1)+'개가 복습 일정과 함께 삭제돼요. 스토리 본문은 그대로 남아요.'],
 [/^Sentence (\d+)$/,'예문 $1'],[/^Delete "(.+)"\?$/,'“$1”을(를) 삭제할까요?'],
