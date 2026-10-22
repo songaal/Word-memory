@@ -15,6 +15,11 @@
     {
       "binding": "WORDS",
       "id": "62473079ad074d29b0cb31d1b9d8e678"
+    },
+    // The old video-repeat-player app's data (transcripts, translations, history), read only as a fallback
+    {
+      "binding": "VIDEO_CACHE",
+      "id": "3818ed0bb72349d68834d07f056aab23"
     }
   ]
 }

@@ -8,6 +8,7 @@ import { FREQ_WORDS } from './freq.js';
 // GET    /api/words                     → { cards, seed, updatedAt } for the signed-in user
 // PUT    /api/words        { cards, seed, log, history, stories } → replaces the user's word list, answer log, test history, and stories
 // GET    /api/lookup?word=              → dictionary entry (no sign-in needed)
+// GET/PUT/DELETE /api/video/transcript?v=   GET/PUT /api/video/translations?v=   GET/PUT /api/video/history  (signed in)
 // GET    /api/settings                  → { translateKey, aiProvider, openaiKey/Model, geminiKey/Model, claudeKey/Model } for the signed-in user
 // PUT    /api/settings     { translateKey, aiProvider, openaiKey/Model, geminiKey/Model, claudeKey/Model } → saves the user's settings
 //
@@ -21,6 +22,11 @@ import { FREQ_WORDS } from './freq.js';
 //   wm:totpTry:<email> → wrong sign-in tries (10 minutes)
 //   wm:journal:<sub>   → journal entries (merged per entry on save)
 //   wm:dict3:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
+//   wm:vt:<videoId>    → video transcript {sentences:[{text,start,end}], source} (shared by video, 1 year)
+//   wm:vtr:<videoId>   → Korean translations of that transcript {index: text} (1 year)
+//   wm:vhist:<sub>     → the user's recent videos [{videoId, title, date, s}] (newest first, max 100)
+//   Video data from the old video-repeat-player app (KV binding VIDEO_CACHE, read only, optional):
+//   <videoId> → transcript, tr:<videoId> → translations, hist:<email> → history
 //
 // Dictionary: Merriam-Webster only (keys are Worker secrets, never in the repo).
 //   Learner's  (MW_LEARNER_KEY)   — definitions, example sentences, pronunciation
@@ -51,6 +57,7 @@ export default {
       if (pathname === '/api/lookup' && method === 'GET') return await lookup(url, env);
       if (pathname === '/api/journal' && method === 'GET') return await getJournal(request, env);
       if (pathname === '/api/journal' && method === 'PUT') return await putJournal(request, env);
+      if (pathname.startsWith('/api/video/')) return await video(request, env, url);
       if (pathname === '/api/settings' && method === 'GET') return await getSettings(request, env);
       if (pathname === '/api/settings' && method === 'PUT') return await putSettings(request, env);
       if (pathname.startsWith('/api/')) return json({ error: 'Not found' }, 404);
@@ -291,11 +298,87 @@ async function putJournal(request, env) {
 }
 
 
+// ── Video (YouTube repeat listening) ───────────
+const VIDEO_TTL = 60 * 60 * 24 * 365;
+const oldVideo = (env, key) => env.VIDEO_CACHE ? env.VIDEO_CACHE.get(key, 'json').catch(() => null) : null;
+async function video(request, env, url) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
+  const kind = url.pathname.slice('/api/video/'.length), method = request.method;
+  const readBody = async () => {
+    const text = await request.text();
+    if (text.length > MAX_BODY) throw new Error('too large');
+    return JSON.parse(text);
+  };
+  if (kind === 'history') {
+    const key = `wm:vhist:${user.sub}`;
+    if (method === 'GET') {
+      let h = await env.WORDS.get(key, 'json').catch(() => null);
+      if (!h && user.email) h = await oldVideo(env, `hist:${user.email}`);
+      return json({ history: Array.isArray(h) ? h : [] });
+    }
+    if (method === 'PUT') {
+      let body; try { body = await readBody(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      if (!Array.isArray(body && body.history)) return json({ error: 'history array required' }, 400);
+      const h = body.history.filter(x => x && /^[A-Za-z0-9_-]{11}$/.test(x.videoId)).slice(0, 100)
+        .map(x => ({ videoId: x.videoId, title: String(x.title || '').slice(0, 300), date: String(x.date || '').slice(0, 40), s: Math.max(0, parseInt(x.s) || 0) }));
+      await env.WORDS.put(key, JSON.stringify(h));
+      return json({ ok: true });
+    }
+    return json({ error: 'Method not allowed' }, 405);
+  }
+  const vid = url.searchParams.get('v') || '';
+  if (!/^[A-Za-z0-9_-]{11}$/.test(vid)) return json({ error: 'v required' }, 400);
+  if (kind === 'transcript') {
+    const key = `wm:vt:${vid}`;
+    if (method === 'GET') {
+      const t = await env.WORDS.get(key, 'json').catch(() => null);
+      if (t && t.deleted) return json({ error: 'not cached' }, 404);
+      const d = t || await oldVideo(env, vid);
+      if (!d) return json({ error: 'not cached' }, 404);
+      const sentences = Array.isArray(d) ? d : d.sentences;
+      if (!Array.isArray(sentences) || !sentences.length) return json({ error: 'not cached' }, 404);
+      return json({ sentences, source: (!Array.isArray(d) && d.source) || 'paste' });
+    }
+    if (method === 'PUT') {
+      let body; try { body = await readBody(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const ss = body && body.sentences;
+      if (!Array.isArray(ss) || !ss.length) return json({ error: 'sentences required' }, 400);
+      const sentences = ss.slice(0, 5000).map(x => ({ text: String(x.text || ''), start: +x.start || 0, end: +x.end || 0 }));
+      await env.WORDS.put(key, JSON.stringify({ sentences, source: String(body.source || 'paste').slice(0, 20) }), { expirationTtl: VIDEO_TTL });
+      return json({ ok: true });
+    }
+    if (method === 'DELETE') {
+      // a marker, so the copy from the old app doesn't come back
+      await env.WORDS.put(key, JSON.stringify({ deleted: true }), { expirationTtl: VIDEO_TTL });
+      await env.WORDS.delete(`wm:vtr:${vid}`).catch(() => {});
+      return json({ ok: true });
+    }
+  }
+  if (kind === 'translations') {
+    const key = `wm:vtr:${vid}`;
+    if (method === 'GET') {
+      const t = await env.WORDS.get(`wm:vt:${vid}`, 'json').catch(() => null);
+      let tr = await env.WORDS.get(key, 'json').catch(() => null);
+      if (!tr && !t) tr = await oldVideo(env, `tr:${vid}`);   // old translations only go with the old transcript
+      return json({ translations: tr && typeof tr === 'object' ? tr : {} });
+    }
+    if (method === 'PUT') {
+      let body; try { body = await readBody(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      if (!body || typeof body.translations !== 'object') return json({ error: 'translations required' }, 400);
+      await env.WORDS.put(key, JSON.stringify(body.translations), { expirationTtl: VIDEO_TTL });
+      return json({ ok: true });
+    }
+  }
+  return json({ error: 'Not found' }, 404);
+}
+
 // ── Settings ─────────────────────────────────────
 // [field, max length] — the user's own API keys and AI choice
 const SETTING_FIELDS = [['translateKey', 200], ['aiProvider', 20], ['openaiKey', 400], ['openaiModel', 80],
   ['geminiKey', 200], ['geminiModel', 80], ['claudeKey', 400], ['claudeModel', 80],
-  ['slashLevel', 8], ['slashTr', 4], ['slashRate', 6], ['slashPause', 6]];
+  ['slashLevel', 8], ['slashTr', 4], ['slashRate', 6], ['slashPause', 6],
+  ['videoRewind', 4], ['videoForward', 4], ['videoSlow', 4]];
 async function getSettings(request, env) {
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'Not signed in' }, 401);

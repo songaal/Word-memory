@@ -412,6 +412,51 @@ button.chip:active{filter:brightness(.92)}
 .lvsel::after{content:"";position:absolute;right:13px;top:50%;width:7px;height:7px;border-right:2.5px solid var(--muted);border-bottom:2.5px solid var(--muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
 .spin{display:inline-block;width:16px;height:16px;border:3px solid var(--line);border-top-color:var(--blue);border-radius:50%;vertical-align:-3px;margin-right:6px;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.vtop{display:flex;align-items:center;gap:8px;padding:6px var(--gutter-r) 6px var(--gutter-l)}
+.vtop .vtitle{flex:1;min-width:0;font:800 15px var(--f-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.vwrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;flex:none;-webkit-user-select:none;user-select:none}
+.vwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vwrap.off #ytPlayer{display:none}
+.vwrap.off{aspect-ratio:unset;min-height:72px;display:flex;align-items:center;justify-content:center;padding:10px 14px}
+.voverlay{position:absolute;inset:0;z-index:10;cursor:pointer;touch-action:manipulation}
+.vcap{position:absolute;bottom:8%;left:50%;transform:translateX(-50%);z-index:11;background:rgba(0,0,0,.72);color:#fff;font:600 15px/1.45 var(--f-ui);padding:4px 10px;border-radius:8px;width:calc(100% - 6ch);text-align:center;pointer-events:none;display:none;word-break:break-word}
+.vwrap.off .vcap{position:static;transform:none;background:transparent;width:100%;font-size:17px}
+.vprog{padding:8px var(--gutter-r) 2px var(--gutter-l);cursor:pointer;touch-action:none;flex:none}
+.vprog-t{height:6px;border-radius:6px;background:var(--line);overflow:hidden}
+.vprog-t i{display:block;height:100%;width:0;background:var(--green);border-radius:6px}
+.vinfo{display:flex;justify-content:space-between;padding:2px var(--gutter-r) 0 var(--gutter-l);font:800 12px var(--f-ui);color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+.vctl{display:flex;gap:6px;padding:6px var(--gutter-r) 4px var(--gutter-l);flex:none}
+.vctl .ricon{flex:1;width:auto;min-width:0;height:42px;font:900 13px var(--f-ui)}
+.vctl .ricon svg{width:20px;height:20px}
+.vtog{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:6px var(--gutter-r) 8px var(--gutter-l);border-bottom:2px solid var(--line);flex:none}
+.vtog .hintbtn{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:34px;flex:1 0 auto;padding:4px 8px;white-space:nowrap}
+.vtog .hintbtn svg{width:17px;height:17px}
+#vScroll{padding:0}
+.vs{display:flex;flex-direction:column;gap:3px;padding:10px var(--gutter-r) 10px var(--gutter-l);border-bottom:1px solid var(--line);border-left:4px solid transparent;cursor:pointer}
+.vs .n{font:800 11px var(--f-ui);color:var(--muted)}
+.vs .t{font:400 17px/1.45 var(--f-word);word-break:break-word;transition:filter .25s}
+.vs .k{display:none;font:600 14.5px/1.45 var(--f-ui);color:var(--muted);padding-top:2px}
+.vs.on{background:var(--accent-soft);border-left-color:var(--blue)}
+.vs.on .n{color:var(--accent)}
+.vs.on .t{font-weight:600}
+.vblur .vs .t{filter:blur(6px)}
+.vtr .vs .k{display:block}
+.vs .ta{display:none;align-items:center;gap:6px;flex-wrap:wrap}
+.vtime .vs .ta{display:flex}
+.vs .ta span{font:700 11px var(--f-ui);color:var(--muted);font-variant-numeric:tabular-nums}
+.vs .ta button{border:2px solid var(--line);background:var(--card);color:var(--fg);border-radius:8px;font:900 12px var(--f-ui);padding:2px 9px;cursor:pointer}
+.vrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid var(--line);border-radius:16px;background:var(--card);color:var(--fg);padding:10px 12px;box-shadow:0 3px 0 var(--line);cursor:pointer;font:inherit}
+.vrow img{width:72px;height:40px;object-fit:cover;border-radius:8px;flex:none;background:#000}
+.vrow .t{flex:1;min-width:0;font:800 14.5px/1.35 var(--f-ui);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vrow .d{font:700 12px var(--f-ui);color:var(--muted);flex:none}
+.vrow .x{border:0;background:none;color:var(--muted);font-size:16px;padding:6px;cursor:pointer;flex:none}
+.vpaste textarea{width:100%;min-height:140px;font:13px/1.5 var(--f-mono)}
+#s-video.playing > .bar{display:none}
+@media (orientation:landscape) and (max-height:500px){
+  body.vplay .tabbar,body.vplay .vtop,body.vplay .vtog,body.vplay #vScroll{display:none!important}
+  body.vplay .vwrap{flex:1 1 auto;min-height:0;aspect-ratio:unset}
+  body.vplay .vinfo{font-size:15px}
+}
 .rprog{height:6px;border-radius:6px;background:var(--line);overflow:hidden}
 .rprog i{display:block;height:100%;width:0;background:var(--green);border-radius:6px;transition:width .25s}
 .storytext.big{font-size:21px}
@@ -662,6 +707,28 @@ button.chip:active{filter:brightness(.92)}
   </section>
 
   <!-- Writing (translate, journal) -->
+  <!-- Video (YouTube repeat listening) -->
+  <section class="screen" id="s-video" hidden>
+    <div class="bar"><h1>Video</h1></div>
+    <div class="pane" id="vpane-list">
+      <form class="composer top" id="vForm" autocomplete="off">
+        <input type="url" id="vUrl" placeholder="YouTube link" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go">
+        <button class="btn ghost" id="vPaste" type="button">Paste</button>
+        <button class="btn" type="submit">Go</button>
+      </form>
+      <div class="scroll"><div class="stack" id="vList"></div></div>
+    </div>
+    <div class="pane" id="vpane-play" hidden>
+      <div class="vtop"><button class="linkbtn inlineback" id="vBack" type="button">‹ Videos</button><span class="vtitle" id="vTitle" data-noi18n></span><button class="ricon plain" id="vMore" type="button" aria-label="More"></button></div>
+      <div class="vwrap" id="vWrap"><div id="ytPlayer"></div><div class="voverlay" id="vOverlay"></div><div class="vcap" id="vCap" data-noi18n></div></div>
+      <div class="vprog" id="vProg"><div class="vprog-t"><i id="vProgFill"></i></div></div>
+      <div class="vinfo"><span id="vTime">0:00</span><span id="vSentN"></span></div>
+      <div class="vctl" id="vCtl"></div>
+      <div class="vtog" id="vTog"></div>
+      <div class="scroll" id="vScroll"><div id="vSents"></div></div>
+    </div>
+  </section>
+
   <section class="screen" id="s-write" hidden>
     <div class="bar"><h1>Writing</h1></div>
     <div class="seg" role="tablist">
@@ -689,7 +756,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.39.3</span> · <span class="version-date">2026/10/23</span></p>
+          <p class="note"><span class="version-tag">v2.40.0</span> · <span class="version-date">2026/10/23</span></p>
         </div>
       </div></div>
     </div>
@@ -699,6 +766,10 @@ button.chip:active{filter:brightness(.92)}
       <div class="scroll"><div class="stack" id="authBody"></div></div>
     </div>
     <!-- Me: Language settings page -->
+    <div class="mepage" id="me-video" hidden>
+      <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>Video</h2><span class="back-spacer"></span></div>
+      <div class="scroll"><div class="stack" id="videoSetBody"></div></div>
+    </div>
     <div class="mepage" id="me-slash" hidden>
       <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>Slash reading</h2><span class="back-spacer"></span></div>
       <div class="scroll"><div class="stack" id="slashBody"></div></div>
@@ -810,6 +881,8 @@ button.chip:active{filter:brightness(.92)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M3 5.5C5.5 4 8.5 4 12 6c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5z"/><path class="cut" d="M12 6v13.5"/></svg>Story</button>
     <button role="tab" id="tab-dict" aria-selected="false" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/><path class="cut" d="M9 8h7M9 11.5h5"/></svg>Words<span class="n" id="dueBadge" hidden></span></button>
+    <button role="tab" id="tab-video" aria-selected="false" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="f" x="2.5" y="5" width="19" height="14" rx="4"/><path class="cut" d="M10 9.2v5.6l4.8-2.8z"/></svg>Video</button>
     <button role="tab" id="tab-write" aria-selected="false" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M4 20h4L19 9l-4-4L4 16z"/><path class="cut" d="M13.5 6.5l4 4"/></svg>Writing</button>
     <button role="tab" id="tab-me" aria-selected="false" type="button">
@@ -1478,7 +1551,7 @@ const AI_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 const TR_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h8M8 3v2M5.5 5c.8 3 3.2 5.6 6 7M10.5 5c-.9 3.6-3.3 6.5-6.5 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/></svg>';
 const SPK_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
 const AI_FIELDS=['aiProvider','openaiKey','openaiModel','geminiKey','geminiModel','claudeKey','claudeModel'];
-const SETTINGS0={translateKey:'',aiProvider:'',openaiKey:'',openaiModel:'',geminiKey:'',geminiModel:'',claudeKey:'',claudeModel:'',slashLevel:'',slashTr:'',slashRate:'',slashPause:''};
+const SETTINGS0={translateKey:'',aiProvider:'',openaiKey:'',openaiModel:'',geminiKey:'',geminiModel:'',claudeKey:'',claudeModel:'',slashLevel:'',slashTr:'',slashRate:'',slashPause:'',videoRewind:'',videoForward:'',videoSlow:''};
 let settings={...SETTINGS0};
 // Several texts in one request (keeps order)
 async function translateManyKo(texts){
@@ -1563,7 +1636,7 @@ document.addEventListener('click',async e=>{
 });
 
 // ---------- tabs ----------
-const TABS=['home','story','dict','write','me'];
+const TABS=['home','story','dict','video','write','me'];
 let curTab='home';
 // Words tab: the tab bar slides away while scrolling down and back on scrolling up
 let tbHidden=false,tbIgnore=0;
@@ -1598,6 +1671,7 @@ function show(name){
   if(name==='dict'){renderDict();if(dictPane==='search') $('searchIn').focus()}
   if(name==='me') renderMe();
   if(name==='write') renderWrite();
+  if(name==='video') renderVideo();else{vPause();document.body.classList.remove('vplay')}
 }
 for(const t of TABS) $('tab-'+t).onclick=()=>show(t);
 function renderBadge(){
@@ -2147,6 +2221,449 @@ function confetti(cv){
 // ---------- writing: translate + journal ----------
 let writePane=lsGet('wm.writePane')==='jn'?'jn':'tr';
 function toast(msg,ms=1800){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.tm);toast.tm=setTimeout(()=>{t.hidden=true},ms)}
+// ---------- Video: YouTube repeat listening (from video-repeat-player) ----------
+// A transcript is pasted once (youtubetotranscript.com format) and kept per video on the server.
+// Tapping a sentence plays it as a 3-pass drill: no caption → Korean → English (Repeat on), or once (Repeat off).
+const VI={
+  video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l7-4v12l-7-4"/></svg>',
+  videoOff:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l7-4v12l-7-4"/><path d="M2 2l20 20"/></svg>',
+  replay:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/></svg>',
+  prev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+  next:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  turtle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="13" rx="6" ry="7"/><path d="M12 6V3"/><circle cx="12" cy="2.2" r="1.3"/><path d="M7 8L3 6M17 8l4-2M7 18l-4 2M17 18l4 2M12 20v2"/></svg>',
+  headset:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="2" y="13" width="4" height="7" rx="1.5"/><rect x="18" y="13" width="4" height="7" rx="1.5"/></svg>',
+  sync:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>',
+  gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+};
+const V={vid:null,title:'',player:null,sents:[],cur:0,loop:-1,pass:0,maxPass:3,token:0,cc:0,auto:false,on:true,blur:false,tr:{},slow:false,
+  time:false,trOn:false,repeat:true,sync:0,tracker:null,hist:[],histAt:0,src:'paste',busy:false,trBusy:false};
+const VIDEO_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="M10 9.2v5.6l4.8-2.8z"/></svg>';
+const vRewind=()=>[1,2,3,5,10].includes(+settings.videoRewind)?+settings.videoRewind:3;
+const vForward=()=>[5,10,15,30].includes(+settings.videoForward)?+settings.videoForward:10;
+const vSlowRate=()=>[0.5,0.6,0.7,0.8,0.9].includes(+settings.videoSlow)?+settings.videoSlow:0.7;
+const vFmt=s=>{s=Math.max(0,Math.floor(s||0));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function vExtract(val){
+  val=(val||'').trim();let m;
+  if((m=val.match(/youtu\.be\/([A-Za-z0-9_-]{11})/))) return m[1];
+  if((m=val.match(/(?:[?&]v=|\/shorts\/|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/))) return m[1];
+  if(/^[A-Za-z0-9_-]{11}$/.test(val)) return val;
+  return null;
+}
+// ---- storage: server for signed-in users, this browser for guests ----
+async function vGet(kind,vid){
+  if(acct!=='cloud') return lsJSON(`wm.v.${kind}.${vid}`);
+  try{const r=await api(`/api/video/${kind}?v=${vid}`);if(r.ok) return await r.json()}catch(e){}
+  return null;
+}
+function vPut(kind,vid,body){
+  if(acct!=='cloud'){lsSet(`wm.v.${kind}.${vid}`,JSON.stringify(body));return Promise.resolve()}
+  return api(`/api/video/${kind}?v=${vid}`,{method:'PUT',body:JSON.stringify(body)}).catch(()=>{});
+}
+function vDel(vid){
+  if(acct!=='cloud'){try{localStorage.removeItem(`wm.v.transcript.${vid}`);localStorage.removeItem(`wm.v.translations.${vid}`)}catch(e){}return}
+  api(`/api/video/transcript?v=${vid}`,{method:'DELETE'}).catch(()=>{});
+}
+let vSaveT=0;
+function vSaveSents(){clearTimeout(vSaveT);const vid=V.vid,ss=V.sents;vSaveT=setTimeout(()=>vPut('transcript',vid,{sentences:ss,source:V.src}),600)}
+// ---- history (recent videos) ----
+const vHistKey=()=>'wm.vhist.'+(acct==='cloud'?user.sub:'guest');
+async function vLoadHist(force){
+  if(!V.histLoaded){V.hist=lsJSON(vHistKey())||[];V.histLoaded=true}
+  if(acct!=='cloud'||(!force&&Date.now()-V.histAt<15000)) return;
+  V.histAt=Date.now();
+  try{const r=await api('/api/video/history');if(r.ok){const j=await r.json();if(Array.isArray(j.history)){V.hist=j.history;lsSet(vHistKey(),JSON.stringify(V.hist));if(curTab==='video'&&!V.vid) renderVideoList()}}}catch(e){}
+}
+let vHistT=0;
+function vSaveHist(){
+  lsSet(vHistKey(),JSON.stringify(V.hist));
+  if(acct!=='cloud') return;
+  clearTimeout(vHistT);vHistT=setTimeout(()=>{V.histAt=Date.now();api('/api/video/history',{method:'PUT',body:JSON.stringify({history:V.hist})}).catch(()=>{})},800);
+}
+function vTouchHist(vid,title,s){
+  const old=V.hist.find(h=>h.videoId===vid);
+  V.hist=V.hist.filter(h=>h.videoId!==vid);
+  V.hist.unshift({videoId:vid,title:title||(old&&old.title)||vid,date:new Date().toISOString(),s:s!=null?s:(old&&old.s)||0});
+  V.hist=V.hist.slice(0,100);vSaveHist();
+}
+function vHistDate(d){
+  const t=Date.parse(d);if(isNaN(t)) return d||'';
+  return dayLabel(new Date(t).toISOString());
+}
+// ---- list screen ----
+function renderVideo(){
+  document.body.classList.toggle('vplay',!!V.vid);
+  if(V.vid) return;
+  vLoadHist();renderVideoList();
+}
+function renderVideoList(){
+  $('s-video').classList.remove('playing');$('vpane-list').hidden=false;$('vpane-play').hidden=true;
+  const h=V.hist;
+  $('vList').innerHTML=`<p class="note" style="padding:0 4px;font-size:13px">Paste a YouTube link. Tap a sentence to hear it three times: no caption, Korean, then English.</p>
+    ${h.length?`<span class="label">Recent videos</span>${h.map(x=>`<div class="vrow" role="button" tabindex="0" data-vid="${esc(x.videoId)}">
+      <img src="https://i.ytimg.com/vi/${esc(x.videoId)}/default.jpg" alt="" loading="lazy">
+      <span class="t" data-noi18n>${esc(x.title||x.videoId)}</span><span class="d">${esc(vHistDate(x.date))}</span>
+      <button class="x" type="button" data-vdel="${esc(x.videoId)}" aria-label="Delete">✕</button></div>`).join('')}`
+    :`<div class="card empty">No videos yet. Paste a YouTube link above.</div>`}`;
+}
+$('vList').addEventListener('click',e=>{
+  const d=e.target.closest('[data-vdel]');
+  if(d){e.stopPropagation();V.hist=V.hist.filter(h=>h.videoId!==d.dataset.vdel);vSaveHist();renderVideoList();return}
+  const r=e.target.closest('[data-vid]');if(r) openVideo(r.dataset.vid);
+});
+$('vForm').addEventListener('submit',e=>{
+  e.preventDefault();const vid=vExtract($('vUrl').value);
+  if(!vid){toast('Enter a YouTube link.');return}
+  $('vUrl').blur();openVideo(vid);
+});
+$('vPaste').onclick=async()=>{
+  try{const t=(await navigator.clipboard.readText()).trim();if(t){$('vUrl').value=t;const vid=vExtract(t);if(vid) openVideo(vid);else toast('Enter a YouTube link.')}}
+  catch(e){$('vUrl').focus()}
+};
+// ---- YouTube IFrame API (loaded the first time a video opens) ----
+let vYT=null;
+function vYTReady(){
+  if(window.YT&&YT.Player) return Promise.resolve();
+  if(!vYT) vYT=new Promise((res,rej)=>{
+    const prev=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{if(prev) try{prev()}catch(e){}res()};
+    const sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';sc.async=true;sc.onerror=()=>{vYT=null;rej(new Error('yt'))};document.head.appendChild(sc);
+  });
+  return vYT;
+}
+function vDestroy(){
+  vStopTracker();V.token++;
+  if(V.player){try{V.player.destroy()}catch(e){}V.player=null}
+  $('vWrap').querySelectorAll('iframe').forEach(f=>f.remove());
+  if(!$('ytPlayer')){const d=document.createElement('div');d.id='ytPlayer';$('vWrap').prepend(d)}
+}
+async function openVideo(vid){
+  stopReading();try{gStop()}catch(e){}
+  vDestroy();
+  Object.assign(V,{vid,title:'',sents:[],cur:0,loop:-1,pass:0,auto:false,on:true,blur:false,tr:{},slow:false,time:false,trOn:false,cc:0,repeat:true,src:'paste'});
+  V.sync=parseFloat(lsGet('wm.vsync.'+vid))||0;
+  const h=V.hist.find(x=>x.videoId===vid);V.title=h&&h.title&&h.title!==vid?h.title:'';
+  try{if(!(window.history.state&&window.history.state.video)) window.history.pushState({video:vid},'')}catch(e){}
+  $('s-video').classList.add('playing');$('vpane-list').hidden=true;$('vpane-play').hidden=false;document.body.classList.add('vplay');
+  $('vTitle').textContent=V.title||'Loading…';$('vSents').innerHTML='';$('vCtl').innerHTML='';$('vTog').innerHTML='';
+  const [t,tr]=await Promise.all([vGet('transcript',vid),vGet('translations',vid)]);
+  if(V.vid!==vid) return;
+  if(t&&Array.isArray(t.sentences)&&t.sentences.length){V.sents=t.sentences;V.src=t.source||'paste'}
+  if(tr&&tr.translations) for(const [k,v] of Object.entries(tr.translations)) V.tr[+k]=v;
+  if(h&&h.s>0&&h.s<=V.sents.length) V.cur=h.s-1;
+  renderVideoPlay();
+  vTouchHist(vid,V.title,null);
+  if(!V.title) fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${vid}&format=json`).then(r=>r.ok?r.json():null).then(j=>{
+    if(V.vid!==vid) return;V.title=(j&&j.title)||vid;$('vTitle').textContent=V.title;vTouchHist(vid,V.title,null);
+  }).catch(()=>{if(V.vid===vid) $('vTitle').textContent=vid});
+  else $('vTitle').textContent=V.title;
+  try{await vYTReady()}catch(e){toast('Could not load the YouTube player.');return}
+  if(V.vid!==vid) return;
+  V.player=new YT.Player('ytPlayer',{videoId:vid,playerVars:{playsinline:1,controls:0,rel:0,modestbranding:1,iv_load_policy:3,cc_load_policy:0},
+    events:{
+      onReady(){try{V.player.unloadModule('captions');V.player.unloadModule('cc')}catch(e){}vTimeInfo(0);if(V.sents.length&&V.cur>0) vHighlight(V.cur,true)},
+      onStateChange(e){
+        if(e.data===YT.PlayerState.PLAYING){try{V.player.unloadModule('captions');V.player.unloadModule('cc')}catch(_){};stopReading()}
+        if(e.data===YT.PlayerState.ENDED){vStopTracker();V.loop=-1;V.pass=0;V.auto=false}
+      }}});
+}
+function closeVideo(){
+  vDestroy();
+  if(V.vid&&V.sents.length) vTouchHist(V.vid,V.title,V.cur+1);
+  V.vid=null;document.body.classList.remove('vplay');
+  if(curTab==='video') renderVideo();
+}
+$('vBack').onclick=()=>{if(window.history.state&&window.history.state.video) window.history.back();else closeVideo()};
+// ---- player screen ----
+function renderVideoPlay(){
+  const has=V.sents.length>0,rw=vRewind(),fw=vForward();
+  $('vWrap').classList.toggle('off',!V.on);
+  $('vMore').innerHTML=MORE_ICON;
+  $('vCtl').innerHTML=`
+    <button class="ricon" id="vOn" type="button" aria-label="Video on or off">${V.on?VI.video:VI.videoOff}</button>
+    ${has?`<button class="ricon" id="vPrev" type="button" aria-label="Previous sentence">${VI.prev}</button>`:''}
+    <button class="ricon" id="vRw" type="button" aria-label="Back ${rw} seconds">−${rw}s</button>
+    ${has?`<button class="ricon play" id="vReplay" type="button" aria-label="Play this sentence again">${VI.replay}</button>`:`<button class="ricon play" id="vPlayAll" type="button" aria-label="Play">${PLAY_ICON}</button>`}
+    <button class="ricon" id="vFw" type="button" aria-label="Forward ${fw} seconds">+${fw}s</button>
+    ${has?`<button class="ricon" id="vNext" type="button" aria-label="Next sentence">${VI.next}</button>`:''}
+    ${has?`<button class="ricon${V.cc?' on':''}" id="vCC" type="button" aria-label="Caption on the video">${['CC','KR','EN'][V.cc]}</button>`:''}`;
+  $('vTog').innerHTML=has?`
+    <button class="hintbtn" id="vRep" type="button" aria-pressed="${V.repeat}">${VI.headset}<span>${V.repeat?'Repeat 3×':'Play once'}</span></button>
+    <button class="hintbtn" id="vSlow" type="button" aria-pressed="${V.slow}">${VI.turtle}<span>${vSlowRate()}×</span></button>
+    <button class="hintbtn" id="vTrBtn" type="button" aria-pressed="${V.trOn}">${V.trBusy?'Translating…':'Translate'}</button>
+    <button class="hintbtn" id="vBlur" type="button" aria-pressed="${V.blur}">Blur</button>
+    <button class="hintbtn" id="vTimeBtn" type="button" aria-pressed="${V.time}">Time</button>`
+    :`<button class="hintbtn" id="vSlow" type="button" aria-pressed="${V.slow}">${VI.turtle}<span>${vSlowRate()}×</span></button>`;
+  const L=$('vSents');
+  L.className=(V.blur?'vblur ':'')+(V.trOn?'vtr ':'')+(V.time?'vtime':'');
+  L.innerHTML=has?V.sents.map((x,i)=>`<div class="vs${i===V.cur?' on':''}" id="vs${i}" data-vi="${i}">
+      <span class="n">${i+1}</span><span class="t" data-noi18n>${esc(x.text)}</span>
+      <span class="ta"><span id="vtr${i}">${x.start.toFixed(1)}s ~ ${x.end.toFixed(1)}s</span>
+        <button type="button" data-vadj="${i}" data-dir="-1" aria-label="Start 0.5 s earlier">&lt;</button><button type="button" data-vadj="${i}" data-dir="1" aria-label="Start 0.5 s later">&gt;</button>
+        ${i===V.sents.length-1?`<button type="button" data-vend="${i}" data-dir="-1" aria-label="End 0.5 s earlier">end &lt;</button><button type="button" data-vend="${i}" data-dir="1" aria-label="End 0.5 s later">end &gt;</button>`:''}</span>
+      <span class="k" id="vk${i}" data-noi18n>${esc(V.tr[i]||'')}</span></div>`).join('')
+    :`<div class="stack"><div class="card vpaste">
+      <span class="label">Add the transcript</span>
+      <p class="note" style="margin:0"><a href="https://youtubetotranscript.com/transcript?v=${esc(V.vid)}" target="_blank" rel="noopener">youtubetotranscript.com</a> <span>Copy the transcript there and paste it below. Lines look like this:</span> <b data-noi18n>[00:00:01] text</b></p>
+      <textarea id="vPasteIn" placeholder="[00:00:00] text&#10;[00:00:03] text" spellcheck="false"></textarea>
+      <div class="row" style="gap:8px"><button class="btn ghost" id="vClip" type="button" style="flex:1">Paste from clipboard</button><button class="btn" id="vApply" type="button" style="flex:1">Apply</button></div>
+    </div></div>`;
+  vSentInfo();
+  const on=(id,f)=>{const el=$(id);if(el) el.onclick=f};
+  on('vOn',()=>{V.on=!V.on;$('vWrap').classList.toggle('off',!V.on);$('vOn').innerHTML=V.on?VI.video:VI.videoOff;vCaption()});
+  on('vPrev',()=>vPlaySingle(Math.max(0,V.cur-1),true));
+  on('vNext',()=>vPlaySingle(Math.min(V.sents.length-1,V.cur+1),true));
+  on('vReplay',()=>vPlaySingle(V.cur));
+  on('vPlayAll',()=>vTap());
+  on('vRw',()=>{if(V.player&&V.player.seekTo) V.player.seekTo(Math.max(0,V.player.getCurrentTime()-vRewind()),true)});
+  on('vFw',()=>{if(V.player&&V.player.seekTo) V.player.seekTo(Math.min(V.player.getDuration()||1e9,V.player.getCurrentTime()+vForward()),true)});
+  on('vCC',()=>{V.cc=(V.cc+1)%3;$('vCC').textContent=['CC','KR','EN'][V.cc];$('vCC').classList.toggle('on',!!V.cc);if(!(V.repeat&&V.loop===V.cur&&V.pass>0)) vCaption()});
+  on('vRep',()=>{V.repeat=!V.repeat;$('vRep').setAttribute('aria-pressed',V.repeat);$('vRep').querySelector('span').textContent=V.repeat?'Repeat 3×':'Play once'});
+  on('vSlow',()=>{V.slow=!V.slow;$('vSlow').setAttribute('aria-pressed',V.slow);if(V.player&&V.player.setPlaybackRate) V.player.setPlaybackRate(V.slow?vSlowRate():1)});
+  on('vTrBtn',vToggleTr);
+  on('vBlur',()=>{V.blur=!V.blur;$('vBlur').setAttribute('aria-pressed',V.blur);L.classList.toggle('vblur',V.blur)});
+  on('vTimeBtn',()=>{V.time=!V.time;$('vTimeBtn').setAttribute('aria-pressed',V.time);L.classList.toggle('vtime',V.time);vScrollCur()});
+  on('vApply',vApplyPaste);
+  on('vClip',async()=>{try{const t=await navigator.clipboard.readText();if(!t.trim()){toast('The clipboard is empty.');return}$('vPasteIn').value=t;vApplyPaste()}catch(e){toast('Paste it into the box instead.');$('vPasteIn').focus()}});
+  if(has) setTimeout(()=>vScrollCur(false),50);
+}
+$('vSents').addEventListener('click',e=>{
+  const a=e.target.closest('[data-vadj],[data-vend]');
+  if(a){
+    e.stopPropagation();const end=!!a.dataset.vend,i=+(a.dataset.vadj||a.dataset.vend),dir=+a.dataset.dir,x=V.sents[i],prev=i>0?V.sents[i-1]:null;
+    if(end) x.end=Math.max(x.start+.1,+(x.end+dir*.5).toFixed(1));
+    else{const min=prev?prev.start+.1:0,max=Math.max(min,x.end-.1);x.start=Math.min(max,Math.max(min,+(x.start+dir*.5).toFixed(1)));if(prev) prev.end=x.start}
+    $('vtr'+i).textContent=`${x.start.toFixed(1)}s ~ ${x.end.toFixed(1)}s`;
+    if(prev&&!end) $('vtr'+(i-1)).textContent=`${prev.start.toFixed(1)}s ~ ${prev.end.toFixed(1)}s`;
+    vSaveSents();return;
+  }
+  const r=e.target.closest('[data-vi]');if(r) vPlaySingle(+r.dataset.vi);
+});
+$('vOverlay').addEventListener('click',()=>vTap());
+$('vMore').onclick=()=>{
+  if(!V.vid) return;
+  const has=V.sents.length>0;
+  openSheet('Video',`<div class="rmenu">
+    ${has?`<button class="mi2" type="button" id="vmSync" style="border-top:0">${VI.sync}<span>Sync subtitles</span></button>
+    <button class="mi2 red" type="button" id="vmClear">${TRASH_ICON}<span>Clear subtitles</span></button>`:''}
+    <button class="mi2" type="button" id="vmSet"${has?'':' style="border-top:0"'}>${VI.gear}<span>Video settings</span></button></div>`);
+  if(has){
+    $('vmSync').onclick=vSyncSheet;
+    $('vmClear').onclick=()=>{
+      openSheet('Clear subtitles?',`<div class="card qconfirm"><p>The transcript and its translations for this video are removed. You can paste it again.</p>
+        <button class="btn ghost block" id="vcKeep" type="button">Cancel</button><button class="btn danger block" id="vcGo" type="button">Clear transcript</button></div>`);
+      $('vcKeep').onclick=closeSheet;
+      $('vcGo').onclick=()=>{closeSheet();vStopTracker();if(V.player&&V.player.pauseVideo) V.player.pauseVideo();vDel(V.vid);V.sents=[];V.tr={};V.cur=0;V.loop=-1;V.pass=0;vCaption();renderVideoPlay()};
+    };
+  }
+  $('vmSet').onclick=()=>{closeSheet();if(V.player&&V.player.pauseVideo) V.player.pauseVideo();vStopTracker();show('me');openMePage('video',true)};
+};
+function vSyncSheet(){
+  const paint=()=>{const el=$('vsVal');if(el){el.textContent=(V.sync>0?'+':'')+V.sync.toFixed(1)+' s';el.style.color=V.sync>0?'var(--good)':V.sync<0?'var(--bad)':''}};
+  const set=v=>{V.sync=Math.round(v*10)/10;if(V.sync) lsSet('wm.vsync.'+V.vid,String(V.sync));else try{localStorage.removeItem('wm.vsync.'+V.vid)}catch(e){}paint()};
+  openSheet('Sync subtitles',`<div class="card" style="align-items:center;text-align:center">
+    <p class="note" style="margin:0">If the highlight comes after the voice, use +. If it comes too early, use −.</p>
+    <div class="row" style="gap:18px;justify-content:center;margin:8px 0">
+      <button class="ricon" id="vsMinus" type="button" aria-label="Earlier">−</button>
+      <span id="vsVal" style="font:900 26px var(--f-ui);min-width:5ch;font-variant-numeric:tabular-nums"></span>
+      <button class="ricon" id="vsPlus" type="button" aria-label="Later">+</button></div>
+    <div class="row" style="gap:8px;width:100%"><button class="btn ghost" id="vsReset" type="button" style="flex:1">Reset</button><button class="btn" id="vsDone" type="button" style="flex:1">Done</button></div></div>`);
+  paint();
+  $('vsMinus').onclick=()=>set(V.sync-.1);$('vsPlus').onclick=()=>set(V.sync+.1);$('vsReset').onclick=()=>set(0);$('vsDone').onclick=closeSheet;
+}
+// ---- transcript paste: "[HH:MM:SS] text" lines → sentences with start/end ----
+function vParseStamped(text){
+  const lines=[],re=/\[(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\]\s*(.+)/g;let m;
+  while((m=re.exec(text))!==null){
+    const ms=((parseInt(m[1]||'0'))*3600+parseInt(m[2])*60+parseInt(m[3]))*1000,t=m[4].trim();
+    if(t) lines.push({text:t,offset:ms});
+  }
+  if(!lines.length) return null;
+  return lines.map((l,i)=>({text:l.text,offset:l.offset,duration:i<lines.length-1?Math.max(lines[i+1].offset-l.offset,500):3000}));
+}
+function vSentences(transcript){
+  const out=[];let buffer=[],sStart=null;
+  for(const c of transcript){
+    const cs=c.offset/1000,cd=c.duration/1000,ce=cs+cd;
+    const text=c.text.replace(/&amp;/g,'&').replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\s+/g,' ').trim();
+    if(!text) continue;
+    if(sStart===null) sStart=cs;
+    const parts=text.split(/(?<=[.!?])\s+/).map(p=>p.trim()).filter(Boolean);
+    const total=parts.reduce((a,p)=>a+p.length,0)||1;let cum=0;
+    for(let i=0;i<parts.length;i++){
+      const part=parts[i],ps=cs+cd*(cum/total),pe=cs+cd*((cum+part.length)/total);
+      if(buffer.length===0&&i>0) sStart=ps;
+      buffer.push(part);cum+=part.length;
+      if(/[.!?]$/.test(part)){
+        const end=i===parts.length-1?ce:pe;
+        out.push({text:buffer.join(' '),start:sStart,end:Math.max(end,sStart+.5)});
+        buffer=[];sStart=i<parts.length-1?pe:null;
+      }
+    }
+  }
+  if(buffer.length&&sStart!==null){const last=transcript[transcript.length-1];out.push({text:buffer.join(' '),start:sStart,end:Math.max((last.offset+last.duration)/1000,sStart+.5)})}
+  out.sort((a,b)=>a.start-b.start||a.end-b.end);
+  const merged=[];
+  for(const x of out){const p=merged[merged.length-1];if(p&&p.start===x.start&&p.end===x.end) p.text+=' '+x.text;else merged.push({...x})}
+  for(let i=0;i<merged.length-1;i++){const a=merged[i],b=merged[i+1];if(b.start>a.start&&b.start-a.start>=.5) a.end=b.start}
+  return merged.map(x=>({text:x.text,start:+x.start.toFixed(2),end:+x.end.toFixed(2)}));
+}
+function vApplyPaste(){
+  const text=$('vPasteIn').value.trim();if(!text) return;
+  const raw=vParseStamped(text);
+  if(!raw){toast('No "[00:00:00] text" lines found. Copy the transcript from youtubetotranscript.com.');return}
+  const ss=vSentences(raw);if(!ss.length){toast('Could not read the transcript.');return}
+  V.sents=ss;V.src='paste';V.tr={};V.cur=0;vPut('transcript',V.vid,{sentences:ss,source:'paste'});
+  renderVideoPlay();
+}
+// ---- playback ----
+function vTap(){
+  const p=V.player;if(!p||typeof p.getPlayerState!=='function') return;
+  if(p.getPlayerState()===YT.PlayerState.PLAYING){p.pauseVideo();vStopTracker()}
+  else if(V.loop===V.cur&&V.pass>0){p.playVideo();vStartTracker()}
+  else if(V.sents.length) vPlaySingle(V.cur,true);
+  else{p.playVideo();vStartTracker()}
+}
+function vPlaySingle(i,advance=false){
+  if(!V.sents.length) return;
+  vStopTracker();V.token++;
+  V.cur=i;V.loop=i;V.pass=1;V.maxPass=V.repeat?3:1;V.auto=advance;
+  vHighlight(i);
+  if(!V.player||!V.player.seekTo) return;
+  stopReading();
+  if(V.player.setPlaybackRate) V.player.setPlaybackRate(V.slow?vSlowRate():1);
+  V.player.seekTo(Math.max(0,V.sents[i].start-V.sync),true);V.player.playVideo();vStartTracker();
+}
+function vStartTracker(){
+  vStopTracker();
+  V.tracker=setInterval(()=>{
+    const p=V.player;if(!p||typeof p.getPlayerState!=='function'||p.getPlayerState()!==YT.PlayerState.PLAYING) return;
+    const now=p.getCurrentTime();vTimeInfo(now);
+    const x=V.sents[V.cur];if(!x) return;
+    const et=now+V.sync;if(et<x.start||et<x.end-.05) return;
+    if(V.loop===V.cur&&V.pass>0&&V.pass<V.maxPass){
+      p.pauseVideo();vStopTracker();
+      const target=V.cur,np=V.pass+1,tk=V.token;
+      setTimeout(()=>{if(V.token===tk&&V.loop===target){V.pass=np;vRepeatCaption(target);p.seekTo(Math.max(0,V.sents[target].start-V.sync),true);p.playVideo();vStartTracker()}},1000);
+    }else if(!V.repeat&&V.auto&&V.loop===V.cur&&V.cur<V.sents.length-1){
+      V.cur++;V.loop=V.cur;V.pass=1;vHighlight(V.cur);   // play once: flow straight into the next sentence
+    }else if(V.loop===V.cur&&V.pass>=V.maxPass){
+      p.pauseVideo();vStopTracker();V.loop=-1;V.pass=0;vCaption();
+      if(V.repeat&&V.auto&&V.cur<V.sents.length-1){const n=V.cur+1,tk=V.token;setTimeout(()=>{if(V.token===tk&&V.auto) vPlaySingle(n,true)},1000)}
+      else V.auto=false;
+    }else{p.pauseVideo();vStopTracker()}
+  },50);
+}
+function vStopTracker(){if(V.tracker){clearInterval(V.tracker);V.tracker=null}}
+function vSentInfo(){$('vSentN').textContent=V.sents.length?`${V.cur+1} / ${V.sents.length}`:''}
+function vScrollCur(smooth=true){
+  const el=$('vs'+V.cur),sc=$('vScroll');if(!el||!sc) return;
+  const r=el.getBoundingClientRect(),sr=sc.getBoundingClientRect();
+  sc.scrollTo({top:Math.max(0,sc.scrollTop+(r.top-sr.top)-sr.height/2+r.height/2),behavior:smooth?'smooth':'auto'});
+}
+let vHistSaveT=0;
+function vHighlight(i,quiet){
+  document.querySelectorAll('#vSents .vs.on').forEach(el=>el.classList.remove('on'));
+  vSentInfo();
+  if(i<0){vCaption();return}
+  const el=$('vs'+i);if(el){el.classList.add('on');vScrollCur(!quiet)}
+  if(V.repeat&&V.loop===i&&V.pass>0) vRepeatCaption(i);else vCaption();
+  clearTimeout(vHistSaveT);const vid=V.vid;vHistSaveT=setTimeout(()=>{if(V.vid===vid){const h=V.hist.find(x=>x.videoId===vid);if(h&&h.s!==i+1){h.s=i+1;vSaveHist()}}},2500);
+}
+function vTimeInfo(now){
+  const p=V.player;if(!p||typeof p.getDuration!=='function') return;
+  const total=p.getDuration();if(!total) return;
+  $('vTime').textContent=vFmt(now)+' / '+vFmt(total);
+  $('vProgFill').style.width=(now/total*100).toFixed(2)+'%';
+}
+(()=>{
+  const wrap=$('vProg');let drag=false;
+  const seek=e=>{
+    const p=V.player;if(!p||typeof p.getDuration!=='function') return;
+    const total=p.getDuration();if(!total) return;
+    const r=wrap.getBoundingClientRect(),ratio=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),to=ratio*total;
+    p.seekTo(to,true);$('vProgFill').style.width=(ratio*100).toFixed(2)+'%';
+    if(V.sents.length){
+      let idx=0;for(let i=0;i<V.sents.length-1;i++) if(to>=V.sents[i].start-V.sync) idx=i;
+      V.token++;V.cur=idx;V.loop=idx;V.pass=1;V.maxPass=V.repeat?3:1;V.auto=true;vHighlight(idx);
+    }
+  };
+  wrap.addEventListener('pointerdown',e=>{drag=true;try{wrap.setPointerCapture(e.pointerId)}catch(_){}seek(e)});
+  wrap.addEventListener('pointermove',e=>{if(drag) seek(e)});
+  wrap.addEventListener('pointerup',()=>drag=false);wrap.addEventListener('pointercancel',()=>drag=false);
+})();
+// ---- captions on the video ----
+function vSetCap(text){const c=$('vCap');if(text){c.textContent=text;c.style.display='block'}else c.style.display='none'}
+function vRepeatCaption(i){   // pass 1: nothing · pass 2: Korean · pass 3: English
+  const x=V.sents[i];if(!x) return;
+  if(V.pass===1) vSetCap('');
+  else if(V.pass===2){
+    if(V.tr[i]) vSetCap(V.tr[i]);
+    else{vSetCap('');vFetchTr().then(ok=>{if(ok&&V.loop===i&&V.pass===2&&V.tr[i]) vSetCap(V.tr[i])})}
+  }else vSetCap(x.text);
+}
+function vCaption(){
+  const i=V.cur;
+  if(!V.cc||!V.sents[i]){vSetCap('');return}
+  if(V.cc===2){vSetCap(V.sents[i].text);return}
+  if(V.tr[i]){vSetCap(V.tr[i]);return}
+  vSetCap('');vFetchTr().then(ok=>{if(ok&&V.cc===1&&V.cur===i&&V.tr[i]) vSetCap(V.tr[i])});
+}
+// ---- translations: the Google Translate key from Me → Settings, 100 sentences per request ----
+let vTrRun=null;
+function vFetchTr(){
+  if(vTrRun) return vTrRun;
+  vTrRun=(async()=>{
+    if(!settings.translateKey){toast('Add your Google Translate API key in Me → Settings to see translations.');return false}
+    const todo=V.sents.map((x,i)=>({i,t:x.text})).filter(o=>!V.tr[o.i]);
+    if(!todo.length) return true;
+    const vid=V.vid;
+    try{
+      for(let a=0;a<todo.length;a+=100){
+        const part=todo.slice(a,a+100),out=await translateManyKo(part.map(o=>o.t));
+        if(V.vid!==vid) return false;
+        part.forEach((o,j)=>{if(out[j]) V.tr[o.i]=out[j].replace(/&amp;/g,'&').replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>')});
+      }
+      vPut('translations',vid,{translations:V.tr});
+      return true;
+    }catch(e){toast(e.message);return false}
+  })().finally(()=>{vTrRun=null});
+  return vTrRun;
+}
+async function vToggleTr(){
+  V.trOn=!V.trOn;const b=$('vTrBtn');b.setAttribute('aria-pressed',V.trOn);
+  if(V.trOn){
+    b.textContent='Translating…';const ok=await vFetchTr();b.textContent='Translate';
+    if(!ok){V.trOn=false;b.setAttribute('aria-pressed','false')}
+    V.sents.forEach((_,i)=>{const k=$('vk'+i);if(k) k.textContent=V.tr[i]||''});
+  }
+  $('vSents').classList.toggle('vtr',V.trOn);vScrollCur();
+}
+// Leaving the tab or the app pauses the video
+function vPause(){if(V.player&&typeof V.player.pauseVideo==='function'){try{V.player.pauseVideo()}catch(e){}}vStopTracker()}
+// Settings page
+function renderVideoSet(){
+  const rw=vRewind(),fw=vForward(),sl=vSlowRate();
+  $('videoSetBody').innerHTML=`
+    <span class="label">Back button</span>
+    <div class="rates">${[1,2,3,5,10].map(v=>`<button type="button" data-vrw="${v}" aria-pressed="${v===rw}">−${v} s</button>`).join('')}</div>
+    <span class="label">Forward button</span>
+    <div class="rates">${[5,10,15,30].map(v=>`<button type="button" data-vfw="${v}" aria-pressed="${v===fw}">+${v} s</button>`).join('')}</div>
+    <span class="label">Slow speed (🐢)</span>
+    <div class="rates">${[0.5,0.6,0.7,0.8,0.9].map(v=>`<button type="button" data-vsl="${v}" aria-pressed="${v===sl}">${v}×</button>`).join('')}</div>
+    <p class="note" style="padding:0 4px"><span>Translations use your Google Translate key (Me → Settings → Google Translate).</span> ${acct==='cloud'?'Saved to your account, so it works on all your devices.':'Saved in this browser only. Sign in to use it on all your devices.'}</p>
+    <span class="label">Recent videos</span>
+    <button class="btn danger block" id="vClearHist" type="button">Clear video history</button>
+    <p class="note" style="padding:0 4px">Transcripts and translations are kept.</p>`;
+}
+$('videoSetBody').addEventListener('click',e=>{
+  const b=e.target.closest('[data-vrw],[data-vfw],[data-vsl]');
+  if(b){if(b.dataset.vrw) setSlash('videoRewind',b.dataset.vrw);else if(b.dataset.vfw) setSlash('videoForward',b.dataset.vfw);else setSlash('videoSlow',b.dataset.vsl);renderVideoSet();return}
+  if(e.target.closest('#vClearHist')){
+    const btn=$('vClearHist');
+    if(btn.dataset.sure){V.hist=[];vSaveHist();btn.textContent='Cleared';btn.disabled=true;return}
+    btn.dataset.sure='1';btn.textContent='Tap again to clear';
+  }
+});
+
 function renderWrite(){
   $('wseg-tr').setAttribute('aria-selected',writePane==='tr');$('wseg-jn').setAttribute('aria-selected',writePane==='jn');
   $('pane-tr').hidden=writePane!=='tr';$('pane-jn').hidden=writePane!=='jn';
@@ -3018,9 +3535,9 @@ function renderStories(){
 }
 $('storyBody').addEventListener('click',e=>{
   const r=e.target.closest('[data-story]');
-  if(r&&!storyView){storyView=r.dataset.story;storyConfirm=false;storyTrMsg='';storyTrErr=false;chunkErr='';srPos=null;try{history.pushState({story:storyView},'')}catch(err){}renderStories();$('storyScroll').scrollTop=0}
+  if(r&&!storyView){storyView=r.dataset.story;storyConfirm=false;storyTrMsg='';storyTrErr=false;chunkErr='';srPos=null;try{window.history.pushState({story:storyView},'')}catch(err){}renderStories();$('storyScroll').scrollTop=0}
 });
-function closeStoryView(){stopReading();if(history.state&&history.state.story) history.back();else{storyView=null;renderStories()}}
+function closeStoryView(){stopReading();if(window.history.state&&window.history.state.story) window.history.back();else{storyView=null;renderStories()}}
 // ---------- slash reading (끊어읽기) in the story reader ----------
 const PLAY_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.5-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>';
 const PAUSE_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1.4"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.4"/></svg>';
@@ -3381,7 +3898,7 @@ async function saveStory(){
   const s={id:'s'+Date.now().toString(36),title,text,words,entries,created:new Date().toISOString()};
   stories.unshift(s);save();
   closeSheet();
-  storyView=s.id;try{history.pushState({story:s.id},'')}catch(e){}
+  storyView=s.id;try{window.history.pushState({story:s.id},'')}catch(e){}
   renderStories();$('storyScroll').scrollTop=0;
 }
 // Scroll el to the top of scroller, adding room under the content (on pad) when it's near the end
@@ -3813,6 +4330,7 @@ const SETTINGS_MENU=[
   {id:'ai',title:'AI',icon:AI_ICON,value:()=>aiKey()?[AI[aiProv()].name,'on']:['Not set',''],render:()=>renderAi()},
   {id:'auth',title:'Authenticator app',icon:LOCK_ICON,value:()=>acct!=='cloud'?['','']:totpOn===true?['On','on']:totpOn===false?['Off','']:['',''],render:()=>renderAuth()},
   {id:'slash',title:'Slash reading',icon:SLASH_ICON,value:()=>[SL_LEVELS.find(l=>l.k===slashCfg().level).name,''],render:()=>renderSlash()},
+  {id:'video',title:'Video',icon:VIDEO_ICON,value:()=>[`−${vRewind()}s · +${vForward()}s · ${vSlowRate()}×`,''],render:()=>renderVideoSet()},
   {id:'lang',title:'Language',icon:LANG_ICON,value:()=>[LANG==='ko'?'한국어':'English',''],render:()=>renderLang()},
   {id:'voice',title:'Voice',icon:SPK_ICON,value:()=>{if(gOn()) return ['Google · '+gVoice().replace(/^en-(US|GB|AU)-(Chirp3-HD|Neural2)-/,''),'on'];const v=pickVoice();return [v?v.name.replace(/\s*\(.*\)$/,'').slice(0,18):'Default','']},render:()=>renderVoice()},
 ];
@@ -3838,13 +4356,13 @@ function openMePage(page,push){
   mePage=page;
   document.querySelectorAll('#s-me .mepage').forEach(el=>el.hidden=el.id!=='me-'+page);
   const m=SETTINGS_MENU.find(x=>x.id===page);if(m) m.render();
-  if(push) try{history.pushState({me:page},'')}catch(e){}
+  if(push) try{window.history.pushState({me:page},'')}catch(e){}
 }
 document.addEventListener('click',e=>{
   const m=e.target.closest('[data-mepage]');
   if(m){openMePage(m.dataset.mepage,true);return}
   if(e.target.closest('[data-back]')){
-    if(history.state&&history.state.me) history.back();else{openMePage('main',false);renderMe()}
+    if(window.history.state&&window.history.state.me) window.history.back();else{openMePage('main',false);renderMe()}
   }
 });
 // Authenticator app page (TOTP): set up with a QR code / key, confirm with a code, turn off
@@ -4023,7 +4541,8 @@ try{speechSynthesis.addEventListener('voiceschanged',()=>{if(curTab==='me'){if(m
 window.addEventListener('popstate',e=>{
   if(!$('pop').hidden){closePop();return}
   if(!$('sheet').hidden){closeSheet();return}
-  if(storyView&&!(e.state&&e.state.story)){stopReading();storyView=null;storyConfirm=false;if(curTab==='story') renderStories();return}
+  if(curTab==='video'&&V.vid&&!(e.state&&e.state.video)){closeVideo();return}
+  if(curTab==='story'&&storyView&&!(e.state&&e.state.story)){stopReading();storyView=null;storyConfirm=false;if(curTab==='story') renderStories();return}
   const page=(e.state&&e.state.me)||'main';
   if(curTab==='me'){mePage=page;renderMe()}else mePage=page;
 });
@@ -4395,7 +4914,7 @@ const I18N_KO={
 'Newest first':'최신순','No entries yet.':'아직 일기가 없어요.','Tap the pen to write your first one.':'펜 버튼을 눌러 첫 일기를 써보세요.','Untitled':'제목 없음','New entry':'새 일기',
 'Done':'완료','Delete this entry?':'이 일기를 삭제할까요?','Write in English…':'영어로 써보세요…','English only — Korean can’t be typed here':'영어로만 쓸 수 있어요 — 한글은 입력되지 않아요',
 'Bold':'굵게','Italic':'기울임','Bullet list':'글머리 기호','Numbered list':'번호 목록','✨ Enhance':'✨ 다듬기','Enhance':'다듬기','Enhance selection':'선택 부분 다듬기','Level':'수준','Tone':'톤',
-'Casual':'캐주얼','Neutral':'보통','Formal':'격식','Academic':'학술','Discard':'버리기','Apply':'반영하기','Applied':'반영했어요','Write something first.':'먼저 글을 써주세요.','Typing practice':'타이핑 연습','This word has no example sentence that uses it, so there is nothing to fill in yet.':'이 단어가 들어간 예문이 없어서 연습할 빈칸이 없어요.','Type the missing word and press Enter.':'빈칸에 들어갈 단어를 입력하고 엔터를 누르세요.','Missing word':'빈칸','Play':'재생','Small chunks':'소 · 작게 끊기','Medium chunks':'중 · 중간 끊기','Large chunks':'대 · 크게 끊기','No chunks':'끊어읽기 없음','Cuts into words and short phrases. Subject, verb, object, prepositional phrases and time words are all separate. Best when you start.':'단어·구 단위로 잘게 끊어요. 주어, 동사, 목적어, 전치사구, 시간 표현이 모두 따로 나뉘어요. 처음 훈련할 때 추천해요.','Keeps relative clauses, to-infinitives and long prepositional phrases together. Practice reading in units of meaning.':'관계사절, to부정사구, 긴 전치사구를 한 덩어리로 묶어요. 의미가 이어지는 단위로 읽는 연습이에요.','Big blocks of meaning, but always cuts where the structure turns: around an inserted clause and where a long subject ends.':'큰 의미 덩어리로 묶되, 삽입절의 시작과 끝이나 긴 주어가 끝나는 곳처럼 구조가 꺾이는 지점은 꼭 끊어요.','The story as it is, with no slashes. Translations are shown under each paragraph.':'빗금 없이 원문 그대로 읽어요. 번역은 문단 아래에 보여요.','Slash reading':'끊어읽기','Slash reading settings':'끊어읽기 설정','Delete story':'스토리 삭제','Text size':'글자 크기','Small':'작게','Large':'크게','Add an AI key in Me → Settings → AI to use slash reading.':'끊어읽기를 쓰려면 나 → 설정 → AI에서 AI 키를 넣어 주세요.','Slash reading is not ready.':'끊어읽기를 준비하지 못했어요.','The story is too long for slash reading (8,000 characters at most).':'끊어읽기를 하기에 스토리가 너무 길어요 (최대 8,000자).','The story is too long for slash reading.':'끊어읽기를 하기에 스토리가 너무 길어요.','Stories are split into chunks (/) by the AI chosen in Settings → AI. Pick how finely in a story with the dropdown, or here.':'스토리는 설정 → AI에서 고른 AI가 의미 단위(/)로 나눠요. 얼마나 잘게 끊을지는 스토리의 드롭다운이나 여기서 고르세요.','Slash size':'끊는 크기','Reading speed':'읽기 속도','Pause between chunks':'덩어리 사이 쉬는 시간','Show and read':'보이고 읽기','Text size is set per device in a story\'s ⋯ menu.':'글자 크기는 스토리의 ⋯ 메뉴에서 기기마다 정해요.','Translation':'번역','More':'더보기','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
+'Casual':'캐주얼','Neutral':'보통','Formal':'격식','Academic':'학술','Discard':'버리기','Apply':'반영하기','Applied':'반영했어요','Write something first.':'먼저 글을 써주세요.','Typing practice':'타이핑 연습','This word has no example sentence that uses it, so there is nothing to fill in yet.':'이 단어가 들어간 예문이 없어서 연습할 빈칸이 없어요.','Type the missing word and press Enter.':'빈칸에 들어갈 단어를 입력하고 엔터를 누르세요.','Missing word':'빈칸','Play':'재생','Repeat 3×':'3번 반복','Video':'영상','YouTube link':'YouTube 링크','Paste':'붙여넣기','Go':'열기','‹ Videos':'‹ 영상','Paste a YouTube link. Tap a sentence to hear it three times: no caption, Korean, then English.':'YouTube 링크를 붙여넣으세요. 문장을 누르면 세 번 들려줘요: 자막 없이, 한국어, 영어 순서예요.','Recent videos':'최근 본 영상','No videos yet. Paste a YouTube link above.':'아직 본 영상이 없어요. 위에 YouTube 링크를 붙여넣으세요.','Enter a YouTube link.':'YouTube 링크를 입력하세요.','Could not load the YouTube player.':'YouTube 플레이어를 불러오지 못했어요.','Video on or off':'영상 켜기/끄기','Previous sentence':'이전 문장','Play this sentence again':'이 문장 다시 듣기','Next sentence':'다음 문장','Caption on the video':'영상 위 자막','Play once':'한 번 듣기','Blur':'가리기','Add the transcript':'자막 넣기','Paste from clipboard':'클립보드에서 붙여넣기','Start 0.5 s earlier':'시작 0.5초 앞으로','Start 0.5 s later':'시작 0.5초 뒤로','End 0.5 s earlier':'끝 0.5초 앞으로','End 0.5 s later':'끝 0.5초 뒤로','Sync subtitles':'자막 싱크 맞추기','Clear subtitles':'자막 지우기','Video settings':'영상 설정','Clear subtitles?':'자막을 지울까요?','The transcript and its translations for this video are removed. You can paste it again.':'이 영상의 자막과 번역이 지워져요. 다시 붙여넣을 수 있어요.','Clear transcript':'자막 지우기','If the highlight comes after the voice, use +. If it comes too early, use −.':'강조 표시가 소리보다 늦으면 +, 너무 빠르면 −를 누르세요.','Earlier':'앞으로','Reset':'초기화','No "[00:00:00] text" lines found. Copy the transcript from youtubetotranscript.com.':'"[00:00:00] 문장" 형식의 줄이 없어요. youtubetotranscript.com에서 자막을 복사하세요.','Could not read the transcript.':'자막을 읽지 못했어요.','The clipboard is empty.':'클립보드가 비어 있어요.','Paste it into the box instead.':'상자에 직접 붙여넣으세요.','Back button':'뒤로 감기 버튼','Forward button':'앞으로 감기 버튼','Slow speed (🐢)':'느리게 듣기 속도 (🐢)','Translations use your Google Translate key (Me → Settings → Google Translate).':'번역은 Google 번역 키(나 → 설정 → Google 번역)를 써요.','Clear video history':'영상 기록 모두 지우기','Tap again to clear':'한 번 더 누르면 지워져요','Cleared':'지웠어요','Transcripts and translations are kept.':'자막과 번역은 남아 있어요.','Copy the transcript there and paste it below. Lines look like this:':'에서 자막을 복사해 아래에 붙여넣으세요. 이런 모양의 줄이에요:','Small chunks':'소 · 작게 끊기','Medium chunks':'중 · 중간 끊기','Large chunks':'대 · 크게 끊기','No chunks':'끊어읽기 없음','Cuts into words and short phrases. Subject, verb, object, prepositional phrases and time words are all separate. Best when you start.':'단어·구 단위로 잘게 끊어요. 주어, 동사, 목적어, 전치사구, 시간 표현이 모두 따로 나뉘어요. 처음 훈련할 때 추천해요.','Keeps relative clauses, to-infinitives and long prepositional phrases together. Practice reading in units of meaning.':'관계사절, to부정사구, 긴 전치사구를 한 덩어리로 묶어요. 의미가 이어지는 단위로 읽는 연습이에요.','Big blocks of meaning, but always cuts where the structure turns: around an inserted clause and where a long subject ends.':'큰 의미 덩어리로 묶되, 삽입절의 시작과 끝이나 긴 주어가 끝나는 곳처럼 구조가 꺾이는 지점은 꼭 끊어요.','The story as it is, with no slashes. Translations are shown under each paragraph.':'빗금 없이 원문 그대로 읽어요. 번역은 문단 아래에 보여요.','Slash reading':'끊어읽기','Slash reading settings':'끊어읽기 설정','Delete story':'스토리 삭제','Text size':'글자 크기','Small':'작게','Large':'크게','Add an AI key in Me → Settings → AI to use slash reading.':'끊어읽기를 쓰려면 나 → 설정 → AI에서 AI 키를 넣어 주세요.','Slash reading is not ready.':'끊어읽기를 준비하지 못했어요.','The story is too long for slash reading (8,000 characters at most).':'끊어읽기를 하기에 스토리가 너무 길어요 (최대 8,000자).','The story is too long for slash reading.':'끊어읽기를 하기에 스토리가 너무 길어요.','Stories are split into chunks (/) by the AI chosen in Settings → AI. Pick how finely in a story with the dropdown, or here.':'스토리는 설정 → AI에서 고른 AI가 의미 단위(/)로 나눠요. 얼마나 잘게 끊을지는 스토리의 드롭다운이나 여기서 고르세요.','Slash size':'끊는 크기','Reading speed':'읽기 속도','Pause between chunks':'덩어리 사이 쉬는 시간','Show and read':'보이고 읽기','Text size is set per device in a story\'s ⋯ menu.':'글자 크기는 스토리의 ⋯ 메뉴에서 기기마다 정해요.','Translation':'번역','More':'더보기','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
 'Great job!':'잘했어요!','Ready for a quick test?':'바로 테스트해 볼까요?','Later':'나중에','Learned words':'학습한 단어','Example level':'예문 수준','Claude ran out of room for this photo. Try a photo with fewer words.':'사진 내용이 너무 많아 Claude 응답이 잘렸어요. 단어가 더 적게 나오게 찍어 보세요.','Keep photo examples':'사진 예문 그대로 쓰기','Very easy':'아주 쉬움','Easy':'쉬움','Medium':'보통','Intermediate':'중상','High':'어려움',
 'Definitions in Korean. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 한국어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.',
 'Definitions in English. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 영어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.','EN–KO':'영한','📷 Photo':'📷 사진','Definitions in':'정의 언어',
@@ -4527,6 +5046,7 @@ const I18N_KO_RE=[
 [/^Not used in the story: (.+)\. Tap Write again, or edit the story\.$/,'스토리에 안 쓰인 단어: $1. 다시 쓰기를 누르거나 직접 고쳐주세요.'],
 [/^Add a genre or idea if you like, then tap Write with (.+)\.$/,'원하면 장르나 아이디어를 적고 $1로 쓰기를 누르세요.'],
 [/^The (.+) API key was rejected\. Check it in Me → Settings → AI\.$/,'$1 API 키가 거부됐어요. 나 → 설정 → AI에서 확인하세요.'],
+[/^Back (\d+) seconds$/,'$1초 뒤로'],[/^Forward (\d+) seconds$/,'$1초 앞으로'],[/^end ([<>])$/,'끝 $1'],
 [/^Lost the connection to (.+)\. Try again\.$/,'$1와 연결이 끊겼어요. 다시 시도해 주세요.'],[/^Couldn't reach (.+)\. Check your connection\.$/,'$1에 연결할 수 없어요. 인터넷 연결을 확인하세요.'],[/^(.+) took too long\. Try again\.$/,'$1 응답이 너무 늦어요. 다시 시도하세요.'],
 [/^(.+) sent back something unexpected\. Try again\.$/,'$1의 응답이 이상해요. 다시 시도하세요.'],[/^(.+) sent back an empty story\. Try again\.$/,'$1가 빈 스토리를 보냈어요. 다시 시도하세요.'],
 [/^Model "(.+?)" isn't available for this key\.(.*)$/,'이 키로는 "$1" 모델을 쓸 수 없어요.$2'],
