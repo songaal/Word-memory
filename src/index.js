@@ -51,7 +51,6 @@ export default {
       if (pathname === '/api/lookup' && method === 'GET') return await lookup(url, env);
       if (pathname === '/api/journal' && method === 'GET') return await getJournal(request, env);
       if (pathname === '/api/journal' && method === 'PUT') return await putJournal(request, env);
-      if (pathname === '/api/chunk' && method === 'POST') return await chunk(request, env);
       if (pathname === '/api/settings' && method === 'GET') return await getSettings(request, env);
       if (pathname === '/api/settings' && method === 'PUT') return await putSettings(request, env);
       if (pathname.startsWith('/api/')) return json({ error: 'Not found' }, 404);
@@ -291,88 +290,6 @@ async function putJournal(request, env) {
   return json(record);
 }
 
-
-// ── Slash reading (끊어읽기) ─────────────────────
-// The Claude API key is a Worker secret (ANTHROPIC_API_KEY); the browser never sees it.
-// Results are cached per passage text, so the same story is analysed once.
-const CHUNK_PROMPT = (text) => `You are an English reading coach for Korean learners. Split the passage into sentences and produce 끊어읽기 (slash-reading) chunks at three levels, each chunk with a Korean translation.
-
-LEVEL RULES
-- "s" (소, smallest): split at phrase level. Subject, verb, object, each prepositional phrase, time/place expressions, conjunctions and relative pronouns + their verb are separate chunks. Typically 2-4 words per chunk.
-- "m" (중, medium): clause/phrase units. Keep relative clauses, to-infinitive phrases, and full prepositional phrases together. Typically 3-8 words.
-- "l" (대, large): large meaning blocks with as few slashes as possible, BUT always cut where the structure turns: before and after an inserted (parenthetical/non-restrictive) clause, at the end of a long subject, before a main clause that follows a subordinate clause. A whole short simple sentence may be one chunk.
-
-TRANSLATION RULES
-- Each chunk's "ko" translates ONLY that chunk, keeping English word order across chunks (앞에서부터 직독직해). Do not move meaning between chunks. Natural Korean inside the chunk is fine; level s may sound a bit literal.
-- Each sentence also gets "ko": one natural full-sentence Korean translation.
-
-STRICT FORMAT
-- Concatenating a level's chunk "en" strings with single spaces must reproduce the sentence "en" exactly (keep punctuation attached to the word before it).
-- Return ONLY JSON, no markdown fences:
-{"title":"짧은 한국어 제목(20자 이내)","sentences":[{"en":"...","ko":"...","s":[["chunk","번역"],...],"m":[[...]],"l":[[...]]}]}
-
-PASSAGE:
-${text}`;
-const CHUNK_TTL = 60 * 60 * 24 * 90;
-function chunkValid(d) {
-  if (!d || !Array.isArray(d.sentences) || !d.sentences.length) return false;
-  return d.sentences.every(s => s && typeof s.en === 'string' && ['s', 'm', 'l'].every(k => Array.isArray(s[k]) && s[k].length && s[k].every(c => Array.isArray(c) && c.length >= 2)));
-}
-function chunkParse(t) {
-  t = String(t || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
-  const a = t.indexOf('{'), b = t.lastIndexOf('}');
-  return JSON.parse(a >= 0 && b > a ? t.slice(a, b + 1) : t);
-}
-async function sha256Hex(text) {
-  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join('');
-}
-async function chunk(request, env) {
-  const user = await currentUser(request, env);
-  if (!user) return json({ error: 'Sign in with Google to use slash reading.' }, 401);
-  let body;
-  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
-  const text = String((body && body.text) || '').replace(/\r/g, '').trim();
-  if (!text) return json({ error: 'No text' }, 400);
-  if (text.length > 8000) return json({ error: 'The story is too long for slash reading (8,000 characters at most).' }, 400);
-  if (!env.ANTHROPIC_API_KEY) return json({ error: 'Slash reading is not set up on the server yet (ANTHROPIC_API_KEY).' }, 503);
-  const model = env.CHUNK_MODEL || 'claude-sonnet-5-5';
-  const key = `wm:chunk:${model}:${await sha256Hex(text)}`;
-  if (!body.fresh) {
-    const hit = await env.WORDS.get(key, 'json').catch(() => null);
-    if (hit) return json(hit);
-  }
-  let lastErr = 'The AI could not split this story. Please try again.';
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model, max_tokens: 16000, messages: [{ role: 'user', content: CHUNK_PROMPT(text) }] }),
-    });
-    const j = await r.json().catch(() => null);
-    if (!r.ok) {
-      lastErr = (j && j.error && j.error.message) || ('Claude API error ' + r.status);
-      if (r.status === 429 || r.status >= 500) continue;
-      return json({ error: lastErr }, 502);
-    }
-    try {
-      const out = (j.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
-      const d = chunkParse(out);
-      if (!chunkValid(d)) throw new Error('bad');
-      const clean = {
-        title: String(d.title || '').slice(0, 40),
-        sentences: d.sentences.map(s => {
-          const o = { en: String(s.en), ko: String(s.ko || '') };
-          for (const k of ['s', 'm', 'l']) o[k] = s[k].map(c => [String(c[0]), String(c[1] || '')]);
-          return o;
-        }),
-      };
-      await env.WORDS.put(key, JSON.stringify(clean), { expirationTtl: CHUNK_TTL });
-      return json(clean);
-    } catch { if (j && j.stop_reason === 'max_tokens') lastErr = 'The story is too long for slash reading.'; }
-  }
-  return json({ error: lastErr }, 502);
-}
 
 // ── Settings ─────────────────────────────────────
 // [field, max length] — the user's own API keys and AI choice
