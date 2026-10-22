@@ -26,9 +26,11 @@
   --bar:#ffffffee;
   --f-word:"Literata",Georgia,serif; --f-ui:"Nunito",system-ui,-apple-system,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
   --gutter-l:max(16px,env(safe-area-inset-left,0px)); --gutter-r:max(16px,env(safe-area-inset-right,0px));
+  --slash:#ff9600; --hl:#ddf4ff; --hl-line:#84d8ff; --ko:#2f3a42; --ko-now:#0a4f73;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
+  --slash:#ffab2e; --hl:#16384a; --hl-line:#1c6a8f; --ko:#d3dee4; --ko-now:#e3f6ff;
   --bg:#131f24; --card:#1d2b32; --fg:#f1f7fb; --muted:#9db0bb; --line:#37464f; --line-d:#2a383f;
   --brand:#58cc02; --brand-d:#58a700; --brand-soft:#203a12; --on-brand:#ffffff;
   --accent:#49c0f8; --accent-soft:#1b3a4a; --good:#79d634; --good-soft:#203a12; --bad:#ff6b6b; --bad-soft:#4a1f22; --coral-soft:#3f2219;
@@ -397,6 +399,54 @@ button.chip:active{filter:brightness(.92)}
 .tw:active{background:var(--accent-soft)}
 /* story read-aloud: the paragraph being read */
 .storytext > p{transition:background .2s}
+/* story reader controls (play / stop / translate / slash level) and slash reading (끊어읽기) */
+.rctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ricon{width:44px;height:44px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--fg);box-shadow:0 3px 0 var(--line);display:inline-grid;place-items:center;padding:0;flex:none;cursor:pointer;transition:transform .06s,box-shadow .06s}
+.ricon:active{transform:translateY(3px);box-shadow:0 0 0 var(--line)}
+.ricon svg{width:22px;height:22px}
+.ricon.on{background:var(--hl);border-color:var(--hl-line);box-shadow:0 3px 0 var(--hl-line);color:var(--blue)}
+.ricon.play{background:var(--green);border-color:var(--green);box-shadow:0 3px 0 var(--green-d);color:#fff}
+.ricon.plain{border-color:transparent;box-shadow:none;background:transparent;width:40px;height:40px}
+.lvsel{margin-left:auto;position:relative;display:inline-flex;align-items:center}
+.lvsel select{appearance:none;-webkit-appearance:none;border:2px solid var(--line);border-radius:14px;background:var(--card);color:var(--fg);font:inherit;font-weight:900;font-size:15px;height:44px;padding:0 34px 0 12px;box-shadow:0 3px 0 var(--line);cursor:pointer}
+.lvsel::after{content:"";position:absolute;right:13px;top:50%;width:7px;height:7px;border-right:2.5px solid var(--muted);border-bottom:2.5px solid var(--muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.spin{display:inline-block;width:16px;height:16px;border:3px solid var(--line);border-top-color:var(--blue);border-radius:50%;vertical-align:-3px;margin-right:6px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rprog{height:6px;border-radius:6px;background:var(--line);overflow:hidden}
+.rprog i{display:block;height:100%;width:0;background:var(--green);border-radius:6px;transition:width .25s}
+.storytext.big{font-size:21px}
+.slashtext{display:flex;flex-direction:column;gap:22px}
+.slashtext > p{margin:0;display:flex;flex-direction:column;gap:16px}
+.slashtext .sent{display:flex;flex-wrap:wrap;align-items:flex-start;row-gap:10px;line-height:1.5}
+.slashtext .chunk{display:inline-flex;flex-direction:column;border-radius:10px;padding:2px 5px;margin:0 -1px;cursor:pointer;border:2px solid transparent;transition:background .15s,border-color .15s;max-width:100%}
+.slashtext .chunk .en{font:500 18px/1.5 var(--f-word);color:var(--fg)}
+.slashtext .chunk .en b{font-weight:800;color:var(--coral-d)}
+.slashtext .chunk .ko{font-weight:700;font-size:13.5px;color:var(--ko);line-height:1.4;margin-top:2px}
+.slashtext .chunk.now{background:var(--hl);border-color:var(--hl-line)}
+.slashtext .chunk.now .ko{color:var(--ko-now)}
+.slashtext .sl{font:900 18px/1.5 var(--f-word);color:var(--slash);padding:2px 3px;user-select:none;-webkit-user-select:none}
+.slashtext.big .chunk .en,.slashtext.big .sl{font-size:21px}
+.slashtext:not(.tr) .chunk .ko{display:none}
+.rmenu{display:flex;flex-direction:column;gap:4px}
+.rmenu .lab{padding:4px 4px 2px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rmenu .sz{display:flex;gap:8px;margin-bottom:6px}
+.rmenu .sz button,.rates button{border:2px solid var(--line);background:var(--card);color:var(--fg);border-radius:14px;font:inherit;font-weight:900;box-shadow:0 3px 0 var(--line);cursor:pointer;font-variant-numeric:tabular-nums}
+.rmenu .sz button{flex:1;height:44px}
+.rmenu .sz button[aria-pressed="true"],.rates button[aria-pressed="true"]{background:var(--hl);border-color:var(--hl-line);color:var(--blue);box-shadow:0 3px 0 var(--hl-line)}
+.rmenu .mi2{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:var(--fg);text-align:left;padding:13px 6px;border-radius:12px;font:inherit;font-weight:800;font-size:16px;cursor:pointer;border-top:2px solid var(--line)}
+.rmenu .mi2 svg{width:20px;height:20px;flex:none}
+.rmenu .mi2.red{color:var(--bad)}
+.opts{display:flex;flex-direction:column;gap:12px}
+.opt{display:block;text-align:left;width:100%;border:2px solid var(--line);border-radius:18px;background:var(--card);color:var(--fg);padding:14px 16px;box-shadow:0 4px 0 var(--line);font:inherit;cursor:pointer}
+.opt[aria-checked="true"]{border-color:var(--hl-line);background:var(--hl);box-shadow:0 4px 0 var(--hl-line)}
+.opt .h{display:flex;align-items:center;gap:10px;font-weight:900;font-size:17px}
+.opt .badge{min-width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--bg);font-size:15px}
+.opt[aria-checked="true"] .badge{background:var(--blue);color:#fff}
+.opt .d{color:var(--muted);font-weight:700;font-size:14px;margin-top:8px;line-height:1.5}
+.opt .ex{margin-top:10px;font:500 15px/1.6 var(--f-word);color:var(--fg)}
+.opt .ex b{color:var(--slash);font-weight:900}
+.rates{display:flex;gap:8px;flex-wrap:wrap}
+.rates button{padding:10px 14px}
 .storytext > p.reading{background:var(--accent-soft);border-radius:6px;box-shadow:0 0 0 6px var(--accent-soft)}
 #vRate{width:100%;accent-color:var(--accent)}
 /* story translation */
@@ -564,29 +614,33 @@ button.chip:active{filter:brightness(.92)}
     <div class="scroll"><div class="stack" id="homeBody"></div></div>
   </section>
 
-  <!-- Test -->
-  <section class="screen" id="s-test" hidden>
-    <div class="bar"><h1>Test</h1>
+  <!-- Story (stories + story test) -->
+  <section class="screen" id="s-story" hidden>
+    <div class="bar" id="storyBarEl"><h1>Story</h1></div>
+    <div class="seg" role="tablist" id="storySeg">
+      <button role="tab" id="sseg-list" aria-selected="true" type="button">Stories</button>
+      <button role="tab" id="sseg-test" aria-selected="false" type="button">Test</button>
+    </div>
+    <div class="pane" id="pane-story">
+      <div class="scroll" id="storyScroll"><div class="stack" id="storyBody"></div></div>
+    </div>
+    <div class="pane" id="pane-stest" hidden>
+      <div class="scroll" id="storyTestScroll"><div class="stack" id="storyTestBody"></div></div>
+    </div>
+  </section>
+
+  <!-- Words (dictionary, word list, words test) -->
+  <section class="screen" id="s-dict" hidden>
+    <div class="bar" id="dictBarEl"><h1>Words</h1>
       <div class="tbar" id="testBarR" hidden>
         <span class="ttime" id="testTime" aria-label="Time">⏱ 0:00</span>
         <button class="hintbtn" id="testHint" type="button" aria-pressed="false">💡 Hint</button>
         <button class="linkbtn quit" id="testQuit" type="button">Quit</button>
       </div></div>
-    <div class="seg" role="tablist" id="testSeg">
-      <button role="tab" id="tseg-schedule" aria-selected="true" type="button">Words</button>
-      <button role="tab" id="tseg-story" aria-selected="false" type="button">Story</button>
-    </div>
-    <div class="scroll" id="testScroll"><div class="stack" id="testBody"></div></div>
-    <div class="scroll" id="storyTestScroll" hidden><div class="stack" id="storyTestBody"></div></div>
-  </section>
-
-  <!-- Words (dictionary, word list, stories) -->
-  <section class="screen" id="s-dict" hidden>
-    <div class="bar"><h1>Words</h1></div>
-    <div class="seg" role="tablist">
+    <div class="seg" role="tablist" id="dictSeg">
       <button role="tab" id="seg-search" aria-selected="true" type="button">Dictionary</button>
       <button role="tab" id="seg-list" aria-selected="false" type="button">Words</button>
-      <button role="tab" id="seg-story" aria-selected="false" type="button">Story</button>
+      <button role="tab" id="seg-test" aria-selected="false" type="button">Test</button>
     </div>
     <div class="pane" id="pane-search">
       <form class="composer top" id="searchForm" autocomplete="off">
@@ -602,8 +656,8 @@ button.chip:active{filter:brightness(.92)}
         <div class="selbtns"><button class="btn blue" id="selTest" type="button">Test</button><button class="btn" id="selGo" type="button">Make a story</button><button class="btn danger" id="selDel" type="button" aria-label="Delete">🗑</button></div>
       </div>
     </div>
-    <div class="pane" id="pane-story" hidden>
-      <div class="scroll" id="storyScroll"><div class="stack" id="storyBody"></div></div>
+    <div class="pane" id="pane-test" hidden>
+      <div class="scroll" id="testScroll"><div class="stack" id="testBody"></div></div>
     </div>
   </section>
 
@@ -635,7 +689,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.38.2</span> · <span class="version-date">2026/10/21</span></p>
+          <p class="note"><span class="version-tag">v2.39.0</span> · <span class="version-date">2026/10/23</span></p>
         </div>
       </div></div>
     </div>
@@ -645,6 +699,10 @@ button.chip:active{filter:brightness(.92)}
       <div class="scroll"><div class="stack" id="authBody"></div></div>
     </div>
     <!-- Me: Language settings page -->
+    <div class="mepage" id="me-slash" hidden>
+      <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>Slash reading</h2><span class="back-spacer"></span></div>
+      <div class="scroll"><div class="stack" id="slashBody"></div></div>
+    </div>
     <div class="mepage" id="me-lang" hidden>
       <div class="bar sub"><button class="back" type="button" data-back aria-label="Back">‹</button><h2>Language</h2><span class="back-spacer"></span></div>
       <div class="scroll"><div class="stack">
@@ -748,10 +806,10 @@ button.chip:active{filter:brightness(.92)}
   <nav class="tabbar" role="tablist" aria-label="Main">
     <button role="tab" id="tab-home" aria-selected="true" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
-    <button role="tab" id="tab-test" aria-selected="false" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="f" x="4" y="3" width="16" height="18" rx="2"/><path class="cut" d="m8.5 12 2.5 2.5 4.5-5"/></svg>Test<span class="n" id="dueBadge" hidden></span></button>
+    <button role="tab" id="tab-story" aria-selected="false" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M3 5.5C5.5 4 8.5 4 12 6c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5z"/><path class="cut" d="M12 6v13.5"/></svg>Story</button>
     <button role="tab" id="tab-dict" aria-selected="false" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/><path class="cut" d="M9 8h7M9 11.5h5"/></svg>Words</button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/><path class="cut" d="M9 8h7M9 11.5h5"/></svg>Words<span class="n" id="dueBadge" hidden></span></button>
     <button role="tab" id="tab-write" aria-selected="false" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="f" d="M4 20h4L19 9l-4-4L4 16z"/><path class="cut" d="M13.5 6.5l4 4"/></svg>Writing</button>
     <button role="tab" id="tab-me" aria-selected="false" type="button">
@@ -898,6 +956,7 @@ function mergeData(a,b){
     if(rs.last&&(!ls.last||rs.last.at>ls.last.at)) ls.last=rs.last;
     ls.tries=Math.max(ls.tries||0,rs.tries||0);
     if(!ls.ko&&rs.ko){ls.ko=rs.ko;ls.koSrc=rs.koSrc}
+    if(rs.chunks&&rs.chunkSrc===rs.text&&!(ls.chunks&&ls.chunkSrc===ls.text)&&rs.text===ls.text){ls.chunks=rs.chunks;ls.chunkSrc=rs.chunkSrc}
   }
   return{cards:[...byWord.values()],seed:Math.max(a.seed||0,b.seed||0),log,history,stories:[...sts.values()]};
 }
@@ -1051,8 +1110,8 @@ function rerenderCurrent(){
   renderBadge();
   if(document.body.classList.contains('intest')||storyRun) return;
   if(curTab==='home') renderHome();
-  else if(curTab==='test') renderTestTab();
-  else if(curTab==='dict'){if(dictPane==='search') renderSearch(false);else if(dictPane==='list') renderList();else renderStories()}
+  else if(curTab==='story'){if(storyPane==='list') renderStories();else renderTestTab()}
+  else if(curTab==='dict'){if(dictPane==='search') renderSearch(false);else if(dictPane==='list') renderList();else renderTestTab()}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){refreshCloud(3000);if(acct==='cloud') loadSettings()}});
 window.addEventListener('focus',()=>refreshCloud(3000));
@@ -1305,11 +1364,11 @@ async function gFetchUrl(text,voice){
 }
 function gStop(){gPlayToken++;try{gAudio.pause()}catch(e){}}
 // Play one piece of text; resolves when it finishes (or is stopped), rejects on failure
-async function gSay(text,voice){
+async function gSay(text,voice,rate){
   const token=++gPlayToken;
   const url=await gFetchUrl(text,voice);
   if(token!==gPlayToken) return;
-  gAudio.src=url;gAudio.playbackRate=voicePref.rate||.9;
+  gAudio.src=url;gAudio.playbackRate=rate||voicePref.rate||.9;
   try{gAudio.preservesPitch=true;gAudio.webkitPreservesPitch=true}catch(e){}
   await gAudio.play();
   await new Promise(res=>{const done=()=>{gAudio.removeEventListener('ended',done);gAudio.removeEventListener('pause',done);res()};gAudio.addEventListener('ended',done);gAudio.addEventListener('pause',done)});
@@ -1346,7 +1405,9 @@ function markReading(){
   }
   markReading.lastP=pi;
   const b=$(readUI.btn);
-  if(b){b.setAttribute('aria-pressed',!!reader);b.querySelector('span').textContent=reader?'Stop':'Listen'}
+  if(b){b.setAttribute('aria-pressed',!!reader);const sp=b.querySelector('span');if(sp) sp.textContent=reader?'Stop':'Listen';else{b.innerHTML=reader?PAUSE_ICON:PLAY_ICON;b.setAttribute('aria-label',reader?'Pause':'Play')}}
+  const pr=$('svProg');
+  if(pr&&readUI===READ_UI&&!(reader&&reader.slash)) pr.style.width=reader?((reader.i+1)/reader.parts.length*100)+'%':(srPos?pr.style.width:'0%');
 }
 function stopReading(){
   if(!reader) return;
@@ -1355,7 +1416,7 @@ function stopReading(){
   gStop();
   markReading();
 }
-function startReading(s,ui){
+function startReading(s,ui,from){
   if(!gOn()&&!('speechSynthesis' in window)) return;
   if(reader) stopReading();
   readUI=ui||READ_UI;markReading.lastP=-1;
@@ -1363,7 +1424,7 @@ function startReading(s,ui){
   stopReading();try{speechSynthesis.cancel()}catch(e){}gStop();
   const parts=[];
   storyParas(s).forEach((p,pi)=>splitSentences(p).forEach(t=>parts.push({p:pi,t})));
-  reader={id:s.id,parts,i:0,token:Math.random(),google:gOn()};
+  reader={id:s.id,parts,i:Math.min(from||0,Math.max(0,parts.length-1)),token:Math.random(),google:gOn()};
   readNext(reader.token);
 }
 function readNext(token){
@@ -1417,7 +1478,7 @@ const AI_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 const TR_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h8M8 3v2M5.5 5c.8 3 3.2 5.6 6 7M10.5 5c-.9 3.6-3.3 6.5-6.5 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/></svg>';
 const SPK_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
 const AI_FIELDS=['aiProvider','openaiKey','openaiModel','geminiKey','geminiModel','claudeKey','claudeModel'];
-const SETTINGS0={translateKey:'',aiProvider:'',openaiKey:'',openaiModel:'',geminiKey:'',geminiModel:'',claudeKey:'',claudeModel:''};
+const SETTINGS0={translateKey:'',aiProvider:'',openaiKey:'',openaiModel:'',geminiKey:'',geminiModel:'',claudeKey:'',claudeModel:'',slashLevel:'',slashTr:'',slashRate:'',slashPause:''};
 let settings={...SETTINGS0};
 // Several texts in one request (keeps order)
 async function translateManyKo(texts){
@@ -1502,7 +1563,7 @@ document.addEventListener('click',async e=>{
 });
 
 // ---------- tabs ----------
-const TABS=['home','test','dict','write','me'];
+const TABS=['home','story','dict','write','me'];
 let curTab='home';
 // Words tab: the tab bar slides away while scrolling down and back on scrolling up
 let tbHidden=false,tbIgnore=0;
@@ -1512,7 +1573,7 @@ function setTabbarHidden(h){
   tbIgnore=Date.now()+350;   // the scroll area resizes during the slide; ignore those scroll events
   document.body.classList.toggle('tbhide',h);
 }
-document.querySelectorAll('#s-dict .scroll').forEach(el=>{
+document.querySelectorAll('#s-dict .scroll:not(#testScroll), #s-story .scroll:not(#storyTestScroll)').forEach(el=>{
   let last=0;
   el.addEventListener('scroll',()=>{
     const max=el.scrollHeight-el.clientHeight, top=Math.max(0,Math.min(el.scrollTop,max)), d=top-last;
@@ -1527,12 +1588,13 @@ function show(name){
   if(name!==curTab) stopReading();
   setTabbarHidden(false);
   if(name!=='dict') listSel=null;
-  if(name!=='test') hideStoryHint();
+  if(name!=='story') hideStoryHint();
   setTimeout(tmrSync,0);
   curTab=name;
   for(const t of TABS){$('tab-'+t).setAttribute('aria-selected',t===name);$('s-'+t).hidden=t!==name}
   if(name==='home') renderHome();
-  if(name==='test') renderTestTab();else document.body.classList.remove('intest');
+  document.body.classList.remove('intest');
+  if(name==='story') renderStoryTab();
   if(name==='dict'){renderDict();if(dictPane==='search') $('searchIn').focus()}
   if(name==='me') renderMe();
   if(name==='write') renderWrite();
@@ -1623,12 +1685,12 @@ function renderHome(){
       <div class="week">${days.map(({k,v})=>{const t=v.ok+v.no;const hh=t/max*95;const [y,m,d]=k.split('-').map(Number);const wd=dn[new Date(y,m-1,d).getDay()];
         return `<div class="wk${k===today()?' today':''}"><small>${t||''}</small><div class="col" style="height:${Math.max(hh,4)}px">${t?`<div class="ok" style="height:${v.ok/t*100}%"></div><div class="no" style="height:${v.no/t*100}%"></div>`:''}</div><small>${wd}</small></div>`}).join('')}</div>
     </div>`;
-  const goWords=()=>{show('test');testPane='schedule';renderTestTab();startTest()};
+  const goWords=()=>{openWordsTest();startTest()};
   if($('homeStart')) $('homeStart').onclick=goWords;
   if($('homeLearn')) $('homeLearn').onclick=learnNow;
   $('homeStory').onclick=()=>{
-    if(!stories.length){show('dict');dictPane='story';storyView=null;renderDict();openStoryForm();return}
-    show('test');testPane='story';renderTestTab();
+    if(!stories.length){storyPane='list';storyView=null;show('story');openStoryForm();return}
+    openStoryTest();
     if(ns) startStoryTest(ns.id);
   };
 }
@@ -1775,7 +1837,7 @@ function lnFinish(){
   $('lnLater').onclick=()=>closeLearn();
   $('lnTest').onclick=()=>{
     const kind=r.kind,words=new Set(r.words);
-    closeLearn();show('test');testPane='schedule';renderTestTab();
+    closeLearn();openWordsTest();
     if(kind==='today') startTest();
     else startTest(allItems().filter(it=>words.has(it.c.word)),'Learned words');
   };
@@ -2026,13 +2088,14 @@ function lpAudio(url){
     if(tk!==gPlayToken) res();
   });
 }
-function lpDevice(text,ko){
+function lpDevice(text,ko,rate){
   return new Promise(res=>{
     try{
       if(!('speechSynthesis' in window)) return setTimeout(res,600);
       speechSynthesis.cancel();
       const u=ko?new SpeechSynthesisUtterance(text):makeUtter(text);
       if(ko){u.lang='ko-KR';const v=speechSynthesis.getVoices().find(v=>/^ko/i.test(v.lang));if(v) u.voice=v;u.rate=1}
+      if(rate) u.rate=rate;
       let ended=false;const fin=()=>{if(!ended){ended=true;res()}};
       u.onend=fin;u.onerror=fin;
       speechSynthesis.speak(u);
@@ -2439,16 +2502,32 @@ $('testBody').addEventListener('click',e=>{
   if(h) renderResult(history[+h.dataset.hist],false);
 });
 // ---------- test tab: Words / Story ----------
-let testPane='schedule';
+let testPane='schedule';   // which test is showing: 'schedule' (Words → Test) or 'story' (Story → Test)
+let storyPane='list';      // Story tab: 'list' | 'test'
+// The open tab's sub-tabs hide while a test runs
+function testSegHide(h){$(testPane==='story'?'storySeg':'dictSeg').hidden=h}
+function openWordsTest(){testPane='schedule';dictPane='test';show('dict')}
+function openStoryTest(id){testPane='story';storyPane='test';show('story');if(id) startStoryTest(id)}
+// Story tab: Stories | Test
+function renderStoryTab(){
+  for(const k of ['list','test']) $('sseg-'+k).setAttribute('aria-selected',storyPane===k);
+  $('pane-story').hidden=storyPane!=='list';$('pane-stest').hidden=storyPane!=='test';
+  if(storyPane==='test'){testPane='story';tbScreenIs('stest');renderTestTab()}
+  else{$('storySeg').hidden=false;if(!storyRun||storyRun.done) setQuit(null);hideStoryHint();renderStories()}
+  tmrSync();
+}
+$('sseg-list').onclick=()=>{setTabbarHidden(false);storyPane='list';stopReading();storyView=null;renderStoryTab()};
+$('sseg-test').onclick=()=>{setTabbarHidden(false);storyPane='test';stopReading();renderStoryTab()};
 // Timer, Hint and Quit sit in the fixed header while a test runs; no tab bar during a test
 function setQuit(fn,hintFn){
+  const host=$(testPane==='story'?'storyBarEl':'dictBarEl');if($('testBarR').parentNode!==host) host.appendChild($('testBarR'));
   $('testBarR').hidden=!fn;$('testQuit').onclick=fn||null;
   $('testHint').hidden=!hintFn;$('testHint').onclick=hintFn||null;$('testHint').disabled=false;
   document.body.classList.toggle('intest',!!fn);
 }
 // Test timer: runs only while a test is on screen (stops on another tab, another app, or a locked phone)
 const tmr={ms:0,since:0,on:false};
-const tmrShould=()=>tmr.on&&curTab==='test'&&document.visibilityState==='visible';
+const tmrShould=()=>tmr.on&&document.visibilityState==='visible'&&(testPane==='story'?curTab==='story'&&storyPane==='test':curTab==='dict'&&dictPane==='test');
 function tmrSync(){
   const now=Date.now();
   if(tmrShould()){if(!tmr.since) tmr.since=now}
@@ -2471,14 +2550,10 @@ function confirmQuit(text,onQuit){
   $('qQuit').onclick=()=>{closeSheet();onQuit()};
 }
 function renderTestTab(){
-  $('tseg-schedule').setAttribute('aria-selected',testPane==='schedule');$('tseg-story').setAttribute('aria-selected',testPane==='story');
-  $('testScroll').hidden=testPane!=='schedule';$('storyTestScroll').hidden=testPane!=='story';
-  if(testPane==='schedule'){$('testSeg').hidden=inTest;setQuit(inTest?askQuitTest:null,null);if(!inTest) testHome()}
-  else{$('testSeg').hidden=!!storyRun;setQuit(storyRun&&!storyRun.done?askQuitStory:null,storyRun&&!storyRun.done?toggleStoryHint:null);if(!storyRun) storyTestList()}
+  if(testPane==='schedule'){testSegHide(inTest);setQuit(inTest?askQuitTest:null,null);if(!inTest) testHome()}
+  else{testSegHide(!!storyRun);setQuit(storyRun&&!storyRun.done?askQuitStory:null,storyRun&&!storyRun.done?toggleStoryHint:null);if(!storyRun) storyTestList()}
   tmrSync();
 }
-$('tseg-schedule').onclick=()=>{testPane='schedule';renderTestTab()};
-$('tseg-story').onclick=()=>{testPane='story';renderTestTab()};
 
 // ---------- stories: shared helpers ----------
 function storyById(id){return stories.find(s=>s.id===id)}
@@ -2541,9 +2616,9 @@ function storyStatsHTML(){
 // ---------- story test ----------
 let storyRun=null;   // {id, ms}
 function storyTestList(){
-  storyRun=null;$('testSeg').hidden=false;setQuit(null);hideStoryHint();
+  storyRun=null;testPane='story';testSegHide(false);setQuit(null);hideStoryHint();
   const b=$('storyTestBody');
-  if(!stories.length){b.innerHTML=`<div class="card empty">No stories yet. Add one in the Words tab → Story, then test yourself here.</div>`;return}
+  if(!stories.length){b.innerHTML=`<div class="card empty">No stories yet. Add one in Stories, then test yourself here.</div>`;return}
   b.innerHTML=`${storyStatsHTML()}
     <p class="note" style="padding:0 4px;font-size:13px">Pick a story. Its study words become blanks to fill in.</p>
     <div class="slist">${storiesNewest().map(s=>storyRow(s)).join('')}</div>`;
@@ -2553,7 +2628,7 @@ function startStoryTest(id){
   const s=storyById(id);if(!s) return;
   const ms=storyMatches(s);
   if(!ms.length){$('storyTestBody').innerHTML=`<button class="linkbtn inlineback" id="stBack" type="button">‹ Stories</button><div class="card empty">None of this story's study words appear in its text.</div>`;$('stBack').onclick=storyTestList;return}
-  testPane='story';storyRun={id,ms};$('testSeg').hidden=true;setQuit(askQuitStory,toggleStoryHint);tmrStart();
+  testPane='story';storyRun={id,ms};testSegHide(true);setQuit(askQuitStory,toggleStoryHint);tmrStart();
   const hintWords=[...new Set(ms.map(m=>m.w))].sort();   // alphabetical, so the order gives nothing away
   $('storyTestBody').innerHTML=`
     <span class="label">${plural(ms.length,'blank')} · 📖 Words shows the word list</span>
@@ -2650,7 +2725,7 @@ function startTest(customSet,label){
   }
   if(!set.length){testHome();return}
   queue=spread(set.slice());total=queue.length;score={ok:0,no:0};results=[];inTest=true;testStartedAt=new Date().toISOString();
-  $('testSeg').hidden=true;setQuit(askQuitTest,null);tmrStart();
+  testPane='schedule';testSegHide(true);setQuit(askQuitTest,null);tmrStart();
   next();
 }
 // ---------- letter-slot blank ----------
@@ -2816,7 +2891,7 @@ function grade(ans){
 }
 function finish(){
   const secs=tmrStop();
-  inTest=false;$('testSeg').hidden=false;setQuit(null);
+  inTest=false;testSegHide(false);setQuit(null);
   renderResult(saveHistory(secs,false),true);
 }
 // The sentences a past test used, found again in the word list
@@ -2909,30 +2984,27 @@ let tbScreen='';
 function tbScreenIs(k){if(k!==tbScreen){tbScreen=k;setTabbarHidden(false)}}
 function renderDict(){
   if(dictPane!=='list') listSel=null;
-  tbScreenIs(dictPane+(dictPane==='story'?':'+(storyView||''):''));
-  for(const k of ['search','list','story']){$('seg-'+k).setAttribute('aria-selected',dictPane===k);$('pane-'+k).hidden=dictPane!==k}
-  if(dictPane==='search') renderSearch(true);else if(dictPane==='list') renderList();else renderStories();
+  tbScreenIs(dictPane);
+  for(const k of ['search','list','test']){$('seg-'+k).setAttribute('aria-selected',dictPane===k);$('pane-'+k).hidden=dictPane!==k}
+  if(dictPane==='test'){testPane='schedule';renderTestTab()}
+  else{$('dictSeg').hidden=false;if(!inTest) setQuit(null);if(dictPane==='search') renderSearch(true);else renderList()}
+  tmrSync();
 }
 $('seg-search').onclick=()=>{setTabbarHidden(false);dictPane='search';renderDict();$('searchIn').focus()};
 $('seg-list').onclick=()=>{setTabbarHidden(false);dictPane='list';renderDict()};
-$('seg-story').onclick=()=>{setTabbarHidden(false);dictPane='story';stopReading();storyView=null;renderDict()};
+$('seg-test').onclick=()=>{setTabbarHidden(false);dictPane='test';renderDict()};
 
 // ---------- words tab: stories ----------
-let storyView=null,storyConfirm=false,storyTr=false,storyTrMsg='',storyTrErr=false;
-// Korean translation under each paragraph. Saved on the story (ko, koSrc) so it is fetched once.
-async function toggleStoryTr(s){
-  storyTrMsg='';storyTrErr=false;
-  if(storyTr){storyTr=false;renderStoryView(s);return}
-  storyTr=true;
-  if(s.ko&&s.koSrc===s.text){renderStoryView(s);return}
-  if(!settings.translateKey){storyTr=false;storyTrErr=true;storyTrMsg='Add your Google Translate API key in Me → Settings to see translations.';renderStoryView(s);return}
-  storyTrMsg='Translating…';renderStoryView(s);
-  try{
-    const paras=storyParas(s);
-    s.ko=await translateManyKo(paras);s.koSrc=s.text;save();
-    storyTrMsg='';
-  }catch(err){storyTr=false;storyTrErr=true;storyTrMsg=err.message}
-  if(storyView===s.id) renderStoryView(s);
+let storyView=null,storyConfirm=false,storyTrMsg='',storyTrErr=false,storyTrBusy=false;
+// Korean under each paragraph when slashes are off (Google). Saved on the story (ko, koSrc) so it is fetched once.
+async function ensureStoryKo(s,asked){
+  if(s.ko&&s.koSrc===s.text||storyTrBusy) return;
+  if(!settings.translateKey){if(asked){storyTrErr=true;storyTrMsg='Add your Google Translate API key in Me → Settings to see translations.'}return}
+  storyTrBusy=true;storyTrErr=false;storyTrMsg='Translating…';if(storyView===s.id) renderStoryView(s);
+  try{s.ko=await translateManyKo(storyParas(s));s.koSrc=s.text;save();storyTrMsg=''}
+  catch(err){storyTrErr=true;storyTrMsg=err.message}
+  storyTrBusy=false;
+  if(storyView===s.id&&curTab==='story') renderStoryView(s);
 }
 function renderStories(){
   const b=$('storyBody');
@@ -2946,40 +3018,216 @@ function renderStories(){
 }
 $('storyBody').addEventListener('click',e=>{
   const r=e.target.closest('[data-story]');
-  if(r&&!storyView){storyView=r.dataset.story;storyConfirm=false;storyTr=false;storyTrMsg='';try{history.pushState({story:storyView},'')}catch(err){}renderStories();$('storyScroll').scrollTop=0}
+  if(r&&!storyView){storyView=r.dataset.story;storyConfirm=false;storyTrMsg='';storyTrErr=false;chunkErr='';srPos=null;try{history.pushState({story:storyView},'')}catch(err){}renderStories();$('storyScroll').scrollTop=0}
 });
 function closeStoryView(){stopReading();if(history.state&&history.state.story) history.back();else{storyView=null;renderStories()}}
+// ---------- slash reading (끊어읽기) in the story reader ----------
+const PLAY_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.5-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>';
+const PAUSE_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1.4"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.4"/></svg>';
+const STOP_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.4"/></svg>';
+const MORE_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>';
+const SLASH_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h5M3 12h3M3 17h5M16 7h5M18 12h3M16 17h5"/><path d="M13.5 4l-3 16"/></svg>';
+const EDIT_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>';
+const TRASH_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
+const SL_LEVELS=[
+  {k:'s',badge:'S',name:'Small chunks',d:'Cuts into words and short phrases. Subject, verb, object, prepositional phrases and time words are all separate. Best when you start.',
+   ex:'The scientists <b>/</b> who studied <b>/</b> the ancient forest <b>/</b> discovered <b>/</b> that trees, <b>/</b> which were once thought <b>/</b> to compete <b>/</b> for sunlight, <b>/</b> actually share nutrients …'},
+  {k:'m',badge:'M',name:'Medium chunks',d:'Keeps relative clauses, to-infinitives and long prepositional phrases together. Practice reading in units of meaning.',
+   ex:'The scientists <b>/</b> who studied the ancient forest <b>/</b> discovered that trees, <b>/</b> which were once thought to compete for sunlight, <b>/</b> actually share nutrients …'},
+  {k:'l',badge:'L',name:'Large chunks',d:'Big blocks of meaning, but always cuts where the structure turns: around an inserted clause and where a long subject ends.',
+   ex:'The scientists who studied the ancient forest discovered that trees, <b>/</b> which were once thought to compete for sunlight, <b>/</b> actually share nutrients through an underground network of fungi.'},
+  {k:'none',badge:'–',name:'No slashes',d:'The story as it is, with no slashes. Translations are shown under each paragraph.',
+   ex:'The scientists who studied the ancient forest discovered that trees, which were once thought to compete for sunlight, actually share nutrients through an underground network of fungi.'}];
+const SL_RATES=[0.7,0.8,0.9,1.0,1.1],SL_PAUSES=[0,0.5,1,1.5,2];
+// Saved with the account settings (level, translation, speed, pause); font size stays on this device
+function slashCfg(){
+  const lv=SL_LEVELS.some(l=>l.k===settings.slashLevel)?settings.slashLevel:'none';
+  const rate=parseFloat(settings.slashRate),pause=parseFloat(settings.slashPause);
+  return {level:lv,tr:settings.slashTr!=='0',rate:SL_RATES.includes(rate)?rate:0.9,pause:SL_PAUSES.includes(pause)?pause:1};
+}
+function setSlash(k,v){settings[k]=String(v);storeSettings().catch(()=>{})}
+const srBig=()=>localStorage.getItem('wm.srFont')==='big';
+let srPos=null;                       // {id, lv, i}: where playback is (kept while paused)
+let chunkBusy=null,chunkErr='';
+const chunksReady=s=>!!(s.chunks&&s.chunkSrc===s.text&&s.chunks.sentences&&s.chunks.sentences.length);
+// Which sentences belong to which paragraph (the AI gets the whole story and returns sentences)
+function slashParas(s){
+  const norm=t=>String(t).replace(/\s+/g,' ').trim();
+  const paras=storyParas(s).map(norm),out=paras.map(()=>[]);let pi=0,pos=0;
+  s.chunks.sentences.forEach((x,si)=>{
+    const e=norm(x.en).slice(0,24);let k=pi,at=-1;
+    while(k<paras.length){at=paras[k].indexOf(e,k===pi?pos:0);if(at>=0) break;k++}
+    if(at<0){out[pi].push(si);return}
+    pi=k;pos=at+e.length;out[pi].push(si);
+  });
+  return out.filter(a=>a.length);
+}
+function slashList(s,lv){
+  const out=[],S=s.chunks.sentences;
+  for(const sis of slashParas(s)) for(const si of sis) for(const c of S[si][lv]) out.push({si,en:c[0],ko:c[1]});
+  return out;
+}
+function boldStudy(text,words){
+  const ms=[];
+  for(const w of words){const re=wordRe(w);let m;while((m=re.exec(text))) ms.push([m.index,m.index+m[0].length])}
+  ms.sort((a,b)=>a[0]-b[0]);let out='',pos=0;
+  for(const [a,b] of ms){if(a<pos) continue;out+=esc(text.slice(pos,a))+'<b>'+esc(text.slice(a,b))+'</b>';pos=b}
+  return out+esc(text.slice(pos));
+}
+function slashHTML(s,lv){
+  let i=0;const S=s.chunks.sentences;
+  return slashParas(s).map(sis=>`<p>${sis.map(si=>`<span class="sent">${S[si][lv].map((c,k)=>`${k?'<span class="sl" aria-hidden="true">/</span>':''}<span class="chunk" data-ci="${i++}"><span class="en">${boldStudy(c[0],s.words)}</span><span class="ko">${esc(c[1])}</span></span>`).join('')}</span>`).join('')}</p>`).join('');
+}
+async function loadChunks(s,fresh){
+  if(chunkBusy) return;
+  if(acct!=='cloud'){chunkErr='Sign in with Google to use slash reading.';renderStoryView(s);return}
+  chunkBusy=s.id;chunkErr='';renderStoryView(s);
+  try{
+    const r=await api('/api/chunk',{method:'POST',body:JSON.stringify({text:s.text,fresh:!!fresh})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error||('Error '+r.status));
+    s.chunks={title:j.title||'',sentences:j.sentences};s.chunkSrc=s.text;save();
+  }catch(e){chunkErr=e.message==='Failed to fetch'?'Could not reach the server. Check your connection.':e.message}
+  chunkBusy=null;
+  if(storyView===s.id&&curTab==='story') renderStoryView(s);
+}
+function srSay(text,ko,rate){
+  if(gOn()) return gSay(text,ko?'ko-KR-Neural2-A':undefined,rate).catch(e=>{gLastError=e.message;return lpDevice(text,ko,rate)});
+  return lpDevice(text,ko,rate);
+}
+const srWait=ms=>new Promise(r=>setTimeout(r,ms));
+// Paint the current chunk, the progress bar and the play button
+function srPaint(s){
+  const on=!!(reader&&reader.slash&&reader.id===s.id),idx=srPos&&srPos.id===s.id?srPos.i:-1;
+  let now=null;
+  document.querySelectorAll('#storyBody .chunk').forEach(el=>{const h=+el.dataset.ci===idx;el.classList.toggle('now',h);if(h) now=el});
+  const b=$('svRead');if(b){b.innerHTML=on?PAUSE_ICON:PLAY_ICON;b.setAttribute('aria-label',on?'Pause':'Play')}
+  const pr=$('svProg'),n=document.querySelectorAll('#storyBody .chunk').length;
+  if(pr) pr.style.width=(idx<0||!n?0:(idx+1)/n*100)+'%';
+  if(now&&on){
+    const sc=$('storyScroll'),r=now.getBoundingClientRect(),sr=sc.getBoundingClientRect();
+    if(r.top<sr.top+60||r.bottom>sr.bottom-40) sc.scrollTo({top:Math.max(0,sc.scrollTop+(r.top-sr.top)-sr.height*.35),behavior:'smooth'});
+  }
+}
+// EN chunk, then its Korean (when translation is on), then the pause; reads the settings live
+async function slashPlay(s,from){
+  const lv=slashCfg().level,list=slashList(s,lv);
+  if(gOn()) gPrime();
+  stopReading();try{speechSynthesis.cancel()}catch(e){}gStop();
+  const token=Math.random();
+  reader={id:s.id,slash:true,token,parts:[],i:0};
+  srPos={id:s.id,lv,i:from};
+  const live=()=>reader&&reader.token===token;
+  for(let i=from;i<list.length;i++){
+    if(!live()) return;
+    srPos.i=i;srPaint(s);
+    await srSay(list[i].en,false,slashCfg().rate);
+    if(!live()) return;
+    if(slashCfg().tr&&list[i].ko){
+      await srWait(180);if(!live()) return;
+      await srSay(list[i].ko,true,Math.min(1.1,slashCfg().rate+.1));
+      if(!live()) return;
+    }
+    if(i<list.length-1) await srWait(Math.round(slashCfg().pause*1000));
+  }
+  if(live()){reader=null;srPos=null;srPaint(s)}
+}
+function srPause(s){
+  if(reader&&!reader.slash&&reader.id===s.id) srPos={id:s.id,lv:'none',i:reader.i};
+  stopReading();
+  if(slashCfg().level!=='none') srPaint(s);
+}
+function srStopAll(s){stopReading();srPos=null;if(slashCfg().level!=='none') srPaint(s);else markReading()}
+function srPlayBtn(s){
+  const lv=slashCfg().level;
+  if(reader&&reader.id===s.id){srPause(s);return}
+  const from=srPos&&srPos.id===s.id&&srPos.lv===lv?srPos.i:0;
+  if(lv==='none'){srPos=null;startReading(s,null,from);return}
+  if(!chunksReady(s)) return;
+  slashPlay(s,from);
+}
+// Switching level keeps the place: the first chunk of the sentence being read
+function srSetLevel(s,lv){
+  const was=reader&&reader.id===s.id,old=slashCfg().level;
+  let si=-1;
+  if(srPos&&srPos.id===s.id){
+    if(old!=='none'&&chunksReady(s)){const L=slashList(s,old);si=L[srPos.i]?L[srPos.i].si:-1}
+  }
+  stopReading();srPos=null;
+  setSlash('slashLevel',lv);
+  renderStoryView(s);
+  if(lv!=='none'&&chunksReady(s)&&si>=0){
+    const L=slashList(s,lv),i=Math.max(0,L.findIndex(c=>c.si>=si));
+    if(was) slashPlay(s,i);else{srPos={id:s.id,lv,i};srPaint(s)}
+  }
+}
+function openStoryMenu(s){
+  const big=srBig();
+  openSheet('Story',`<div class="rmenu">
+    <div class="lab">Text size</div>
+    <div class="sz"><button type="button" data-sz="small" aria-pressed="${!big}">Small</button><button type="button" data-sz="big" aria-pressed="${big}">Large</button></div>
+    <button class="mi2" type="button" id="smSlash">${SLASH_ICON}<span>Slash reading settings</span></button>
+    <button class="mi2" type="button" id="smEdit">${EDIT_ICON}<span>Edit story</span></button>
+    <button class="mi2 red" type="button" id="smDel">${TRASH_ICON}<span>Delete story</span></button></div>`);
+  $('sheetBody').querySelectorAll('[data-sz]').forEach(b=>b.onclick=()=>{
+    try{localStorage.setItem('wm.srFont',b.dataset.sz)}catch(e){}
+    $('sheetBody').querySelectorAll('[data-sz]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+    document.querySelectorAll('#storyBody .storytext,#storyBody .slashtext').forEach(el=>el.classList.toggle('big',b.dataset.sz==='big'));
+  });
+  $('smSlash').onclick=()=>{closeSheet();show('me');openMePage('slash',true)};
+  $('smEdit').onclick=()=>{closeSheet();openStoryForm(s)};
+  $('smDel').onclick=()=>{closeSheet();storyConfirm=true;renderStoryView(s);$('storyScroll').scrollTop=0};
+}
 function renderStoryView(s){
+  const cfg=slashCfg(),lv=cfg.level,big=srBig()?' big':'';
+  if(lv==='none'&&cfg.tr&&!(s.ko&&s.koSrc===s.text)&&settings.translateKey&&!storyTrBusy&&!storyTrErr) setTimeout(()=>ensureStoryKo(s),0);
+  if(lv!=='none'&&!chunksReady(s)&&!chunkBusy&&!chunkErr) setTimeout(()=>loadChunks(s),0);
+  let body;
+  if(lv==='none') body=`<div class="storytext${big}">${storyHTML(s,m=>`<button class="sw" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`,
+      cfg.tr&&s.ko&&s.koSrc===s.text?i=>s.ko[i]?`<div class="pko">${esc(s.ko[i])}</div>`:'':null,true)}</div>`;
+  else if(chunksReady(s)) body=`<div class="slashtext${cfg.tr?' tr':''}${big}" id="svSlash">${slashHTML(s,lv)}</div>`;
+  else if(chunkBusy===s.id) body=`<div class="empty" style="padding:18px 4px"><span class="spin"></span> Splitting the story into chunks…</div>`;
+  else body=`<div class="msg err">${esc(chunkErr||'Slash reading is not ready.')}</div><button class="btn ghost block" id="svRetry" type="button" style="margin-top:10px">Try again</button>`;
   $('storyBody').innerHTML=`
     <div class="row" style="justify-content:space-between">
       <button class="linkbtn inlineback" id="svBack" type="button">‹ Stories</button>
-      <span class="row" style="gap:14px"><button class="linkbtn" id="svEdit" type="button">Edit</button><button class="linkbtn" style="color:var(--bad)" id="svDelTop" type="button">Delete</button></span>
+      <button class="ricon plain" id="svMore" type="button" aria-label="More">${MORE_ICON}</button>
     </div>
     ${storyConfirm?`<div class="card" style="flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-color:var(--bad)">
       <span>Delete "${esc(s.title)}"?</span>
       <span class="row"><button class="btn ghost" id="svDelNo" type="button">Cancel</button><button class="btn" style="background:var(--bad);border-color:var(--bad)" id="svDelYes" type="button">Delete</button></span></div>`:''}
     <h2 class="stitle">${esc(s.title)}</h2>
-    <div class="note">${esc(fmtDay(s.created))} · ${plural(s.words.length,'study word')} · tap any word for its entry</div>
-    <div class="row" style="gap:8px">
-      <button class="hintbtn trbtn" id="svRead" type="button" aria-pressed="false">${SPK_ICON}<span>Listen</span></button>
-      <button class="hintbtn trbtn" id="svTr" type="button" aria-pressed="${storyTr}">${TR_ICON}<span>Translate</span></button>
+    <div class="note">${esc(fmtDay(s.created))} · ${plural(s.words.length,'study word')} · ${lv==='none'?'tap any word for its entry':'tap a chunk to play from there'}</div>
+    <div class="rctl">
+      <button class="ricon play" id="svRead" type="button" aria-label="Play">${PLAY_ICON}</button>
+      <button class="ricon" id="svStop" type="button" aria-label="Stop">${STOP_ICON}</button>
+      <button class="ricon${cfg.tr?' on':''}" id="svTr" type="button" aria-label="Translation" aria-pressed="${cfg.tr}">${TR_ICON}</button>
+      <label class="lvsel"><select id="svLv" aria-label="Slash reading">${SL_LEVELS.map(l=>`<option value="${l.k}"${l.k===lv?' selected':''}>${esc(l.name)}</option>`).join('')}</select></label>
     </div>
-    ${storyTrMsg?`<div class="msg${storyTrErr?' err':''}">${esc(storyTrMsg)}</div>`:''}
-    <div class="card"><div class="storytext">${storyHTML(s,m=>`<button class="sw" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`,
-      storyTr&&s.ko&&s.koSrc===s.text?i=>s.ko[i]?`<div class="pko">${esc(s.ko[i])}</div>`:'':null,true)}</div></div>
+    <div class="rprog"><i id="svProg"></i></div>
+    ${lv==='none'&&storyTrMsg?`<div class="msg${storyTrErr?' err':''}">${esc(storyTrMsg)}</div>`:''}
+    <div class="card">${body}</div>
     <div class="card">
       <span class="label">Study words</span>
       <div class="syn">${s.words.map(w=>`<button class="chip" type="button" data-pop="${esc(w)}" style="border:0;cursor:pointer">${esc(w)}</button>`).join('')}</div>
     </div>
     <button class="btn block" id="svTest" type="button">Test this story</button>`;
   $('svBack').onclick=closeStoryView;
-  $('svTest').onclick=()=>{show('test');testPane='story';renderTestTab();startStoryTest(s.id)};
-  $('svEdit').onclick=()=>openStoryForm(s);
-  $('svTr').onclick=()=>toggleStoryTr(s);
-  $('svRead').onclick=()=>{if(reader&&reader.id===s.id) stopReading();else startReading(s)};
+  $('svMore').onclick=()=>openStoryMenu(s);
+  $('svTest').onclick=()=>openStoryTest(s.id);
+  $('svRead').onclick=()=>srPlayBtn(s);
+  $('svStop').onclick=()=>srStopAll(s);
+  $('svLv').onchange=e=>srSetLevel(s,e.target.value);
+  $('svTr').onclick=()=>{
+    const on=!slashCfg().tr;setSlash('slashTr',on?'1':'0');
+    if(slashCfg().level==='none'){storyTrErr=false;storyTrMsg='';if(on) ensureStoryKo(s,true);renderStoryView(s);return}
+    $('svTr').classList.toggle('on',on);$('svTr').setAttribute('aria-pressed',on);
+    const t=$('svSlash');if(t) t.classList.toggle('tr',on);
+  };
+  if($('svRetry')) $('svRetry').onclick=()=>{chunkErr='';loadChunks(s,true)};
+  if($('svSlash')) $('svSlash').addEventListener('click',e=>{const c=e.target.closest('.chunk');if(c) slashPlay(s,+c.dataset.ci)});
   if(reader&&reader.id!==s.id) stopReading();
-  markReading();
-  $('svDelTop').onclick=()=>{storyConfirm=!storyConfirm;renderStoryView(s);$('storyScroll').scrollTop=0};
+  if(lv==='none') markReading();else srPaint(s);
   if(storyConfirm){
     $('svDelYes').onclick=()=>{stories=stories.filter(x=>x!==s);save();storyConfirm=false;closeStoryView()};
     $('svDelNo').onclick=()=>{storyConfirm=false;renderStoryView(s)};
@@ -3172,7 +3420,7 @@ $('selTest').onclick=()=>{
   if(!listSel||!listSel.size) return;
   const set=allItems().filter(it=>listSel.has(it.c.word));
   listSel=null;renderList();
-  show('test');testPane='schedule';renderTestTab();
+  openWordsTest();
   startTest(set,'Selected words');
 };
 // Delete the picked words (asks first)
@@ -3190,7 +3438,7 @@ $('selDel').onclick=()=>{
 $('selGo').onclick=()=>{
   if(!listSel||!listSel.size) return;
   const order=[...cards].map(c=>c.word).filter(w=>listSel.has(w));
-  listSel=null;dictPane='story';storyView=null;renderDict();
+  listSel=null;storyPane='list';storyView=null;show('story');
   openStoryForm(null,order);
 };
 $('listBody').addEventListener('click',e=>{
@@ -3509,6 +3757,7 @@ const SETTINGS_MENU=[
   {id:'translate',title:'Google Translate',icon:TR_ICON,value:()=>settings.translateKey?['On','on']:['Not set',''],render:()=>renderSettings()},
   {id:'ai',title:'AI',icon:AI_ICON,value:()=>aiKey()?[AI[aiProv()].name,'on']:['Not set',''],render:()=>renderAi()},
   {id:'auth',title:'Authenticator app',icon:LOCK_ICON,value:()=>acct!=='cloud'?['','']:totpOn===true?['On','on']:totpOn===false?['Off','']:['',''],render:()=>renderAuth()},
+  {id:'slash',title:'Slash reading',icon:SLASH_ICON,value:()=>[SL_LEVELS.find(l=>l.k===slashCfg().level).name,''],render:()=>renderSlash()},
   {id:'lang',title:'Language',icon:LANG_ICON,value:()=>[LANG==='ko'?'한국어':'English',''],render:()=>renderLang()},
   {id:'voice',title:'Voice',icon:SPK_ICON,value:()=>{if(gOn()) return ['Google · '+gVoice().replace(/^en-(US|GB|AU)-(Chirp3-HD|Neural2)-/,''),'on'];const v=pickVoice();return [v?v.name.replace(/\s*\(.*\)$/,'').slice(0,18):'Default','']},render:()=>renderVoice()},
 ];
@@ -3609,6 +3858,29 @@ async function renderAuth(msg){
   };
 }
 // Language page
+function renderSlash(){
+  const c=slashCfg();
+  $('slashBody').innerHTML=`
+    <p class="note" style="padding:0 4px">Stories are split into chunks (/) by Claude. Pick how finely in a story with the dropdown, or here.</p>
+    <span class="label">Slash size</span>
+    <div class="opts" role="radiogroup">${SL_LEVELS.map(l=>`<button class="opt" type="button" role="radio" aria-checked="${l.k===c.level}" data-slv="${l.k}">
+      <div class="h"><span class="badge">${l.badge}</span><span>${esc(l.name)}</span></div><div class="d">${esc(l.d)}</div><div class="ex">${l.ex}</div></button>`).join('')}</div>
+    <span class="label">Reading speed</span>
+    <div class="rates">${SL_RATES.map(r=>`<button type="button" data-srate="${r}" aria-pressed="${r===c.rate}">${r.toFixed(1)}×</button>`).join('')}</div>
+    <span class="label">Pause between chunks</span>
+    <div class="rates">${SL_PAUSES.map(r=>`<button type="button" data-spause="${r}" aria-pressed="${r===c.pause}">${r} s</button>`).join('')}</div>
+    <span class="label">Korean translation</span>
+    <div class="rates"><button type="button" data-str="1" aria-pressed="${c.tr}">Show and read</button><button type="button" data-str="0" aria-pressed="${!c.tr}">Hide</button></div>
+    <p class="note" style="padding:0 4px">${acct==='cloud'?'Saved to your account, so it works on all your devices.':'Saved in this browser only. Sign in to use it on all your devices.'} <span>Text size is set per device in a story's ⋯ menu.</span></p>`;
+}
+$('slashBody').addEventListener('click',e=>{
+  const b=e.target.closest('[data-slv],[data-srate],[data-spause],[data-str]');if(!b) return;
+  if(b.dataset.slv) setSlash('slashLevel',b.dataset.slv);
+  else if(b.dataset.srate) setSlash('slashRate',b.dataset.srate);
+  else if(b.dataset.spause) setSlash('slashPause',b.dataset.spause);
+  else setSlash('slashTr',b.dataset.str);
+  renderSlash();
+});
 function renderLang(){
   const opts=[['auto',`System default (${DEVICE_LANG==='ko'?'한국어':'English'})`],['en','English'],['ko','한국어']];
   $('langList').innerHTML=opts.map(([k,l])=>`<button class="mi" type="button" role="radio" aria-checked="${LANG_PREF===k}" data-lang="${k}"><span class="rdo"></span><span class="t">${esc(l)}</span></button>`).join('');
@@ -3696,7 +3968,7 @@ try{speechSynthesis.addEventListener('voiceschanged',()=>{if(curTab==='me'){if(m
 window.addEventListener('popstate',e=>{
   if(!$('pop').hidden){closePop();return}
   if(!$('sheet').hidden){closeSheet();return}
-  if(storyView&&!(e.state&&e.state.story)){stopReading();storyView=null;storyConfirm=false;if(curTab==='dict') renderStories();return}
+  if(storyView&&!(e.state&&e.state.story)){stopReading();storyView=null;storyConfirm=false;if(curTab==='story') renderStories();return}
   const page=(e.state&&e.state.me)||'main';
   if(curTab==='me'){mePage=page;renderMe()}else mePage=page;
 });
@@ -4013,7 +4285,7 @@ const I18N_KO={
 '👑 100%':'👑 100%','✓ 70%+':'✓ 70% 이상','↻ under 70%':'↻ 70% 미만','✦ not tested':'✦ 테스트 전','Not tested yet':'아직 테스트 안 함',
 '📖 Words':'📖 단어','💡 Words in this story':'💡 이 스토리의 단어','Words in this story':'이 스토리의 단어','Tap a blank to keep typing.':'빈칸을 누르면 계속 입력할 수 있어요.',
 'Tap a blank and type the word. Enter moves to the next blank.':'빈칸을 누르고 단어를 입력하세요. 엔터를 누르면 다음 빈칸으로 가요.','Back to stories':'스토리 목록','‹ Stories':'‹ 스토리','‹ Back':'‹ 뒤로',
-'No stories yet. Add one in the Words tab → Story, then test yourself here.':'아직 스토리가 없어요. 단어 탭 → 스토리에서 추가한 뒤 여기서 테스트하세요.',
+'No stories yet. Add one in Stories, then test yourself here.':'아직 스토리가 없어요. 스토리 목록에서 추가한 뒤 여기서 테스트하세요.',
 "None of this story's study words appear in its text.":'이 스토리 본문에 공부할 단어가 하나도 없어요.',
 // words tab
 'Look up a word':'단어 찾기',"Search for any word. It won't be added to your study list until you tap":'아무 단어나 검색해 보세요. 학습 목록에는 이 버튼을 눌러야 추가돼요:',
@@ -4035,7 +4307,7 @@ const I18N_KO={
 'Newest first':'최신순','No entries yet.':'아직 일기가 없어요.','Tap the pen to write your first one.':'펜 버튼을 눌러 첫 일기를 써보세요.','Untitled':'제목 없음','New entry':'새 일기',
 'Done':'완료','Delete this entry?':'이 일기를 삭제할까요?','Write in English…':'영어로 써보세요…','English only — Korean can’t be typed here':'영어로만 쓸 수 있어요 — 한글은 입력되지 않아요',
 'Bold':'굵게','Italic':'기울임','Bullet list':'글머리 기호','Numbered list':'번호 목록','✨ Enhance':'✨ 다듬기','Enhance':'다듬기','Enhance selection':'선택 부분 다듬기','Level':'수준','Tone':'톤',
-'Casual':'캐주얼','Neutral':'보통','Formal':'격식','Academic':'학술','Discard':'버리기','Apply':'반영하기','Applied':'반영했어요','Write something first.':'먼저 글을 써주세요.','Typing practice':'타이핑 연습','This word has no example sentence that uses it, so there is nothing to fill in yet.':'이 단어가 들어간 예문이 없어서 연습할 빈칸이 없어요.','Type the missing word and press Enter.':'빈칸에 들어갈 단어를 입력하고 엔터를 누르세요.','Missing word':'빈칸','Play':'재생','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
+'Casual':'캐주얼','Neutral':'보통','Formal':'격식','Academic':'학술','Discard':'버리기','Apply':'반영하기','Applied':'반영했어요','Write something first.':'먼저 글을 써주세요.','Typing practice':'타이핑 연습','This word has no example sentence that uses it, so there is nothing to fill in yet.':'이 단어가 들어간 예문이 없어서 연습할 빈칸이 없어요.','Type the missing word and press Enter.':'빈칸에 들어갈 단어를 입력하고 엔터를 누르세요.','Missing word':'빈칸','Play':'재생','Small chunks':'소 · 작게 끊기','Medium chunks':'중 · 중간 끊기','Large chunks':'대 · 크게 끊기','No slashes':'끊어읽기 없음','Cuts into words and short phrases. Subject, verb, object, prepositional phrases and time words are all separate. Best when you start.':'단어·구 단위로 잘게 끊어요. 주어, 동사, 목적어, 전치사구, 시간 표현이 모두 따로 나뉘어요. 처음 훈련할 때 추천해요.','Keeps relative clauses, to-infinitives and long prepositional phrases together. Practice reading in units of meaning.':'관계사절, to부정사구, 긴 전치사구를 한 덩어리로 묶어요. 의미가 이어지는 단위로 읽는 연습이에요.','Big blocks of meaning, but always cuts where the structure turns: around an inserted clause and where a long subject ends.':'큰 의미 덩어리로 묶되, 삽입절의 시작과 끝이나 긴 주어가 끝나는 곳처럼 구조가 꺾이는 지점은 꼭 끊어요.','The story as it is, with no slashes. Translations are shown under each paragraph.':'빗금 없이 원문 그대로 읽어요. 번역은 문단 아래에 보여요.','Slash reading':'끊어읽기','Slash reading settings':'끊어읽기 설정','Delete story':'스토리 삭제','Text size':'글자 크기','Small':'작게','Large':'크게','Splitting the story into chunks…':'스토리를 끊어읽기 단위로 나누는 중…','Slash reading is not ready.':'끊어읽기를 준비하지 못했어요.','Sign in with Google to use slash reading.':'끊어읽기는 Google로 로그인해야 쓸 수 있어요.','The story is too long for slash reading (8,000 characters at most).':'끊어읽기를 하기에 스토리가 너무 길어요 (최대 8,000자).','Slash reading is not set up on the server yet (ANTHROPIC_API_KEY).':'서버에 끊어읽기가 아직 설정되지 않았어요 (ANTHROPIC_API_KEY).','The AI could not split this story. Please try again.':'AI가 이 스토리를 나누지 못했어요. 다시 시도해 주세요.','The story is too long for slash reading.':'끊어읽기를 하기에 스토리가 너무 길어요.','Stories are split into chunks (/) by Claude. Pick how finely in a story with the dropdown, or here.':'스토리는 Claude가 의미 단위(/)로 나눠요. 얼마나 잘게 끊을지는 스토리의 드롭다운이나 여기서 고르세요.','Slash size':'끊는 크기','Reading speed':'읽기 속도','Pause between chunks':'덩어리 사이 쉬는 시간','Show and read':'보이고 읽기','Text size is set per device in a story\'s ⋯ menu.':'글자 크기는 스토리의 ⋯ 메뉴에서 기기마다 정해요.','Translation':'번역','More':'더보기','Pause':'일시정지','Repeat':'반복 재생','Read once':'한 번만 재생','↑ Got it':'↑ 외웠어요','Swipe up when you know it · swipe left to see it again later':'외웠으면 위로, 다시 보려면 왼쪽으로 밀어주세요',
 'Great job!':'잘했어요!','Ready for a quick test?':'바로 테스트해 볼까요?','Later':'나중에','Learned words':'학습한 단어','Example level':'예문 수준','Claude ran out of room for this photo. Try a photo with fewer words.':'사진 내용이 너무 많아 Claude 응답이 잘렸어요. 단어가 더 적게 나오게 찍어 보세요.','Keep photo examples':'사진 예문 그대로 쓰기','Very easy':'아주 쉬움','Easy':'쉬움','Medium':'보통','Intermediate':'중상','High':'어려움',
 'Definitions in Korean. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 한국어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.',
 'Definitions in English. Meanings and similar words printed in the photo are used as they are; only missing parts are written by the AI.':'뜻은 영어로 만들어요. 사진에 인쇄된 뜻과 유사어는 그대로 쓰고, 없는 부분만 AI가 채워요.','EN–KO':'영한','📷 Photo':'📷 사진','Definitions in':'정의 언어',
@@ -4159,6 +4431,7 @@ const I18N_KO_RE=[
 [/^– (.+): already in your list(?: as "(.+)")?$/,'– $1: 이미 목록에 있어요'],
 [/^Line (\d+) isn't valid JSON: (.+)$/,'$1번째 줄이 올바른 JSON이 아니에요: $2'],[/^"(.+)" has no example\/definition pairs$/,'“$1”에 예문/정의 쌍이 없어요'],
 [/^(.+) · (\d+) study words? · tap any word for its entry$/,'$1 · 공부할 단어 $2개 · 단어를 탭하면 뜻이 나와요'],
+[/^(.+) · (\d+) study words? · tap a chunk to play from there$/,'$1 · 공부할 단어 $2개 · 덩어리를 탭하면 거기서부터 읽어요'],
 [/^Write with (.+)$/,'$1로 쓰기'],[/^Write again with (.+)$/,'$1로 다시 쓰기'],
 [/^Not found in the story text: (.+)\. Check the story above, or tap Save again to keep them anyway\.$/,'스토리 본문에 없는 단어: $1. 스토리를 확인하거나, 그대로 두려면 저장을 한 번 더 누르세요.'],
 [/^(.+) is writing a story with (\d+) words?… \(usually 5–20 seconds\)$/,'$1가 단어 $2개로 스토리를 쓰는 중… (보통 5~20초)'],
@@ -4181,7 +4454,7 @@ const I18N_KO_RE=[
 ];
 // ---------- Korean UI: translate interface text as it is drawn ----------
 // Learning content (sentences, stories, words, definitions, what you type) is never translated.
-const I18N_SKIP='.trh .a,.trh .b,#jtrOut,.jeditor,.jitem .jt,.jitem .js,#trOut,#trIn,.storytext,.ex,.def,.qsent,.stitle,.si .t,.si .ws,.li .w,.word h2,.ri .top,.ri .sent,.chip,.syn,.pko,.ko,.qdef>div,[data-noi18n]';
+const I18N_SKIP='.slashtext,.opt .ex,.trh .a,.trh .b,#jtrOut,.jeditor,.jitem .jt,.jitem .js,#trOut,#trIn,.storytext,.ex,.def,.qsent,.stitle,.si .t,.si .ws,.li .w,.word h2,.ri .top,.ri .sent,.chip,.syn,.pko,.ko,.qdef>div,[data-noi18n]';
 function trText(str){
   const m=/^(\s*)([\s\S]*?)(\s*)$/.exec(str),core=m[2];if(!core) return null;
   let out=I18N_KO[core];
