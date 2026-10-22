@@ -689,7 +689,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.39.2</span> · <span class="version-date">2026/10/23</span></p>
+          <p class="note"><span class="version-tag">v2.39.3</span> · <span class="version-date">2026/10/23</span></p>
         </div>
       </div></div>
     </div>
@@ -3048,7 +3048,7 @@ function slashCfg(){
 function setSlash(k,v){settings[k]=String(v);storeSettings().catch(()=>{})}
 const srBig=()=>localStorage.getItem('wm.srFont')==='big';
 let srPos=null;                       // {id, lv, i}: where playback is (kept while paused)
-let chunkBusy=null,chunkErr='';
+let chunkJobs={},chunkErr='';   // chunkJobs[story id] = {done, total, start} while the AI works
 const chunksReady=s=>!!(s.chunks&&s.chunkSrc===s.text&&s.chunks.sentences&&s.chunks.sentences.length);
 // Which sentences belong to which paragraph (the AI gets the whole story and returns sentences)
 function slashParas(s){
@@ -3106,26 +3106,43 @@ function chunkParse(t){
   const a=t.indexOf('{'),b=t.lastIndexOf('}');
   return JSON.parse(a>=0&&b>a?t.slice(a,b+1):t);
 }
+// Long stories are sent in parts of a few paragraphs, several at a time, so it doesn't take minutes
+function chunkBatches(text){
+  const paras=text.replace(/\r/g,'').split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean),out=[];let cur='';
+  for(const p of paras){if(cur&&cur.length+p.length>700){out.push(cur);cur=''}cur=cur?cur+'\n\n'+p:p}
+  if(cur) out.push(cur);
+  return out;
+}
+async function chunkPart(text,p){
+  let last=null;
+  for(let t=0;t<2;t++){
+    try{
+      const j=chunkParse(await aiComplete('Return only JSON.',CHUNK_PROMPT(text),p,{maxTokens:16000,timeout:120000,stream:true,idle:60000}));
+      if(chunkValid(j)) return j;
+      last=new Error(`${AI[p].name} could not split this story. Try again.`);
+    }catch(e){last=e;if(/too long|key|rejected|invalid|401|403/i.test(e.message)) break}
+  }
+  throw last;
+}
+function chunkTick(){
+  const el=$('svBusyN'),job=chunkJobs[storyView];
+  if(!el||!job){clearInterval(chunkTick.t);chunkTick.t=0;return}
+  el.textContent=`${job.done} / ${job.total} · ${Math.round((Date.now()-job.start)/1000)} s`;
+}
 async function loadChunks(s){
-  if(chunkBusy) return;
+  if(chunkJobs[s.id]) return;
   if(!aiKey()){chunkErr='Add an AI key in Me → Settings → AI to use slash reading.';renderStoryView(s);return}
   if(s.text.length>8000){chunkErr='The story is too long for slash reading (8,000 characters at most).';renderStoryView(s);return}
-  chunkBusy=s.id;chunkErr='';renderStoryView(s);
-  const p=aiProv();
+  const p=aiProv(),parts=chunkBatches(s.text),job={done:0,total:parts.length,start:Date.now()};
+  chunkJobs[s.id]=job;chunkErr='';if(storyView===s.id) renderStoryView(s);
   try{
-    let d=null,last=null;
-    for(let t=0;t<2&&!d;t++){
-      try{
-        const out=await aiComplete('Return only JSON.',CHUNK_PROMPT(s.text.replace(/\r/g,'').trim()),p,{maxTokens:16000,timeout:150000});
-        const j=chunkParse(out);
-        if(chunkValid(j)) d=j;else last=new Error(`${AI[p].name} could not split this story. Try again.`);
-      }catch(e){last=e;if(/too long|key|Couldn't reach/i.test(e.message)) break}
-    }
-    if(!d) throw last||new Error('error');
-    s.chunks={title:String(d.title||''),sentences:d.sentences.map(x=>{const o={en:String(x.en),ko:String(x.ko||'')};for(const k of ['s','m','l']) o[k]=x[k].map(c=>[String(c[0]),String(c[1]||'')]);return o})};
-    s.chunkSrc=s.text;save();
-  }catch(e){chunkErr=e.message}
-  chunkBusy=null;
+    const res=new Array(parts.length);let next=0;
+    const worker=async()=>{while(next<parts.length){const i=next++;res[i]=await chunkPart(parts[i],p);job.done++;chunkTick()}};
+    await Promise.all(Array.from({length:Math.min(4,parts.length)},worker));
+    const sentences=res.flatMap(d=>d.sentences).map(x=>{const o={en:String(x.en),ko:String(x.ko||'')};for(const k of ['s','m','l']) o[k]=x[k].map(c=>[String(c[0]),String(c[1]||'')]);return o});
+    s.chunks={title:String(res[0].title||''),sentences};s.chunkSrc=s.text;save();
+  }catch(e){if(storyView===s.id) chunkErr=e.message}
+  delete chunkJobs[s.id];
   if(storyView===s.id&&curTab==='story') renderStoryView(s);
 }
 function srSay(text,ko,rate){
@@ -3218,12 +3235,12 @@ function openStoryMenu(s){
 function renderStoryView(s){
   const cfg=slashCfg(),lv=cfg.level,big=srBig()?' big':'';
   if(lv==='none'&&cfg.tr&&!(s.ko&&s.koSrc===s.text)&&settings.translateKey&&!storyTrBusy&&!storyTrErr) setTimeout(()=>ensureStoryKo(s),0);
-  if(lv!=='none'&&!chunksReady(s)&&!chunkBusy&&!chunkErr) setTimeout(()=>loadChunks(s),0);
+  if(lv!=='none'&&!chunksReady(s)&&!chunkJobs[s.id]&&!chunkErr) setTimeout(()=>loadChunks(s),0);
   let body;
   if(lv==='none') body=`<div class="storytext${big}">${storyHTML(s,m=>`<button class="sw" type="button" data-pop="${esc(m.w)}">${esc(m.form)}</button>`,
       cfg.tr&&s.ko&&s.koSrc===s.text?i=>s.ko[i]?`<div class="pko">${esc(s.ko[i])}</div>`:'':null,true)}</div>`;
   else if(chunksReady(s)) body=`<div class="slashtext${cfg.tr?' tr':''}${big}" id="svSlash">${slashHTML(s,lv)}</div>`;
-  else if(chunkBusy===s.id) body=`<div class="empty" style="padding:18px 4px"><span class="spin"></span> ${esc(AI[aiProv()].name)} is splitting the story into chunks…</div>`;
+  else if(chunkJobs[s.id]) body=`<div class="empty" style="padding:18px 4px"><span class="spin"></span> <span>${esc(AI[aiProv()].name)} is splitting the story into chunks…</span><div class="note" id="svBusyN" style="margin-top:6px"></div></div>`;
   else body=`<div class="msg err">${esc(chunkErr||'Slash reading is not ready.')}</div><button class="btn ghost block" id="svRetry" type="button" style="margin-top:10px">Try again</button>`;
   $('storyBody').innerHTML=`
     <div class="row" style="justify-content:space-between">
@@ -3265,6 +3282,7 @@ function renderStoryView(s){
   if($('svSlash')) $('svSlash').addEventListener('click',e=>{const c=e.target.closest('.chunk');if(c) slashPlay(s,+c.dataset.ci)});
   if(reader&&reader.id!==s.id) stopReading();
   if(lv==='none') markReading();else srPaint(s);
+  if($('svBusyN')){chunkTick();if(!chunkTick.t) chunkTick.t=setInterval(chunkTick,1000)}
   if(storyConfirm){
     $('svDelYes').onclick=()=>{stories=stories.filter(x=>x!==s);save();storyConfirm=false;closeStoryView()};
     $('svDelNo').onclick=()=>{storyConfirm=false;renderStoryView(s)};
@@ -4085,6 +4103,33 @@ async function aiFetch(p,url,opt,timeout=90000){
   if(!r.ok) throw aiError(p,r,j);
   return j;
 }
+// Claude with streaming: the connection stays busy while it writes, so long replies don't get cut off.
+// 'idle' = give up only when nothing has arrived for that long.
+async function claudeStream(k,model,system,user,maxTokens,idle){
+  const ctl=new AbortController();let t;const arm=()=>{clearTimeout(t);t=setTimeout(()=>ctl.abort(),idle)};arm();
+  let r;
+  try{r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:claudeHeaders(k),signal:ctl.signal,
+    body:JSON.stringify({model,max_tokens:maxTokens,stream:true,system,messages:[{role:'user',content:user}]})})}
+  catch(e){clearTimeout(t);throw new Error(e.name==='AbortError'?'Claude took too long. Try again.':"Couldn't reach Claude. Check your connection.")}
+  if(!r.ok){clearTimeout(t);let j=null;try{j=await r.json()}catch(_){}throw aiError('claude',r,j)}
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf='',out='',stop='';
+  try{
+    for(;;){
+      const {done,value}=await rd.read();if(done) break;arm();
+      buf+=dec.decode(value,{stream:true});let i;
+      while((i=buf.indexOf('\n'))>=0){
+        const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
+        if(!line.startsWith('data:')) continue;
+        let ev;try{ev=JSON.parse(line.slice(5))}catch(_){continue}
+        if(ev.type==='content_block_delta'&&ev.delta&&ev.delta.type==='text_delta') out+=ev.delta.text;
+        else if(ev.type==='message_delta'&&ev.delta&&ev.delta.stop_reason) stop=ev.delta.stop_reason;
+        else if(ev.type==='error'){const er=new Error('Claude: '+((ev.error&&ev.error.message)||'error'));er.ai=1;throw er}
+      }
+    }
+  }catch(e){throw e.ai?e:new Error(e.name==='AbortError'?'Claude took too long. Try again.':'Lost the connection to Claude. Try again.')}
+  finally{clearTimeout(t)}
+  return {text:out,stop};
+}
 const claudeHeaders=k=>({'x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'});
 // Checking the model is free and proves the key works
 function aiTest(p){
@@ -4107,6 +4152,11 @@ async function aiComplete(system,user,p=aiProv(),o={}){
     const j=await aiFetch(p,'https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json',Authorization:'Bearer '+k},
       body:JSON.stringify({model,response_format:{type:'json_object'},messages:[{role:'system',content:system},{role:'user',content:user}]})},o.timeout);
     return j.choices[0].message.content;
+  }
+  if(o.stream){
+    const r=await claudeStream(k,model,system,user,o.maxTokens||4000,o.idle||60000);
+    if(o.maxTokens&&r.stop==='max_tokens') throw new Error('The story is too long for slash reading.');
+    return r.text;
   }
   const j=await aiFetch(p,'https://api.anthropic.com/v1/messages',{method:'POST',headers:claudeHeaders(k),
     body:JSON.stringify({model,max_tokens:o.maxTokens||4000,system,messages:[{role:'user',content:user}]})},o.timeout);
@@ -4477,7 +4527,7 @@ const I18N_KO_RE=[
 [/^Not used in the story: (.+)\. Tap Write again, or edit the story\.$/,'스토리에 안 쓰인 단어: $1. 다시 쓰기를 누르거나 직접 고쳐주세요.'],
 [/^Add a genre or idea if you like, then tap Write with (.+)\.$/,'원하면 장르나 아이디어를 적고 $1로 쓰기를 누르세요.'],
 [/^The (.+) API key was rejected\. Check it in Me → Settings → AI\.$/,'$1 API 키가 거부됐어요. 나 → 설정 → AI에서 확인하세요.'],
-[/^Couldn't reach (.+)\. Check your connection\.$/,'$1에 연결할 수 없어요. 인터넷 연결을 확인하세요.'],[/^(.+) took too long\. Try again\.$/,'$1 응답이 너무 늦어요. 다시 시도하세요.'],
+[/^Lost the connection to (.+)\. Try again\.$/,'$1와 연결이 끊겼어요. 다시 시도해 주세요.'],[/^Couldn't reach (.+)\. Check your connection\.$/,'$1에 연결할 수 없어요. 인터넷 연결을 확인하세요.'],[/^(.+) took too long\. Try again\.$/,'$1 응답이 너무 늦어요. 다시 시도하세요.'],
 [/^(.+) sent back something unexpected\. Try again\.$/,'$1의 응답이 이상해요. 다시 시도하세요.'],[/^(.+) sent back an empty story\. Try again\.$/,'$1가 빈 스토리를 보냈어요. 다시 시도하세요.'],
 [/^Model "(.+?)" isn't available for this key\.(.*)$/,'이 키로는 "$1" 모델을 쓸 수 없어요.$2'],
 [/^Saved\. Test translation: (.+)$/,'저장했어요. 번역 테스트: $1'],[/^The key didn't work: (.+)$/,'키가 작동하지 않아요: $1'],
