@@ -511,6 +511,11 @@ button.chip:active{filter:brightness(.92)}
 .bubble{align-self:center;font-size:13px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 14px}
 .bubble.err{color:var(--bad)}
 .listhead{display:flex;align-items:center;justify-content:space-between}
+.lfilter{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1 * var(--gutter-l));padding:2px var(--gutter-r) 4px var(--gutter-l)}
+.lfilter::-webkit-scrollbar{display:none}
+.lfilter button{flex:none;border:2px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:5px 12px;font:800 13px var(--f-ui);cursor:pointer;box-shadow:0 2px 0 var(--line)}
+.lfilter button span{font-weight:700;opacity:.75;margin-left:2px}
+.lfilter button[aria-selected="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 .plus{width:42px;height:42px;border-radius:14px;border:0;background:var(--brand);color:var(--on-brand);font:800 26px/1 var(--f-ui);cursor:pointer;display:grid;place-items:center;box-shadow:0 3px 0 var(--brand-d)}
 .list{display:flex;flex-direction:column;border:2px solid var(--line);border-radius:18px;background:var(--card);overflow:hidden}
 .li{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:13px 14px;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;width:100%}
@@ -756,7 +761,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.40.0</span> · <span class="version-date">2026/10/23</span></p>
+          <p class="note"><span class="version-tag">v2.41.0</span> · <span class="version-date">2026/10/30</span></p>
         </div>
       </div></div>
     </div>
@@ -1626,7 +1631,7 @@ document.addEventListener('click',async e=>{
     const src=findCard(w);if(!src) return;
     const c=JSON.parse(JSON.stringify(src));c.added=today();
     for(const g of c.meanings) for(const d of g.defs) if(d.stage==null){d.stage=0;d.due=today()}
-    cards.unshift(c);save();renderBadge();
+    (c.addedAt=Date.now(),cards.unshift(c));save();renderBadge();
     if(!$('pop').hidden) openPop(c);
     if(curTab==='dict'&&dictPane==='search') renderSearch(false);
     // a card stacked in a sheet: just swap its button
@@ -1775,7 +1780,7 @@ function renderHome(){
 // Home's learn button and Words → Words' Learn: continue today's set where it stopped; when it's done (or empty), learn all words
 function learnNow(){
   const lset=todayLearnSet(),t=today(),all=lset.length&&lset.every(c=>c.learned===t);
-  if(!lset.length||all){const o=listOrder();startLearn('list',o.map(w=>cards.find(c=>c.word===w)))}
+  if(!lset.length||all){const o=listOrder(true);startLearn('list',o.map(w=>cards.find(c=>c.word===w)))}
   else startLearn('today',lset);
 }
 function todayLearnSet(){return cards.filter(c=>c.learned===today()||itemsOf(c).some(it=>isDue(it.d)))}
@@ -3867,7 +3872,7 @@ async function saveStory(){
     // Add (or replace) these words in the word list, and keep a copy for the story
     for(const c of jsonCards){
       const old=cards.find(x=>x.word===c.word);
-      if(old) overwriteCard(old,c);else cards.unshift(c);
+      if(old) overwriteCard(old,c);else (c.addedAt=Date.now(),cards.unshift(c));
       entries[c.word]=JSON.parse(JSON.stringify(old||c));
     }
     renderBadge();
@@ -3879,7 +3884,7 @@ async function saveStory(){
       msg.textContent=`Looking up ${i} of ${words.length}…`;
       try{
         const c=await lookup(w);
-        if(!cards.some(x=>x.word===c.word)) cards.unshift(c);
+        if(!cards.some(x=>x.word===c.word)) (c.addedAt=Date.now(),cards.unshift(c));
         entries[w]=JSON.parse(JSON.stringify(c));
       }catch(e){entries[w]=null}
     }
@@ -3965,18 +3970,22 @@ document.addEventListener('click',async e=>{
 // Select mode: pick words, then make a story from them with ChatGPT
 let listSel=null;const SEL_MAX=20;
 function renderList(){
-  const sorted=[...cards].map(c=>({c,s:wordSummary(c)})).sort((a,b)=>a.s.due<b.s.due?-1:a.s.due>b.s.due?1:a.c.word.localeCompare(b.c.word));
+  const shown=listCards(),sorted=shown.map(c=>({c,s:wordSummary(c)}));
+  const counts={};for(const f of LIST_FILTERS) counts[f]=f==='all'?cards.length:cards.filter(c=>inFilter(c,f)).length;
+  const chips=cards.length?`<div class="lfilter" role="tablist">${LIST_FILTERS.filter(f=>f==='all'||counts[f]||f===listFilter).map(f=>`<button type="button" role="tab" data-lf="${f}" aria-selected="${f===listFilter}">${filterLabel(f)} <span>${counts[f]}</span></button>`).join('')}</div>`:'';
   if(listSel) for(const w of [...listSel]) if(!cards.some(c=>c.word===w)) listSel.delete(w);
   const head=listSel
-    ?`<div class="listhead"><span class="label">${listSel.size?listSel.size+' selected':'Tap words to pick them'}</span><span class="row" style="gap:14px;flex-wrap:nowrap"><button class="linkbtn" id="selAll" type="button">${listSel.size===cards.length?'Clear':'Select all'}</button><button class="linkbtn" id="selCancel" type="button">Cancel</button></span></div>`
+    ?`<div class="listhead"><span class="label">${listSel.size?listSel.size+' selected':'Tap words to pick them'}</span><span class="row" style="gap:14px;flex-wrap:nowrap"><button class="linkbtn" id="selAll" type="button">${listSel.size&&listSel.size===shown.length?'Clear':'Select all'}</button><button class="linkbtn" id="selCancel" type="button">Cancel</button></span></div>`
     :`<div class="listhead"><span class="label">${plural(cards.length,'word')} · ${plural(allItems().length,'sentence')}</span><span class="row" style="gap:12px;flex-wrap:nowrap">${cards.length?'<button class="linkbtn" id="learnBtn" type="button">Learn</button><button class="linkbtn" id="selBtn" type="button">Select</button>':''}<button class="plus" id="bulkBtn" type="button" aria-label="Add words">+</button></span></div>`;
-  $('listBody').innerHTML=`${head}
-    ${cards.length?`<div class="list">${sorted.map(({c,s})=>listSel
+  $('listBody').innerHTML=`${head}${chips}
+    ${cards.length&&!shown.length?`<div class="card empty">${listFilter==='0'?'No words added today.':`No words added ${listFilter} days ago.`}</div>`:''}
+    ${shown.length?`<div class="list">${sorted.map(({c,s})=>listSel
         ?`<button class="li sel" type="button" data-pick="${esc(c.word)}" aria-pressed="${listSel.has(c.word)}"><span class="ck"></span><span class="w">${esc(c.word)}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${dueLabel(s.due)}</span></button>`
         :`<button class="li" type="button" data-open="${esc(c.word)}"><span class="w">${esc(c.word)}${c.sample?' <span class="tag">Sample</span>':''}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${dueLabel(s.due)}</span></button>`).join('')}</div>`
-      :`<div class="card empty">No words yet. Tap + to add some, or search in the Search tab.</div>`}`;
-  if(listSel){$('selCancel').onclick=()=>{listSel=null;renderList()};$('selAll').onclick=()=>{listSel=listSel.size===cards.length?new Set():new Set(cards.map(c=>c.word));renderList()}}
-  else{$('bulkBtn').onclick=openBulk;if($('selBtn')) $('selBtn').onclick=()=>{listSel=new Set();renderList()};if($('learnBtn')) $('learnBtn').onclick=learnNow}
+      :cards.length?'':`<div class="card empty">No words yet. Tap + to add some, or search in the Search tab.</div>`}`;
+  if(listSel){$('selCancel').onclick=()=>{listSel=null;renderList()};$('selAll').onclick=()=>{listSel=listSel.size&&listSel.size===shown.length?new Set():new Set(shown.map(c=>c.word));renderList()}}
+  else{$('bulkBtn').onclick=openBulk;if($('selBtn')) $('selBtn').onclick=()=>{listSel=new Set();renderList()};if($('learnBtn')) $('learnBtn').onclick=()=>{if(listFilter==='all'||!shown.length) learnNow();else startLearn('list',shown)}}
+  $('listBody').querySelectorAll('[data-lf]').forEach(b=>b.onclick=()=>{listFilter=b.dataset.lf;lsSet('wm.listFilter',listFilter);if(listSel) listSel=new Set();renderList()});
   renderSelBar();
 }
 function renderSelBar(){
@@ -3984,7 +3993,7 @@ function renderSelBar(){
   const n=listSel.size,b=$('selGo'),t=$('selTest');
   $('selCount').textContent=!n?'Pick words to test or to make a story':n>SEL_MAX?`${n} selected · a story takes ${SEL_MAX} words or fewer`:`${n===1?'1 word':n+' words'} selected`;
   t.disabled=!n;b.disabled=!n||n>SEL_MAX;$('selDel').disabled=!n;
-  const sa=$('selAll');if(sa) sa.textContent=n&&n===cards.length?'Clear':'Select all';
+  const sa=$('selAll');if(sa) sa.textContent=n&&n===listCards().length?'Clear':'Select all';
   t.textContent=n?`Test ${n===1?'it':'these'}`:'Test';b.textContent='Make a story';
 }
 // Test just the picked words: every example sentence of each one (due ones count, the rest are practice)
@@ -4021,7 +4030,19 @@ $('listBody').addEventListener('click',e=>{
   if(o) openWord(o.dataset.open);
 });
 // Word list order (same as the Words list): due first, then A–Z
-function listOrder(){return [...cards].map(c=>({c,s:wordSummary(c)})).sort((a,b)=>a.s.due<b.s.due?-1:a.s.due>b.s.due?1:a.c.word.localeCompare(b.c.word)).map(x=>x.c.word)}
+// Newest first: by the day it was added, then the time (addedAt, words added since v2.41.0), then list position (new words are put in front)
+function cardsNewest(list){
+  const pos=new Map(cards.map((c,i)=>[c,i]));
+  return [...list].sort((a,b)=>(b.added||'').localeCompare(a.added||'')||(b.addedAt||0)-(a.addedAt||0)||pos.get(a)-pos.get(b));
+}
+// Filter chips by how long ago a word was added, at the review moments (today, 1, 3, 7, 14, 30, 60 days ago)
+const LIST_FILTERS=['all','0','1','3','7','14','30','60'];
+let listFilter=LIST_FILTERS.includes(lsGet('wm.listFilter'))?lsGet('wm.listFilter'):'all';
+const addedAgo=c=>c.added?-diffDays(c.added):-1;
+const inFilter=(c,f=listFilter)=>f==='all'||addedAgo(c)===+f;
+const filterLabel=f=>f==='all'?'All':f==='0'?'Today':f+'d';
+function listCards(){return cardsNewest(cards.filter(c=>inFilter(c)))}
+function listOrder(all){return (all?cardsNewest(cards):listCards()).map(c=>c.word)}
 function openWord(word,confirm){
   const c=cards.find(x=>x.word===word);if(!c) return;
   const its=itemsOf(c);
@@ -4269,7 +4290,7 @@ async function runBulk(){
         const c=jsonToCard(o);
         const old=cards.find(x=>x.word===c.word);
         if(old){overwriteCard(old,c);updated.push(old);continue}
-        cards.unshift(c);added.push(c);
+        (c.addedAt=Date.now(),cards.unshift(c));added.push(c);
       }catch(err){failed.push(err.message)}
     }
     if(added.length||updated.length) bulkDraft.json=JSON_TEMPLATE;
@@ -4284,7 +4305,7 @@ async function runBulk(){
       if(cards.some(x=>x.word===w)){skipped.push(w);line('skip',`– ${esc(w)}: already in your list`);continue}
       try{const c=await lookup(w);
         if(cards.some(x=>x.word===c.word)){skipped.push(w);line('skip',`– ${esc(w)}: already in your list as "${esc(c.word)}"`);continue}
-        cards.unshift(c);added.push(c);line('ok',`✓ ${esc(c.word)}`);save();
+        (c.addedAt=Date.now(),cards.unshift(c));added.push(c);line('ok',`✓ ${esc(c.word)}`);save();
       }catch(err){failed.push(lookupErr(err.message,w));line('no',`✗ ${esc(lookupErr(err.message,w))}`)}
     }
     $('bulkGo').disabled=false;
@@ -5046,7 +5067,7 @@ const I18N_KO_RE=[
 [/^Not used in the story: (.+)\. Tap Write again, or edit the story\.$/,'스토리에 안 쓰인 단어: $1. 다시 쓰기를 누르거나 직접 고쳐주세요.'],
 [/^Add a genre or idea if you like, then tap Write with (.+)\.$/,'원하면 장르나 아이디어를 적고 $1로 쓰기를 누르세요.'],
 [/^The (.+) API key was rejected\. Check it in Me → Settings → AI\.$/,'$1 API 키가 거부됐어요. 나 → 설정 → AI에서 확인하세요.'],
-[/^Back (\d+) seconds$/,'$1초 뒤로'],[/^Forward (\d+) seconds$/,'$1초 앞으로'],[/^end ([<>])$/,'끝 $1'],
+[/^(\d+)d$/,'$1일'],[/^No words added (\d+) days ago\.$/,'$1일 전에 추가한 단어가 없어요.'],[/^Back (\d+) seconds$/,'$1초 뒤로'],[/^Forward (\d+) seconds$/,'$1초 앞으로'],[/^end ([<>])$/,'끝 $1'],
 [/^Lost the connection to (.+)\. Try again\.$/,'$1와 연결이 끊겼어요. 다시 시도해 주세요.'],[/^Couldn't reach (.+)\. Check your connection\.$/,'$1에 연결할 수 없어요. 인터넷 연결을 확인하세요.'],[/^(.+) took too long\. Try again\.$/,'$1 응답이 너무 늦어요. 다시 시도하세요.'],
 [/^(.+) sent back something unexpected\. Try again\.$/,'$1의 응답이 이상해요. 다시 시도하세요.'],[/^(.+) sent back an empty story\. Try again\.$/,'$1가 빈 스토리를 보냈어요. 다시 시도하세요.'],
 [/^Model "(.+?)" isn't available for this key\.(.*)$/,'이 키로는 "$1" 모델을 쓸 수 없어요.$2'],
