@@ -761,7 +761,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.41.0</span> · <span class="version-date">2026/10/30</span></p>
+          <p class="note"><span class="version-tag">v2.41.1</span> · <span class="version-date">2026/10/30</span></p>
         </div>
       </div></div>
     </div>
@@ -1350,7 +1350,7 @@ function wordSummary(c){
   const its=itemsOf(c);
   return{stage:Math.min(...its.map(i=>i.d.stage)),due:its.map(i=>i.d.due).sort()[0]||today(),n:its.length};
 }
-function stageLabel(s){return s===0?'New':INTERVALS[s-1]+'-day'}
+function stageLabel(s){return s===0?'1-day':INTERVALS[s-1]+'-day'}   // stage 0 = back tomorrow, so "1-day" like the rest
 function dueLabel(due){const n=diffDays(due);return n<=0?'Today':n===1?'Tomorrow':'In '+n+' days'}
 
 // ---------- dictionary lookup ----------
@@ -3980,8 +3980,8 @@ function renderList(){
   $('listBody').innerHTML=`${head}${chips}
     ${cards.length&&!shown.length?`<div class="card empty">${listFilter==='0'?'No words added today.':`No words added ${listFilter} days ago.`}</div>`:''}
     ${shown.length?`<div class="list">${sorted.map(({c,s})=>listSel
-        ?`<button class="li sel" type="button" data-pick="${esc(c.word)}" aria-pressed="${listSel.has(c.word)}"><span class="ck"></span><span class="w">${esc(c.word)}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${dueLabel(s.due)}</span></button>`
-        :`<button class="li" type="button" data-open="${esc(c.word)}"><span class="w">${esc(c.word)}${c.sample?' <span class="tag">Sample</span>':''}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${dueLabel(s.due)}</span></button>`).join('')}</div>`
+        ?`<button class="li sel" type="button" data-pick="${esc(c.word)}" aria-pressed="${listSel.has(c.word)}"><span class="ck"></span><span class="w">${esc(c.word)}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${addedLabel(c)}</span></button>`
+        :`<button class="li" type="button" data-open="${esc(c.word)}"><span class="w">${esc(c.word)}${c.sample?' <span class="tag">Sample</span>':''}</span><span class="st">${stageLabel(s.stage)}</span><span class="d">${addedLabel(c)}</span></button>`).join('')}</div>`
       :cards.length?'':`<div class="card empty">No words yet. Tap + to add some, or search in the Search tab.</div>`}`;
   if(listSel){$('selCancel').onclick=()=>{listSel=null;renderList()};$('selAll').onclick=()=>{listSel=listSel.size&&listSel.size===shown.length?new Set():new Set(shown.map(c=>c.word));renderList()}}
   else{$('bulkBtn').onclick=openBulk;if($('selBtn')) $('selBtn').onclick=()=>{listSel=new Set();renderList()};if($('learnBtn')) $('learnBtn').onclick=()=>{if(listFilter==='all'||!shown.length) learnNow();else startLearn('list',shown)}}
@@ -4041,6 +4041,8 @@ let listFilter=LIST_FILTERS.includes(lsGet('wm.listFilter'))?lsGet('wm.listFilte
 const addedAgo=c=>c.added?-diffDays(c.added):-1;
 const inFilter=(c,f=listFilter)=>f==='all'||addedAgo(c)===+f;
 const filterLabel=f=>f==='all'?'All':f==='0'?'Today':f+'d';
+// When it was added: Today, 1–7 days ago, then the date as YY.MM.DD
+function addedLabel(c){const a=addedAgo(c);return !c.added?'':a<=0?'Today':a<=7?(a===1?'1 day ago':a+' days ago'):c.added.slice(2).replace(/-/g,'.')}
 function listCards(){return cardsNewest(cards.filter(c=>inFilter(c)))}
 function listOrder(all){return (all?cardsNewest(cards):listCards()).map(c=>c.word)}
 function openWord(word,confirm){
@@ -5012,7 +5014,7 @@ const I18N_KO_RE=[
 [/^All done · (\d+) answered today$/,'모두 완료 · 오늘 $1개 풀었어요'],
 [/^Next: (.+)$/,'다음: $1'],[/^Try again: (.+)$/,'다시 도전: $1'],
 [/^Words · (\d+) sentences?$/,'단어 · 예문 $1개'],[/^(\d+) words? · (\d+) sentences?$/,'단어 $1개 · 예문 $2개'],
-[/^(\d+)d$/,'$1일'],[/^(\d+)-day$/,'$1일'],[/^In (\d+) days?$/,'$1일 뒤'],
+[/^(\d+)-day$/,'$1일'],[/^In (\d+) days?$/,'$1일 뒤'],
 [/^(\d+) min ago$/,'$1분 전'],[/^Today (\d\d:\d\d)$/,'오늘 $1'],[/^Yesterday (\d\d:\d\d)$/,'어제 $1'],
 [/^⏱ (.+?) · (\d+) of (\d+) answered$/,(m,d,a,b)=>'⏱ '+durKo(d)+' · '+b+'문제 중 '+a+'문제 풀었음'],
 [/^⏱ (.+?) · (\d+) questions?$/,(m,d,n)=>'⏱ '+durKo(d)+' · '+n+'문제'],
@@ -5067,7 +5069,7 @@ const I18N_KO_RE=[
 [/^Not used in the story: (.+)\. Tap Write again, or edit the story\.$/,'스토리에 안 쓰인 단어: $1. 다시 쓰기를 누르거나 직접 고쳐주세요.'],
 [/^Add a genre or idea if you like, then tap Write with (.+)\.$/,'원하면 장르나 아이디어를 적고 $1로 쓰기를 누르세요.'],
 [/^The (.+) API key was rejected\. Check it in Me → Settings → AI\.$/,'$1 API 키가 거부됐어요. 나 → 설정 → AI에서 확인하세요.'],
-[/^(\d+)d$/,'$1일'],[/^No words added (\d+) days ago\.$/,'$1일 전에 추가한 단어가 없어요.'],[/^Back (\d+) seconds$/,'$1초 뒤로'],[/^Forward (\d+) seconds$/,'$1초 앞으로'],[/^end ([<>])$/,'끝 $1'],
+[/^(\d+)d$/,'$1일'],[/^(\d+) days? ago$/,'$1일 전'],[/^No words added (\d+) days ago\.$/,'$1일 전에 추가한 단어가 없어요.'],[/^Back (\d+) seconds$/,'$1초 뒤로'],[/^Forward (\d+) seconds$/,'$1초 앞으로'],[/^end ([<>])$/,'끝 $1'],
 [/^Lost the connection to (.+)\. Try again\.$/,'$1와 연결이 끊겼어요. 다시 시도해 주세요.'],[/^Couldn't reach (.+)\. Check your connection\.$/,'$1에 연결할 수 없어요. 인터넷 연결을 확인하세요.'],[/^(.+) took too long\. Try again\.$/,'$1 응답이 너무 늦어요. 다시 시도하세요.'],
 [/^(.+) sent back something unexpected\. Try again\.$/,'$1의 응답이 이상해요. 다시 시도하세요.'],[/^(.+) sent back an empty story\. Try again\.$/,'$1가 빈 스토리를 보냈어요. 다시 시도하세요.'],
 [/^Model "(.+?)" isn't available for this key\.(.*)$/,'이 키로는 "$1" 모델을 쓸 수 없어요.$2'],
