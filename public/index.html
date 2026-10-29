@@ -511,7 +511,8 @@ button.chip:active{filter:brightness(.92)}
 .bubble{align-self:center;font-size:13px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 14px}
 .bubble.err{color:var(--bad)}
 .listhead{display:flex;align-items:center;justify-content:space-between}
-.lfilter{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1 * var(--gutter-l));padding:2px var(--gutter-r) 4px var(--gutter-l)}
+/* scrolls up with the list header, then sticks under the sub-tabs */
+.lfilter{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1 * var(--gutter-l));padding:6px var(--gutter-r) 8px var(--gutter-l);position:sticky;top:-4px;z-index:3;background:var(--bg)}
 .lfilter::-webkit-scrollbar{display:none}
 .lfilter button{flex:none;border:2px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:5px 12px;font:800 13px var(--f-ui);cursor:pointer;box-shadow:0 2px 0 var(--line)}
 .lfilter button span{font-weight:700;opacity:.75;margin-left:2px}
@@ -761,7 +762,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.42.0</span> · <span class="version-date">2026/10/30</span></p>
+          <p class="note"><span class="version-tag">v2.42.1</span> · <span class="version-date">2026/10/30</span></p>
         </div>
       </div></div>
     </div>
