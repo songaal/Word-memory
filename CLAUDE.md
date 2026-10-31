@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.43.1</span> · <span class="version-date">2026/10/30</span>
+<span class="version-tag">v2.43.2</span> · <span class="version-date">2026/10/31</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,74 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.43.1 — 2026/10/30**
+**Current version: v2.43.2 — 2026/10/31**
+
+## How to start a new session (read this first)
+
+This file is the context for new conversations. Read **Code map** and **Where to change things** first; the long **Architecture** section below is the detailed feature reference (search it for the feature you are touching).
+
+**Keep this file current (MANDATORY):** when a change adds or moves a feature, a screen, a data field, an endpoint, a setting, or a section of `index.html`, update the Code map / Where to change things / Architecture text in the same commit. Describe code by section headers and function names, not line numbers (they drift).
+
+## Code map
+
+```
+word-memory/
+├── public/                 static files served by the Worker (ASSETS)
+│   ├── index.html          THE app: all HTML, CSS and JS in one file (~5,300 lines), no build step
+│   ├── manifest.json       PWA manifest (name "Word Story", icons, standalone)
+│   └── icons/              icon.svg (source) → icon-192.png, icon-512.png, apple-touch-icon.png
+├── src/
+│   ├── index.js            Cloudflare Worker: all /api/* routes (~600 lines)
+│   └── freq.js             FREQ_WORDS: 20k common English words (ranks similar words)
+├── dev/server.mjs          local test server (real worker + in-memory KV + mocked dictionary); not deployed
+├── wrangler.jsonc          Worker config: KV bindings WORDS (word-memory) and VIDEO_CACHE (old video app, read only)
+├── package.json            wrangler only (no runtime dependencies)
+└── CLAUDE.md               this file
+```
+
+### public/index.html — layout of the file (top to bottom)
+
+1. **`<head>` + `<style>`** — all CSS. Tokens on `:root` (light) and `@media (prefers-color-scheme:dark)` (dark), then shell (`.view`, `.bar`, `.scroll`, `.tabbar`, `.seg`, `.pane`), buttons (`.btn` + variants, `.hintbtn`, `.ricon`, `.linkbtn`), cards, then feature blocks (home, list `.li`/`.lfilter`, test `.gap`, learn `.learn`, stories `.storytext`/`.slashtext`, video `.vs`/`.vwrap`, journal `.jed`, sheets `.sheet`).
+2. **Markup** — `#gate` (sign-in), `#loading`, then `.view#app` with one `<section class="screen" id="s-<tab>">` per tab: `s-home`, `s-story`, `s-dict` (Words), `s-video`, `s-write`, `s-me` (settings pages are `.mepage#me-<id>` inside it), then `nav.tabbar`. Overlays after it: `#hintPop` (story test words), `#learn` (learn mode), `#jed` (journal editor), and bottom sheets `#pracSheet` (z 70), `#pop` (z 60, word popup), `#vchat` (z 55, video AI chat), `#sheet` (z 50, general).
+3. **One `<script>`** — sections start with grep-able headers `// ---------- name ----------` (sub-parts `// ---- name`). In order:
+   - `account & storage`, `language` (`LANG`, `LOC()`), sample story, `keep in step with other devices` (`refreshCloud`, `rerenderCurrent`), `sign-in` (`initEmailLogin`, Google GSI, `api()`, `save()`, `mergeData`, `migrate`, `applySeeds`)
+   - `dates` (`today()`, `addDays`, `diffDays`), `built-in words`, `helpers` (`wordSummary`, `stageLabel`, `INTERVALS`), `test items` (`itemsOf`, `allItems`, `isDue`), `dictionary lookup` (`lookup`, `findCard`, `tapCache`)
+   - `sound` / `Google Cloud Text-to-Speech` (`gSay`, `gAudio`, `makeUtter`, `speak`, `sayExample`), `story reader` (`startReading`/`stopReading`/`markReading`), `translation` (`translateText`, `translateManyKo`, `SETTINGS0`), `word card` (`cardHTML`)
+   - `tabs` (`TABS`, `show(name)`, tab-bar auto hide), `home` (`renderHome`), `learn` (`startLearn`, `lp*` card reader, typing practice `openPractice`, card ▶ `crPlay`)
+   - `writing` → `Video` (state `V`, `openVideo`, `renderVideoPlay`, `vPlaySingle`/`vStartTracker`, `vFetchTr`, sentence study `vStudyAsk`/`vChat*`) → Translate (`renderTranslate`) → Journal (`jn*`) → Enhance
+   - `test` (`renderResult`, history), `test tab` (`testPane`, `storyPane`, `renderStoryTab`, `setQuit`, timer `tmr*`, `openWordsTest`/`openStoryTest`), `stories: shared helpers` (`storyMatches`, `storyHTML`, `tapWordsHTML`), `story test`, `letter-slot blank` (`gapHTML`/`setupGap`), `schedule test` (`startTest`, `grade` = **the review schedule**)
+   - `sheet` (`openSheet`/`closeSheet`, `openPop`), `dict: search` (`renderDict`, `dictPane`), `words tab: stories` (`renderStories`), `slash reading` (`renderStoryView`, `loadChunks`, `slashPlay`, `openStoryMenu`), `dict: word list` (`renderList`, `cardsNewest`, `LIST_FILTERS`, `openWord`), `dict: bulk add` (`openBulk`, JSON import, `photoToJson`)
+   - `me` (`renderMe`, `SETTINGS_MENU`, `openMePage`, settings pages `render*`), `AI story writer` (`AI` table, `aiProv`/`aiKey`/`aiModel`, `aiFetch`, `aiComplete`, `aiChat`, `claudeStream`, `aiVision`, `writeStory`)
+   - `native feel` (keyboard, zoom blocking, `--vvh`), `Korean dictionary` (`I18N_KO`, `I18N_KO_RE`, `I18N_SKIP`), `Korean UI` (`trTree` + MutationObserver), `start` (boot: load cache → `loadSettings` → `/api/words` → `renderAll`)
+
+### src/index.js — the Worker
+
+`export default { fetch }` routes `/api/*` (anything else → `env.ASSETS`). Groups: auth (`login`, `newSession`, `linkEmail`, `logout`, `me`, `currentUser` reads `Authorization: Bearer <session>`), TOTP (`totp*`), words (`getWords`/`putWords` with the 409 conflict check), journal (`getJournal`/`putJournal`, per-entry merge), video (`video()` handles `/api/video/*`), settings (`getSettings`/`putSettings`, whitelist `SETTING_FIELDS`), dictionary (`lookup` → `fromMerriamWebster` + `fromThesaurus`, `freqRank`). Helpers: `json()`, `MAX_BODY`.
+
+### Data (per user, KV `wm:words:<sub>`)
+
+`{cards, seed, log, history, stories, updatedAt}`. A card: `{word, phonetic, audio, meanings:[{pos, defs:[{d, ex, stage, due, last, v:2, exKo, exKoSrc}]}], synonyms, added, addedAt, learned, sample?}` — **the schedule lives on each def (example sentence)**, not on the card. A story: `{id, title, text, words, entries, created, last, tries, ko, koSrc, chunks, chunkSrc}`. Settings are separate (`wm:settings:<sub>`), journal separate (`wm:journal:<sub>`), video data separate (`wm:vt:` / `wm:vtr:` / `wm:vhist:`).
+
+## Where to change things
+
+- **Add a bottom tab**: markup `<section class="screen" id="s-x">` + a button `#tab-x` in `nav.tabbar`; add `'x'` to `TABS`; render it in `show()`; add `rerenderCurrent` / popstate handling if it has sub-pages.
+- **Add a sub-tab (segment)**: `.seg` buttons + `.pane`s inside the screen; a `xPane` variable and a `renderX()` that toggles panes (see `renderDict`, `renderStoryTab`, `renderWrite`).
+- **Add a setting synced to the account**: add the field to `SETTINGS0` (client) **and** `SETTING_FIELDS` (worker, with a max length; values may not contain spaces), read it with a helper (see `slashCfg`, `vRewind`), save with `setSlash(key, value)` (generic `settings[k]=…; storeSettings()`). Per-device prefs use localStorage `wm.<name>` (`lsGet`/`lsSet`/`lsJSON`).
+- **Add a settings page**: `.mepage#me-<id>` markup (copy `me-slash`) + an entry in `SETTINGS_MENU` `{id, title, icon, value, render}`.
+- **Add a field to cards / stories**: set it where items are created (`newDef`, `lookup`, JSON import, `(c.addedAt=…, cards.unshift(c))` sites), make `mergeData` keep it when two copies meet, and if old data needs converting add a step to `migrate()` (guard it so it runs once, like `d.v`).
+- **Change the review schedule**: `INTERVALS`, `grade()` in `schedule test`, `stageLabel`, `STAGE_OF` (list chips), the Home stage boxes in `renderHome`; old data needs a `migrate()` step.
+- **Call an AI**: `aiComplete(system, user, p, {maxTokens, stream})` for one JSON answer, `aiChat(system, messages)` for a conversation (plain text), `aiVision(prompt, images)` for photos. Always check `aiKey()` first and point to Me → Settings → AI when it is missing.
+- **Add a worker endpoint**: a route line in `fetch`, a handler using `currentUser`, `json()`; keys start with `wm:`; document it in the Backend section below.
+- **Any UI text**: write it in English and add the Korean to `I18N_KO` (exact string) or `I18N_KO_RE` (pattern). Mark learning content `data-noi18n` or add a selector to `I18N_SKIP`. Check for an existing key before adding (duplicate keys silently override).
+- **Navigation / back gesture**: use `window.history` (never bare `history` — that name is the test-history array). Push a state when opening a page-like view and handle it in the `popstate` listener (scoped by `curTab`).
+- **Bottom sheets**: `openSheet(title, html)` / `closeSheet()`; word popup `openPop(card)`; a sheet that must stay open over others needs its own element with a higher z-index (see `#pracSheet`, `#vchat`).
+
+## Local testing
+
+1. `node dev/server.mjs` (keep it running in the background) → http://localhost:8787. In the browser set localStorage `wm.session` / `wm.user` as described at the top of that file (or `wm.guest=1`), reload.
+2. Syntax check after editing: extract the last `<script>` of `public/index.html` to a temp file and run `node --check` on it; `node --check src/index.js`.
+3. Drive the UI with Playwright (Chromium is pre-installed in the cloud sandbox): open the page, click through the changed flow, read DOM state with `page.evaluate`, take screenshots and look at them (both `wm.lang` `en` and `ko`). Mock outside services with `context.route(...)` (Google sign-in script, Google Translate/TTS, AI APIs, YouTube iframe API) — the sandbox cannot reach most outside hosts.
+4. Then commit, push to `main`, and wait for the "Workers Builds: word-memory" check (`gh api repos/songaal/Word-memory/commits/<sha>/check-runs`).
 
 ## Architecture
 
