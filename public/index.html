@@ -169,9 +169,11 @@ textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 .vtgapm{display:inline-block;width:4px;height:40px;border-radius:2px;background:var(--blue);align-self:center;animation:pop .15s ease-out}
 .vtstage.vtplay{overflow:hidden}
 .vtstage.vtplay>*{flex:none}
-.vtstage.vtplay .vtans{flex:0 1 auto;min-height:30%;overflow-y:auto;transition:min-height .2s}
+.vtstage.vtplay .vtans{flex:0 1 auto;min-height:70px;overflow-y:auto}
 .vtstage.vtplay.vtdone .vtans{flex:1 1 0;min-height:0}
-.vtstage.vtplay .vtpool{flex:1 1 0;min-height:0;overflow:hidden;align-content:flex-start;padding:2px 0 6px}
+.vtstage.vtplay .vtpool{flex:1 1 0;min-height:0;overflow-y:auto;align-content:flex-start;padding:2px 0 6px}
+.vtstage.dense .vtpool,.vtstage.dense .vtans{gap:6px}
+.vtstage.dense .vblk{font-size:15px;padding:5px 9px;border-radius:10px}
 .vtstage.vtplay .vtrev{max-height:44%;overflow-y:auto}
 .vthrow{display:flex;align-items:center;gap:8px}
 #vtHintPop .vtpopc{background:#fffbea;border-color:#ffe08a}
@@ -933,7 +935,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.47.4</span> · <span class="version-date">2026/11/02</span></p>
+          <p class="note"><span class="version-tag">v2.47.5</span> · <span class="version-date">2026/11/02</span></p>
         </div>
       </div></div>
     </div>
@@ -3232,7 +3234,7 @@ function vtQuestion(){
   vtHead();
   const retry=VT.round===2,mem=VT.mode==='mem',ko=VT.mode==='ko';
   // play layout: answer area and block pool each scroll on their own; the Check bar stays put
-  $('vtStage').className='lstage vtstage vtplay';
+  $('vtStage').className='lstage vtstage vtplay'+(words.length>16?' dense':'');
   $('vtStage').innerHTML=`${retry?`<div class="vtround">↻ Missed sentences · try again</div>`:''}
     <div class="vthrow"><span class="sp"></span><button class="hintbtn" id="vtHint" type="button">💡 Hint</button></div>
     <div class="vtans" id="vtAns"></div>
@@ -3247,6 +3249,7 @@ function vtQuestion(){
     </div><button class="btn block" id="vtGo" type="button">I'm ready</button></div>`}`;
   $('vtCheck').onclick=()=>vtCheck(false);
   $('vtSkip').onclick=()=>vtCheck(true);
+  requestAnimationFrame(vtFit);
   $('vtHint').onclick=vtHint;
   if(mem){VT.phase='build';vtDrawAns();return}
   if($('vtPopTr')) $('vtPopTr').onclick=async()=>{
@@ -3257,6 +3260,18 @@ function vtQuestion(){
   };
   $('vtGo').onclick=()=>{if(!VT||VT.tk!==tk) return;VT.phase='build';$('vtPop').remove();vtDrawAns()};
 }
+// Size the answer area: up to ~1/3 of the stage, but never so big that the blocks don't fit below it
+function vtFit(){
+  const st=$('vtStage'),a=$('vtAns'),p=$('vtPool');
+  if(!st||!a||!p||!st.classList.contains('vtplay')||st.classList.contains('vtdone')) return;
+  const kids=[...st.children].filter(x=>!x.classList.contains('vtpop')&&!x.classList.contains('vghost'));
+  const gap=parseFloat(getComputedStyle(st).rowGap)||0;
+  const others=kids.filter(x=>x!==a&&x!==p).reduce((n,x)=>n+x.offsetHeight,0);
+  p.style.flex='none';const need=p.offsetHeight;p.style.flex='';   // the pool's natural height (it stretches otherwise)
+  const free=st.clientHeight-others-gap*(kids.length-1)-need-2;
+  a.style.minHeight=Math.max(70,Math.min(st.clientHeight*.3,free))+'px';
+}
+window.addEventListener('resize',()=>{if(VT&&VT.phase==='build') vtFit()});
 // 💡 Hint: the Korean of the sentence in a full-screen popup with Close; unlimited (it isn't left on screen while building)
 async function vtHint(){
   if(!VT||VT.phase!=='build'||$('vtHintPop')) return;
