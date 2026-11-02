@@ -171,15 +171,12 @@ textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 .vtstage.vtplay .vtans{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .vtstage.vtplay .vtpool{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;align-content:flex-start;padding:2px 0 6px}
 .vtstage.vtplay .vtrev{max-height:44%;overflow-y:auto}
-.vthrow{display:flex;align-items:flex-start;gap:8px;min-height:34px}
+.vthrow{display:flex;align-items:center;gap:8px}
+#vtHintPop .vtpopc{background:#fffbea;border-color:#ffe08a}
+@media (prefers-color-scheme:dark){#vtHintPop .vtpopc{background:#2e2810;border-color:#7a6420}}
 .vthrow .sp{flex:1}
 .vthrow .hintbtn{flex:none;height:34px;display:inline-flex;align-items:center;gap:4px}
-.vthrow .hintbtn b{display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:99px;background:var(--gold,#ffc800);color:#fff;font:900 12px var(--f-ui);padding:0 5px}
 .vthrow .hintbtn:disabled{opacity:.45}
-.vthrow .hintbtn:disabled b{background:var(--muted)}
-.vtkh{flex:1 1 auto;min-width:0;font:700 15.5px/1.45 var(--f-ui);color:var(--fg);background:#fff6d6;border:2px solid #ffe08a;border-radius:12px;padding:6px 10px;max-height:5.6em;overflow-y:auto}
-@media (prefers-color-scheme:dark){.vtkh{background:#3d3412;border-color:#7a6420}}
-.vtkh:not([hidden])+.sp{display:none}
 .vtfoot2{display:grid!important;grid-template-columns:1fr 3fr;gap:10px}
 .vtskipped{margin:auto;font:800 16px var(--f-ui);color:var(--bad)}
 .vtpopb{display:flex;gap:10px;justify-content:center}
@@ -188,6 +185,10 @@ textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 .vtresume{display:flex;flex-direction:column;gap:2px;text-align:left;border:2px solid var(--orange);background:var(--orange-soft);border-radius:16px;padding:12px 14px;cursor:pointer;color:var(--fg);font:inherit;box-shadow:0 3px 0 var(--orange)}
 .vtresume b{font:900 15px var(--f-ui);color:var(--orange-d)}
 .vtresume span{font:700 13px var(--f-ui);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vtlinks{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;padding:0 2px}
+.vtlinks .linkbtn{display:inline-flex;align-items:center;gap:5px;font:800 14px var(--f-ui);min-width:0;white-space:nowrap}
+.vtlinks .linkbtn .n{font:800 11px var(--f-ui);background:var(--line);color:var(--muted);border-radius:99px;padding:1px 7px}
+.vtlinks .btn.sm{flex:none;display:inline-flex;align-items:center;gap:5px;padding:7px 14px;font-size:13px;border-radius:12px;white-space:nowrap}
 .vthist .jthumb{width:64px;height:36px;border-radius:8px;flex:none;display:grid;place-items:center;font-size:22px;background:var(--accent-soft)}
 #s-write .bar{display:flex;align-items:center;gap:8px}
 #s-write .bar h1{flex:1}
@@ -930,7 +931,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.47.0</span> · <span class="version-date">2026/11/02</span></p>
+          <p class="note"><span class="version-tag">v2.47.1</span> · <span class="version-date">2026/11/02</span></p>
         </div>
       </div></div>
     </div>
@@ -2592,8 +2593,8 @@ function renderVideoList(){
   const h=V.hist;
   const nt=xt().vtests.length;
   $('vList').innerHTML=`<p class="note" style="padding:0 4px;font-size:13px">Paste a YouTube link. Tap a sentence to hear it three times: no caption, Korean, then English.</p>
-    <div class="vtbtnrow"><button class="btn ghost" id="vHistBtn" type="button" style="display:flex;align-items:center;justify-content:center;gap:6px">${VI.hist.replace('<svg ','<svg width="18" height="18" ')}<span>Test history</span>${nt?`<span class="tag">${nt}</span>`:''}</button>
-    ${xtPaused()?`<button class="btn orange" id="vResumeBtn" type="button">▶ Continue test</button>`:h.length?`<button class="btn blue" id="vLatestBtn" type="button">${VI.test.replace('<svg ','<svg width="18" height="18" style="vertical-align:-4px" ')} Test latest video</button>`:''}</div>
+    <div class="vtlinks"><button class="linkbtn" id="vHistBtn" type="button">${VI.hist.replace('<svg ','<svg width="16" height="16" ')}<span>Test history</span>${nt?`<span class="n">${nt}</span>`:''}</button>
+    ${xtPaused()?`<button class="btn orange sm" id="vResumeBtn" type="button">▶ Continue test</button>`:h.length?`<button class="btn blue sm" id="vLatestBtn" type="button">${VI.test.replace('<svg ','<svg width="16" height="16" ')}<span>Test</span></button>`:''}</div>
     ${h.length?`<span class="label">Recent videos</span>${h.map(x=>`<div class="vrow" role="button" tabindex="0" data-vid="${esc(x.videoId)}">
       <img src="https://i.ytimg.com/vi/${esc(x.videoId)}/default.jpg" alt="" loading="lazy">
       <span class="t" data-noi18n>${esc(x.title||x.videoId)}</span><span class="d">${esc(vHistDate(x.date))}</span>
@@ -3201,8 +3202,7 @@ function vtStart(){
   vtQuestion();
 }
 // shared state of a block test (video or journal). round 1 = the test; round 2 = the missed sentences once more (practice)
-const VT_HINTS=2;
-function vtNew(o){return Object.assign({kind:'video',mode:'en',vid:'',title:'',qs:[],ko:{},k:0,ok:0,res:[],round:1,rq:[],res2:[],ok2:0,el:0,t0:0,tm:null,phase:'show',done:false,hints:VT_HINTS,
+function vtNew(o){return Object.assign({kind:'video',mode:'en',vid:'',title:'',qs:[],ko:{},k:0,ok:0,res:[],round:1,rq:[],res2:[],ok2:0,el:0,t0:0,tm:null,phase:'show',done:false,
   id:xtId(),at:new Date().toISOString()},o)}
 function vtOpenOverlay(state){
   $('vtest').hidden=false;$('vtest').classList.remove('retry');
@@ -3232,7 +3232,7 @@ function vtQuestion(){
   // play layout: answer area and block pool each scroll on their own; the Check bar stays put
   $('vtStage').className='lstage vtstage vtplay';
   $('vtStage').innerHTML=`${retry?`<div class="vtround">↻ Missed sentences · try again</div>`:''}
-    <div class="vthrow"><span class="vtkh" id="vtKh" data-noi18n hidden></span><span class="sp"></span><button class="hintbtn" id="vtHint" type="button"${VT.hints>0?'':' disabled'}>💡 Hint <b id="vtHintN">${VT.hints}</b></button></div>
+    <div class="vthrow"><span class="sp"></span><button class="hintbtn" id="vtHint" type="button">💡 Hint</button></div>
     <div class="vtans" id="vtAns"></div>
     <div class="vtpool" id="vtPool">${order.map(i=>`<button class="vblk" type="button" data-vb="${i}" data-noi18n>${esc(words[i])}</button>`).join('')}</div>
     <div class="vtfoot vtfoot2"><button class="btn ghost" id="vtSkip" type="button">Skip</button><button class="btn" id="vtCheck" type="button" disabled>Check</button></div>
@@ -3255,14 +3255,18 @@ function vtQuestion(){
   };
   $('vtGo').onclick=()=>{if(!VT||VT.tk!==tk) return;VT.phase='build';$('vtPop').remove();vtDrawAns()};
 }
-// 💡 Hint: shows the Korean of the sentence; two per test (the count is kept on a paused test too)
+// 💡 Hint: the Korean of the sentence in a full-screen popup with Close, once per sentence (it isn't left on screen while building)
 async function vtHint(){
-  if(!VT||VT.phase!=='build'||VT.hinted||VT.hints<=0) return;
-  const t=vtList()[VT.k],tk=VT.tk,box=$('vtKh');
-  VT.hinted=true;VT.hints--;$('vtHintN').textContent=VT.hints;$('vtHint').disabled=true;
-  box.hidden=false;box.textContent='…';
-  try{const k=await vtKoGet(t);if(VT&&VT.tk===tk) box.textContent=k}
-  catch(e){if(VT&&VT.tk===tk){VT.hinted=false;VT.hints++;$('vtHintN').textContent=VT.hints;$('vtHint').disabled=false;box.textContent=e.message}}
+  if(!VT||VT.phase!=='build'||VT.hinted) return;
+  const t=vtList()[VT.k],tk=VT.tk;
+  VT.hinted=true;$('vtHint').disabled=true;
+  $('vtStage').insertAdjacentHTML('beforeend',`<div class="vtpop" id="vtHintPop"><div class="vtpopc">
+      <span class="label">💡 Hint</span>
+      <div class="flash ko" id="vtHintKo" data-noi18n>…</div>
+    </div><button class="btn ghost block" id="vtHintX" type="button">Close</button></div>`);
+  $('vtHintX').onclick=()=>{const p=$('vtHintPop');if(p) p.remove()};
+  try{const k=await vtKoGet(t);if(VT&&VT.tk===tk&&$('vtHintKo')) $('vtHintKo').textContent=k}
+  catch(e){if(VT&&VT.tk===tk){VT.hinted=false;$('vtHint').disabled=false;if($('vtHintKo')) $('vtHintKo').textContent=e.message}}
 }
 // Korean for a test sentence: journal KO mode, this session, the journal cache, or Google
 async function vtKoGet(t){
@@ -3369,7 +3373,7 @@ function vtCheck(skip){
   if(VT.round===2){if(ok) VT.ok2++;VT.res2.push(r)}else{if(ok) VT.ok++;VT.res.push(r)}
   $('vtAns').classList.add(ok?'ok':'no');
   $('vtAns').querySelectorAll('[data-va]').forEach((b,p)=>b.classList.add(VT.words[VT.pick[p]]===VT.words[p]?'r':'w'));
-  $('vtPool').remove();$('vtStage').querySelector('.vthrow').remove();
+  $('vtPool').remove();$('vtStage').querySelector('.vthrow').remove();if($('vtHintPop')) $('vtHintPop').remove();
   if(skip) $('vtAns').innerHTML=`<span class="vtskipped">Skipped</span>`;
   const last=VT.k>=L.length-1,missed=VT.res.filter(x=>!x.ok).length,toRetry=last&&VT.round===1&&missed>0;
   $('vtAns').insertAdjacentHTML('beforebegin',`<div class="vtrev">
@@ -3461,7 +3465,7 @@ function vtPauseLater(){
   if(VT.phase==='checked') k++;                               // this one is answered: continue with the next
   if(VT.phase==='intro'){round=1;k=VT.qs.length}             // between the test and the retry
   const d={kind:VT.kind,mode:VT.mode,vid:VT.vid||'',jid:VT.kind==='jn'&&VT.entry?VT.entry.id:'',title:VT.title,qs:VT.qs,all:VT.all||null,ko:VT.ko||{},
-    k,ok:VT.ok,res:VT.res,round,rq:VT.rq,res2:VT.res2,ok2:VT.ok2,el:Math.round(vtSecs()),hints:VT.hints,id:VT.id,at:VT.at,savedAt:new Date().toISOString()};
+    k,ok:VT.ok,res:VT.res,round,rq:VT.rq,res2:VT.res2,ok2:VT.ok2,el:Math.round(vtSecs()),id:VT.id,at:VT.at,savedAt:new Date().toISOString()};
   clearInterval(VT.tm);
   xtSetPaused(d);
   vtClose();
