@@ -338,7 +338,7 @@ async function getExtra(request, env) {
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'Not signed in' }, 401);
   const d = await env.WORDS.get(`wm:extra:${user.sub}`, 'json').catch(() => null);
-  return json(d || { sentences: [], vtests: [], updatedAt: null });
+  return json(d || { sentences: [], vtests: [], paused: { at: 0, data: null }, updatedAt: null });
 }
 async function putExtra(request, env) {
   const user = await currentUser(request, env);
@@ -363,13 +363,19 @@ async function putExtra(request, env) {
   const sentences = [...sm.values()].filter(x => !x.deleted || x.updated > cutoff).slice(-2000);
   const tm = new Map();
   for (const x of [...(cur.vtests || []), ...((body && body.vtests) || [])]) {
-    if (!idOk(x) || !/^[A-Za-z0-9_-]{11}$/.test(x.vid || '')) continue;
-    tm.set(x.id, { id: x.id, at: String(x.at || ''), vid: x.vid, title: String(x.title || '').slice(0, 300), total: +x.total || 0, ok: +x.ok || 0,
+    const jn = x && x.kind === 'jn';
+    if (!idOk(x) || (jn ? !(typeof x.jid === 'string' && x.jid && x.jid.length <= 40) : !/^[A-Za-z0-9_-]{11}$/.test(x.vid || ''))) continue;
+    tm.set(x.id, { id: x.id, at: String(x.at || ''), kind: jn ? 'jn' : 'video', vid: jn ? '' : x.vid, jid: jn ? x.jid : '', mode: String(x.mode || '').slice(0, 4),
+      title: String(x.title || '').slice(0, 300), total: +x.total || 0, ok: +x.ok || 0,
       secs: +x.secs || 0, quit: !!x.quit, items: cleanItems(x.items),
       ...(x.retry && typeof x.retry === 'object' ? { retry: { ok: +x.retry.ok || 0, total: +x.retry.total || 0, items: cleanItems(x.retry.items) } } : {}) });
   }
   const vtests = [...tm.values()].sort((a, b) => a.at < b.at ? 1 : -1).slice(0, 300);
-  const rec = { sentences, vtests, updatedAt: new Date().toISOString() };
+  // one paused test {at, data|null}: the newer `at` wins; data is kept as sent (size-limited)
+  const okP = p => p && typeof p === 'object' && typeof p.at === 'number' && (p.data === null || (typeof p.data === 'object' && JSON.stringify(p.data).length < 200000));
+  let paused = okP(cur.paused) ? cur.paused : { at: 0, data: null };
+  if (body && okP(body.paused) && body.paused.at > paused.at) paused = body.paused;
+  const rec = { sentences, vtests, paused, updatedAt: new Date().toISOString() };
   await env.WORDS.put(key, JSON.stringify(rec));
   return json(rec);
 }

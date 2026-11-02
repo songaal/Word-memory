@@ -171,6 +171,29 @@ textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 .vtstage.vtplay .vtans{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .vtstage.vtplay .vtpool{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;align-content:flex-start;padding:2px 0 6px}
 .vtstage.vtplay .vtrev{max-height:44%;overflow-y:auto}
+.vthrow{display:flex;align-items:flex-start;gap:8px;min-height:34px}
+.vthrow .sp{flex:1}
+.vthrow .hintbtn{flex:none;height:34px;display:inline-flex;align-items:center;gap:4px}
+.vthrow .hintbtn b{display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:99px;background:var(--gold,#ffc800);color:#fff;font:900 12px var(--f-ui);padding:0 5px}
+.vthrow .hintbtn:disabled{opacity:.45}
+.vthrow .hintbtn:disabled b{background:var(--muted)}
+.vtkh{flex:1 1 auto;min-width:0;font:700 15.5px/1.45 var(--f-ui);color:var(--fg);background:#fff6d6;border:2px solid #ffe08a;border-radius:12px;padding:6px 10px;max-height:5.6em;overflow-y:auto}
+@media (prefers-color-scheme:dark){.vtkh{background:#3d3412;border-color:#7a6420}}
+.vtkh:not([hidden])+.sp{display:none}
+.vtfoot2{display:grid!important;grid-template-columns:1fr 3fr;gap:10px}
+.vtskipped{margin:auto;font:800 16px var(--f-ui);color:var(--bad)}
+.vtpopb{display:flex;gap:10px;justify-content:center}
+.vtpopc .ctool[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.vtpopko{font:700 17px/1.5 var(--f-ui);color:var(--muted)}
+.vtresume{display:flex;flex-direction:column;gap:2px;text-align:left;border:2px solid var(--orange);background:var(--orange-soft);border-radius:16px;padding:12px 14px;cursor:pointer;color:var(--fg);font:inherit;box-shadow:0 3px 0 var(--orange)}
+.vtresume b{font:900 15px var(--f-ui);color:var(--orange-d)}
+.vtresume span{font:700 13px var(--f-ui);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vthist .jthumb{width:64px;height:36px;border-radius:8px;flex:none;display:grid;place-items:center;font-size:22px;background:var(--accent-soft)}
+#s-write .bar{display:flex;align-items:center;gap:8px}
+#s-write .bar h1{flex:1}
+.wbar{display:flex;gap:12px;align-items:center}
+.wbar .linkbtn{font-size:14px}
+
 .vtstage.vtplay .vtfoot{margin-top:0}
 .vtpop{position:absolute;inset:0;z-index:5;background:var(--bg);display:flex;flex-direction:column;gap:14px;padding-bottom:2px}
 .vtpopc{flex:1;min-height:0;overflow-y:auto;border:2px solid var(--line);border-radius:20px;background:var(--card);padding:22px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center}
@@ -879,7 +902,7 @@ button.chip:active{filter:brightness(.92)}
   </section>
 
   <section class="screen" id="s-write" hidden>
-    <div class="bar"><h1>Writing</h1></div>
+    <div class="bar"><h1>Writing</h1><span class="wbar" id="wBar"></span></div>
     <div class="seg" role="tablist">
       <button role="tab" id="wseg-tr" aria-selected="true" type="button">Translate</button>
       <button role="tab" id="wseg-jn" aria-selected="false" type="button">Journal</button>
@@ -907,7 +930,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.46.0</span> · <span class="version-date">2026/11/02</span></p>
+          <p class="note"><span class="version-tag">v2.47.0</span> · <span class="version-date">2026/11/02</span></p>
         </div>
       </div></div>
     </div>
@@ -2504,7 +2527,7 @@ VI.chat=VI.study;   // the same three-star AI icon
 VI.test='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="14" y="4" width="7" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/></svg>';
 VI.hist='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>';
 const V={vid:null,title:'',player:null,sents:[],cur:0,loop:-1,pass:0,maxPass:3,token:0,cc:0,auto:false,on:true,blur:false,tr:{},slow:false,
-  time:false,trOn:false,repeat:true,sync:0,tracker:null,hist:[],histAt:0,src:'paste',busy:false,trBusy:false};
+  time:false,trOn:false,repeat:false,sync:0,tracker:null,hist:[],histAt:0,src:'paste',busy:false,trBusy:false};
 const VIDEO_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="M10 9.2v5.6l4.8-2.8z"/></svg>';
 const vRewind=()=>[1,2,3,5,10].includes(+settings.videoRewind)?+settings.videoRewind:3;
 const vForward=()=>[5,10,15,30].includes(+settings.videoForward)?+settings.videoForward:10;
@@ -2569,7 +2592,8 @@ function renderVideoList(){
   const h=V.hist;
   const nt=xt().vtests.length;
   $('vList').innerHTML=`<p class="note" style="padding:0 4px;font-size:13px">Paste a YouTube link. Tap a sentence to hear it three times: no caption, Korean, then English.</p>
-    <button class="btn ghost block" id="vHistBtn" type="button" style="display:flex;align-items:center;justify-content:center;gap:6px">${VI.hist.replace('<svg ','<svg width="18" height="18" ')}<span>Test history</span>${nt?`<span class="tag">${nt}</span>`:''}</button>
+    <div class="vtbtnrow"><button class="btn ghost" id="vHistBtn" type="button" style="display:flex;align-items:center;justify-content:center;gap:6px">${VI.hist.replace('<svg ','<svg width="18" height="18" ')}<span>Test history</span>${nt?`<span class="tag">${nt}</span>`:''}</button>
+    ${xtPaused()?`<button class="btn orange" id="vResumeBtn" type="button">▶ Continue test</button>`:h.length?`<button class="btn blue" id="vLatestBtn" type="button">${VI.test.replace('<svg ','<svg width="18" height="18" style="vertical-align:-4px" ')} Test latest video</button>`:''}</div>
     ${h.length?`<span class="label">Recent videos</span>${h.map(x=>`<div class="vrow" role="button" tabindex="0" data-vid="${esc(x.videoId)}">
       <img src="https://i.ytimg.com/vi/${esc(x.videoId)}/default.jpg" alt="" loading="lazy">
       <span class="t" data-noi18n>${esc(x.title||x.videoId)}</span><span class="d">${esc(vHistDate(x.date))}</span>
@@ -2578,6 +2602,8 @@ function renderVideoList(){
 }
 $('vList').addEventListener('click',e=>{
   if(e.target.closest('#vHistBtn')){vtHistory(null);return}
+  if(e.target.closest('#vResumeBtn')){vtResume();return}
+  if(e.target.closest('#vLatestBtn')){vtStartLatest();return}
   const d=e.target.closest('[data-vdel]');
   if(d){e.stopPropagation();V.hist=V.hist.filter(h=>h.videoId!==d.dataset.vdel);vSaveHist();renderVideoList();return}
   const r=e.target.closest('[data-vid]');if(r) openVideo(r.dataset.vid);
@@ -2610,7 +2636,7 @@ function vDestroy(){
 async function openVideo(vid){
   stopReading();try{gStop()}catch(e){}
   vDestroy();
-  Object.assign(V,{vid,title:'',sents:[],cur:0,loop:-1,pass:0,auto:false,on:true,blur:false,tr:{},slow:false,time:false,trOn:false,cc:0,repeat:true,src:'paste'});
+  Object.assign(V,{vid,title:'',sents:[],cur:0,loop:-1,pass:0,auto:false,on:true,blur:false,tr:{},slow:false,time:false,trOn:false,cc:0,repeat:false,src:'paste'});
   V.sync=parseFloat(lsGet('wm.vsync.'+vid))||0;
   const h=V.hist.find(x=>x.videoId===vid);V.title=h&&h.title&&h.title!==vid?h.title:'';
   try{if(!(window.history.state&&window.history.state.video)) window.history.pushState({video:vid},'')}catch(e){}
@@ -2624,6 +2650,7 @@ async function openVideo(vid){
   if(h&&h.s>0&&h.s<=V.sents.length) V.cur=h.s-1;
   renderVideoPlay();
   vTouchHist(vid,V.title,null);
+  if(V.after){const f=V.after;V.after=null;setTimeout(f,0)}   // e.g. start or resume a test once the transcript is in
   if(!V.title) fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${vid}&format=json`).then(r=>r.ok?r.json():null).then(j=>{
     if(V.vid!==vid) return;V.title=(j&&j.title)||vid;$('vTitle').textContent=V.title;vTouchHist(vid,V.title,null);
   }).catch(()=>{if(V.vid===vid) $('vTitle').textContent=vid});
@@ -3023,7 +3050,16 @@ $('videoSetBody').addEventListener('click',e=>{
   }
 });
 
+function renderWriteBar(){
+  const b=$('wBar');if(!b) return;
+  if(writePane!=='jn'){b.innerHTML='';return}
+  const p=xtPaused();
+  b.innerHTML=`${p&&p.kind==='jn'?`<button class="linkbtn" id="wResume" type="button" style="color:var(--orange-d)">▶ Continue test</button>`:''}<button class="linkbtn" id="wHist" type="button">Test history</button>`;
+  $('wHist').onclick=()=>{vtHistory('jn')};
+  if($('wResume')) $('wResume').onclick=vtResume;
+}
 function renderWrite(){
+  renderWriteBar();if(writePane==='jn') xtLoad();
   for(const k of ['tr','jn','sn']){$('wseg-'+k).setAttribute('aria-selected',writePane===k);$('pane-'+k).hidden=writePane!==k}
   if(writePane==='tr') renderTranslate();else if(writePane==='jn'){renderJournal();jnLoad()}else{renderSentences();xtLoad()}
 }
@@ -3034,7 +3070,10 @@ for(const k of ['tr','jn','sn']) $('wseg-'+k).onclick=()=>{writePane=k;lsSet('wm
 // Kept in this browser (wm.extra.<sub|guest>) and, signed in, in /api/extra (merged per item on the server, like the journal).
 let XT=null,xtLoadedAt=0,xtPushT=null;
 const xtKey=()=>'wm.extra.'+(acct==='cloud'&&user?user.sub:'guest');
-function xt(){if(!XT){const d=lsJSON(xtKey())||{};XT={sentences:Array.isArray(d.sentences)?d.sentences:[],vtests:Array.isArray(d.vtests)?d.vtests:[]}}return XT}
+function xt(){if(!XT){const d=lsJSON(xtKey())||{};XT={sentences:Array.isArray(d.sentences)?d.sentences:[],vtests:Array.isArray(d.vtests)?d.vtests:[],paused:d.paused&&typeof d.paused.at==='number'?d.paused:{at:0,data:null}}}return XT}
+// one test saved for later ({at, data}); the newer `at` wins when copies meet, data:null = nothing paused
+const xtPaused=()=>xt().paused&&xt().paused.data||null;
+function xtSetPaused(data){xt().paused={at:Date.now(),data:data||null};xtPush()}
 function xtSaveLocal(){lsSet(xtKey(),JSON.stringify(xt()))}
 function xtMerge(d){
   const x=xt(),sm=new Map(x.sentences.map(a=>[a.id,a]));
@@ -3042,6 +3081,7 @@ function xtMerge(d){
   x.sentences=[...sm.values()];
   const tm=new Map(x.vtests.map(a=>[a.id,a]));for(const r of (d&&d.vtests)||[]) if(!tm.has(r.id)) tm.set(r.id,r);
   x.vtests=[...tm.values()].sort((a,b)=>a.at<b.at?1:-1).slice(0,300);
+  if(d&&d.paused&&typeof d.paused.at==='number'&&d.paused.at>((x.paused&&x.paused.at)||0)) x.paused=d.paused;
 }
 async function xtLoad(force){
   if(acct!=='cloud'||(!force&&Date.now()-xtLoadedAt<15000)) return;
@@ -3056,7 +3096,7 @@ function xtPush(){
     try{const r=await api('/api/extra',{method:'PUT',body:JSON.stringify(xt())});if(r.ok){xtMerge(await r.json());xtSaveLocal()}}catch(_){}
   },900);
 }
-function xtRedraw(){if(curTab==='write'&&writePane==='sn'&&!snBusy()) renderSentences()}
+function xtRedraw(){if(curTab==='write'&&writePane==='sn'&&!snBusy()) renderSentences();if(curTab==='write') renderWriteBar();if(curTab==='video'&&!V.vid) renderVideoList()}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&curTab==='write'&&writePane==='sn') xtLoad()});
 const xtId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const snNorm=t=>String(t||'').replace(/\s+/g,' ').trim();
@@ -3161,7 +3201,8 @@ function vtStart(){
   vtQuestion();
 }
 // shared state of a block test (video or journal). round 1 = the test; round 2 = the missed sentences once more (practice)
-function vtNew(o){return Object.assign({kind:'video',mode:'en',vid:'',title:'',qs:[],ko:{},k:0,ok:0,res:[],round:1,rq:[],res2:[],ok2:0,el:0,t0:0,tm:null,phase:'show',done:false,
+const VT_HINTS=2;
+function vtNew(o){return Object.assign({kind:'video',mode:'en',vid:'',title:'',qs:[],ko:{},k:0,ok:0,res:[],round:1,rq:[],res2:[],ok2:0,el:0,t0:0,tm:null,phase:'show',done:false,hints:VT_HINTS,
   id:xtId(),at:new Date().toISOString()},o)}
 function vtOpenOverlay(state){
   $('vtest').hidden=false;$('vtest').classList.remove('retry');
@@ -3183,25 +3224,53 @@ function vtHead(){
 }
 function vtQuestion(){
   const L=vtList(),t=L[VT.k],words=vtWords(t),tk=VT.id+':'+VT.round+':'+VT.k;
-  const order=words.map((_,i)=>i);for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}
-  if(order.length>1&&order.every((v,i)=>v===i)) order.push(order.shift());
-  Object.assign(VT,{phase:'show',words,order,pick:[],tk});
+  // blocks in alphabetical order, so a word is easy to find
+  const order=words.map((_,i)=>i).sort((x,y)=>words[x].toLowerCase().localeCompare(words[y].toLowerCase())||x-y);
+  Object.assign(VT,{phase:'show',words,order,pick:[],tk,hinted:false});
   vtHead();
   const retry=VT.round===2,mem=VT.mode==='mem',ko=VT.mode==='ko';
   // play layout: answer area and block pool each scroll on their own; the Check bar stays put
   $('vtStage').className='lstage vtstage vtplay';
-  $('vtStage').innerHTML=`${retry?`<div class="vtround">↻ Missed sentences · try again</div>`:''}<div class="vtans" id="vtAns"></div>
+  $('vtStage').innerHTML=`${retry?`<div class="vtround">↻ Missed sentences · try again</div>`:''}
+    <div class="vthrow"><span class="vtkh" id="vtKh" data-noi18n hidden></span><span class="sp"></span><button class="hintbtn" id="vtHint" type="button"${VT.hints>0?'':' disabled'}>💡 Hint <b id="vtHintN">${VT.hints}</b></button></div>
+    <div class="vtans" id="vtAns"></div>
     <div class="vtpool" id="vtPool">${order.map(i=>`<button class="vblk" type="button" data-vb="${i}" data-noi18n>${esc(words[i])}</button>`).join('')}</div>
-    <div class="vtfoot"><button class="btn" id="vtCheck" type="button" disabled>Check</button></div>
+    <div class="vtfoot vtfoot2"><button class="btn ghost" id="vtSkip" type="button">Skip</button><button class="btn" id="vtCheck" type="button" disabled>Check</button></div>
     ${mem?'':`<div class="vtpop" id="vtPop"><div class="vtpopc">
       ${retry?`<span class="vtround">↻ Missed sentence</span>`:''}
       <span class="label">${ko?'Build this in English':'Remember this sentence'}</span>
       <div class="flash${ko?' ko':''}" data-noi18n>${esc(ko?(VT.ko[t]||t):t)}</div>
-      ${ko?'':`<button class="ctool" type="button" data-say="${esc(t)}" data-kind="ex" aria-label="Listen">${SPK_ICON}</button>`}
+      ${ko?'':`<div class="vtpopb"><button class="ctool" type="button" data-say="${esc(t)}" data-kind="ex" aria-label="Listen">${SPK_ICON}</button><button class="ctool" type="button" id="vtPopTr" aria-pressed="false" aria-label="Show Korean translation">${TR_ICON}</button></div>
+      <div class="vtpopko" id="vtPopKo" data-noi18n hidden></div>`}
     </div><button class="btn block" id="vtGo" type="button">I'm ready</button></div>`}`;
-  $('vtCheck').onclick=vtCheck;
+  $('vtCheck').onclick=()=>vtCheck(false);
+  $('vtSkip').onclick=()=>vtCheck(true);
+  $('vtHint').onclick=vtHint;
   if(mem){VT.phase='build';vtDrawAns();return}
+  if($('vtPopTr')) $('vtPopTr').onclick=async()=>{
+    const b=$('vtPopTr'),box=$('vtPopKo');
+    if(b.getAttribute('aria-pressed')==='true'){b.setAttribute('aria-pressed','false');b.classList.remove('on');box.hidden=true;return}
+    b.setAttribute('aria-pressed','true');b.classList.add('on');box.hidden=false;box.textContent='…';
+    try{const k=await vtKoGet(t);if(box.isConnected) box.textContent=k}catch(e){if(box.isConnected) box.textContent=e.message}
+  };
   $('vtGo').onclick=()=>{if(!VT||VT.tk!==tk) return;VT.phase='build';$('vtPop').remove();vtDrawAns()};
+}
+// 💡 Hint: shows the Korean of the sentence; two per test (the count is kept on a paused test too)
+async function vtHint(){
+  if(!VT||VT.phase!=='build'||VT.hinted||VT.hints<=0) return;
+  const t=vtList()[VT.k],tk=VT.tk,box=$('vtKh');
+  VT.hinted=true;VT.hints--;$('vtHintN').textContent=VT.hints;$('vtHint').disabled=true;
+  box.hidden=false;box.textContent='…';
+  try{const k=await vtKoGet(t);if(VT&&VT.tk===tk) box.textContent=k}
+  catch(e){if(VT&&VT.tk===tk){VT.hinted=false;VT.hints++;$('vtHintN').textContent=VT.hints;$('vtHint').disabled=false;box.textContent=e.message}}
+}
+// Korean for a test sentence: journal KO mode, this session, the journal cache, or Google
+async function vtKoGet(t){
+  if(VT&&VT.ko&&VT.ko[t]) return VT.ko[t];
+  if(vtKoCache.has(t)) return vtKoCache.get(t);
+  if(jko()[t]) return jko()[t];
+  if(!settings.translateKey) throw new Error('Add your Google Translate API key in Me → Settings to see translations.');
+  const k=unEnt(await translateKo(t));vtKoCache.set(t,k);return k;
 }
 function vtDrawAns(){
   const a=$('vtAns');if(!a) return;
@@ -3231,7 +3300,7 @@ $('vtStage').addEventListener('pointerdown',e=>{
   vtDrEnd();
   const fromAns=b.dataset.va!=null;
   vtDr={b,id:e.pointerId,x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,on:false,fromAns,idx:+(fromAns?b.dataset.va:b.dataset.vb),tgt:undefined,
-    tm:setTimeout(vtDrStart,300)};
+    tm:setTimeout(vtDrStart,150)};
 });
 document.addEventListener('pointermove',e=>{
   const d=vtDr;if(!d||e.pointerId!==d.id) return;
@@ -3291,16 +3360,17 @@ function vtDrEnd(){
   if(d.b) d.b.classList.remove('dsrc');
   const a=$('vtAns');if(a){a.querySelectorAll('.vtgapm').forEach(x=>x.remove());a.classList.remove('dropin')}
 }
-function vtCheck(){
-  if(!VT||VT.phase!=='build'||VT.pick.length!==VT.words.length) return;
+function vtCheck(skip){
+  if(!VT||VT.phase!=='build'||(!skip&&VT.pick.length!==VT.words.length)) return;
   vtDrEnd();VT.phase='checked';
-  const L=vtList(),t=L[VT.k],built=VT.pick.map(i=>VT.words[i]),ok=built.join(' ')===VT.words.join(' ');
+  const L=vtList(),t=L[VT.k],built=skip?[]:VT.pick.map(i=>VT.words[i]),ok=!skip&&built.join(' ')===VT.words.join(' ');
   if(ok) chime();
-  const r={t,ok,a:ok?'':built.join(' ')};
+  const r={t,ok,a:skip?'(skipped)':ok?'':built.join(' ')};
   if(VT.round===2){if(ok) VT.ok2++;VT.res2.push(r)}else{if(ok) VT.ok++;VT.res.push(r)}
   $('vtAns').classList.add(ok?'ok':'no');
   $('vtAns').querySelectorAll('[data-va]').forEach((b,p)=>b.classList.add(VT.words[VT.pick[p]]===VT.words[p]?'r':'w'));
-  $('vtPool').remove();
+  $('vtPool').remove();$('vtStage').querySelector('.vthrow').remove();
+  if(skip) $('vtAns').innerHTML=`<span class="vtskipped">Skipped</span>`;
   const last=VT.k>=L.length-1,missed=VT.res.filter(x=>!x.ok).length,toRetry=last&&VT.round===1&&missed>0;
   $('vtAns').insertAdjacentHTML('beforebegin',`<div class="vtrev">
     <div class="vth"><span class="lbl">${ok?'Correct!':'Answer'}</span><span class="sp"></span>
@@ -3308,6 +3378,7 @@ function vtCheck(){
     <div class="vts"><span data-noi18n>${esc(t)}</span> <button class="vttr" type="button" id="vtTr" aria-pressed="false" aria-label="Show Korean translation">${TR_ICON}</button></div>
     <span class="vtko" id="vtKo" data-noi18n hidden></span></div>`);
   $('vtTr').onclick=()=>vtTranslate(t);
+  $('vtStage').querySelector('.vtfoot').className='vtfoot';
   $('vtStage').querySelector('.vtfoot').innerHTML=`<button class="btn${ok?'':' blue'}" id="vtNext" type="button">${last&&!toRetry?'See results':'Next'}</button>`;
   $('vtNext').onclick=()=>{if(!last){VT.k++;vtQuestion()}else if(toRetry) vtRetryIntro();else vtFinish(false)};
   vtHead();
@@ -3332,17 +3403,13 @@ const vtKoCache=new Map();
 async function vtTranslate(t){
   const b=$('vtTr'),box=$('vtKo');if(!b||!box) return;
   if(b.getAttribute('aria-pressed')==='true'){b.setAttribute('aria-pressed','false');b.classList.remove('on');box.hidden=true;return}
-  b.setAttribute('aria-pressed','true');b.classList.add('on');box.hidden=false;box.classList.remove('err');
-  if(VT&&VT.ko&&VT.ko[t]) vtKoCache.set(t,VT.ko[t]);
-  if(vtKoCache.has(t)){box.textContent=vtKoCache.get(t);return}
-  if(!settings.translateKey){box.classList.add('err');box.textContent='Add your Google Translate API key in Me → Settings to see translations.';box.removeAttribute('data-noi18n');return}
-  box.textContent='Translating…';box.removeAttribute('data-noi18n');
-  try{const ko=await translateKo(t);vtKoCache.set(t,ko);if(box.isConnected){box.setAttribute('data-noi18n','');box.textContent=ko}}
+  b.setAttribute('aria-pressed','true');b.classList.add('on');box.hidden=false;box.classList.remove('err');box.textContent='…';
+  try{const k=await vtKoGet(t);if(box.isConnected) box.textContent=k}
   catch(e){if(box.isConnected){box.classList.add('err');box.textContent=e.message}}
 }
 function vtSave(quit){
-  if(!VT||VT.kind!=='video'||!VT.res.length) return;
-  const h={id:VT.id,at:VT.at,vid:VT.vid,title:VT.title,total:VT.qs.length,ok:VT.ok,secs:Math.round(vtSecs()),quit:!!quit,items:VT.res.slice()};
+  if(!VT||!VT.res.length) return;
+  const h={id:VT.id,at:VT.at,kind:VT.kind,vid:VT.vid||'',jid:VT.kind==='jn'&&VT.entry?VT.entry.id:'',mode:VT.mode,title:VT.title,total:VT.qs.length,ok:VT.ok,secs:Math.round(vtSecs()),quit:!!quit,items:VT.res.slice()};
   if(VT.round===2&&VT.res2.length) h.retry={ok:VT.ok2,total:VT.rq.length,items:VT.res2.slice()};
   const x=xt();x.vtests=[h,...x.vtests.filter(a=>a.id!==h.id)].slice(0,300);xtPush();
 }
@@ -3369,7 +3436,7 @@ function vtFinish(quit){
   $('vtAgain').onclick=()=>{vtClose();setTimeout(again,150)};
 }
 function vtItemsHTML(items,vid,title){
-  return items.map(i=>`<div class="it"><span class="m ${i.ok?'ok':'no'}">${i.ok?'✓':'✗'}</span><span class="t" data-noi18n>${esc(i.t)}${!i.ok&&i.a?`<span class="a">${esc(i.a)}</span>`:''}</span>${heartHTML(i.t).replace('data-heart=',`data-hvid="${esc(vid)}" data-htitle="${esc(title)}" data-heart=`)}</div>`).join('');
+  return items.map(i=>`<div class="it"><span class="m ${i.ok?'ok':'no'}">${i.ok?'✓':'✗'}</span><span class="t"><span data-noi18n>${esc(i.t)}</span>${!i.ok&&i.a?(i.a==='(skipped)'?`<span class="a">Skipped</span>`:`<span class="a" data-noi18n>${esc(i.a)}</span>`):''}</span>${heartHTML(i.t).replace('data-heart=',`data-hvid="${esc(vid)}" data-htitle="${esc(title)}" data-heart=`)}</div>`).join('');
 }
 function vtClose(fromBack){
   if(!VT) return;clearInterval(VT.tm);VT=null;
@@ -3379,36 +3446,88 @@ function vtClose(fromBack){
 function vtAskQuit(){
   if(!VT) return;
   if(VT.done||VT.phase==='mode'){vtClose();return}
-  openSheet('Quit the test?',`<div class="card qconfirm"><p>${VT.kind!=='video'?'Journal tests are not saved.':VT.round===2?'Your test is already saved in Test history.':VT.res.length?`Your ${VT.res.length} answered ${VT.res.length===1?'sentence is':'sentences are'} saved in Test history.`:'Nothing is saved yet.'}</p>
-    <button class="btn ghost block" id="vtKeep" type="button">Keep going</button><button class="btn danger block" id="vtStop" type="button">Quit</button></div>`);
+  openSheet('Quit the test?',`<div class="card qconfirm"><p>${VT.round===2?'Your test is already saved in Test history.':VT.res.length?`Your ${VT.res.length} answered ${VT.res.length===1?'sentence is':'sentences are'} saved in Test history.`:'Nothing is saved yet.'}</p>
+    <button class="btn ghost block" id="vtKeep" type="button">Keep going</button>
+    <button class="btn blue block" id="vtLater" type="button">Pause and continue later</button>
+    <button class="btn danger block" id="vtStop" type="button">Quit</button></div>`);
   $('vtKeep').onclick=closeSheet;
+  $('vtLater').onclick=()=>{closeSheet();vtPauseLater()};
   $('vtStop').onclick=()=>{closeSheet();vtFinish(true)};
+}
+// Save the running test to continue later (one paused test, synced with the account). Nothing goes to history yet.
+function vtPauseLater(){
+  if(!VT) return;
+  let k=VT.k,round=VT.round;
+  if(VT.phase==='checked') k++;                               // this one is answered: continue with the next
+  if(VT.phase==='intro'){round=1;k=VT.qs.length}             // between the test and the retry
+  const d={kind:VT.kind,mode:VT.mode,vid:VT.vid||'',jid:VT.kind==='jn'&&VT.entry?VT.entry.id:'',title:VT.title,qs:VT.qs,all:VT.all||null,ko:VT.ko||{},
+    k,ok:VT.ok,res:VT.res,round,rq:VT.rq,res2:VT.res2,ok2:VT.ok2,el:Math.round(vtSecs()),hints:VT.hints,id:VT.id,at:VT.at,savedAt:new Date().toISOString()};
+  clearInterval(VT.tm);
+  xtSetPaused(d);
+  vtClose();
+  toast('Paused. Continue it from Test history.',2600);
+}
+// Continue where the list stands: next question, the retry screen, or the results
+function vtContinue(){
+  const L=vtList();
+  if(VT.k<L.length){vtQuestion();return}
+  if(VT.round===1&&VT.res.some(x=>!x.ok)) vtRetryIntro();else vtFinish(false);
+}
+function vtResume(){
+  const p=xtPaused();if(!p) return;
+  const go=entry=>{
+    VT=vtNew({...p,entry,phase:'show',t0:Date.now(),done:false});
+    xtSetPaused(null);
+    vtOpenOverlay(p.kind==='video'?{video:p.vid}:{});
+    vtContinue();
+  };
+  if(p.kind==='jn'){
+    const e=jnLocal().entries.find(x=>x.id===p.jid&&!x.deleted);
+    if(!e){toast('That journal entry is gone.');xtSetPaused(null);return}
+    go(e);return;
+  }
+  if(curTab!=='video') show('video');
+  if(V.vid===p.vid&&V.sents.length){go(null);return}
+  V.after=()=>{if(V.vid===p.vid) go(null)};
+  if(V.vid) closeVideo();
+  openVideo(p.vid);
+}
+// Start a test on the most recent video (opens it first so the transcript is loaded)
+function vtStartLatest(){
+  const h=V.hist[0];if(!h) return;
+  V.after=()=>{if(V.vid===h.videoId){if(V.sents.length) vtStart();else toast('Add the transcript first.')}};
+  openVideo(h.videoId);
 }
 $('vtQuit').onclick=vtAskQuit;
 // ---- Test history: every video test, newest first ----
-function vtHistory(onlyVid){
-  const list=xt().vtests.filter(h=>!onlyVid||h.vid===onlyVid);
+function vtHistory(scope){   // 'jn' = journal tests, a video id = that video, null = all videos
+  const jn=scope==='jn',onlyVid=jn?null:scope;
+  const list=xt().vtests.filter(h=>jn?h.kind==='jn':h.kind!=='jn'&&(!onlyVid||h.vid===onlyVid));
+  const p=xtPaused(),pOk=p&&(jn?p.kind==='jn':p.kind!=='jn');
+  const MODE={en:'EN → EN',ko:'KO → EN',mem:'Memory'};
   const row=h=>{const pct=h.total?Math.round(h.ok/h.total*100):0;return `<div class="vthist" role="button" tabindex="0" data-vth="${esc(h.id)}">
-      <img src="https://i.ytimg.com/vi/${esc(h.vid)}/default.jpg" alt="" loading="lazy">
-      <div class="b"><span class="t" data-noi18n>${esc(h.title||h.vid)}</span><span class="d"><span>${esc(agoOrTime(h.at))}</span> · ⏱ ${vFmt(h.secs)}${h.quit?` · <span class="tag">Stopped</span>`:''}</span></div>
+      ${h.kind==='jn'?`<span class="jthumb">📓</span>`:`<img src="https://i.ytimg.com/vi/${esc(h.vid)}/default.jpg" alt="" loading="lazy">`}
+      <div class="b"><span class="t" data-noi18n>${esc(h.title||h.vid)}</span><span class="d"><span>${esc(agoOrTime(h.at))}</span> · ⏱ ${vFmt(h.secs)}${h.kind==='jn'&&MODE[h.mode]?` · <span>${MODE[h.mode]}</span>`:''}${h.quit?` · <span class="tag">Stopped</span>`:''}</span></div>
       <span class="sc" style="color:${pctColor(pct)}">${h.ok}/${h.total}</span></div>`};
-  openSheet('Test history',`<div class="stack" style="gap:10px">
-    ${V.vid?`<div class="seg" role="tablist" style="margin:0"><button role="tab" type="button" id="vthThis" aria-selected="${!!onlyVid}">This video</button><button role="tab" type="button" id="vthAll" aria-selected="${!onlyVid}">All videos</button></div>`:''}
-    ${list.length?list.map(row).join(''):`<div class="card empty">No tests yet. Open a video and tap Test.</div>`}</div>`);
+  openSheet(jn?'Journal test history':'Test history',`<div class="stack" style="gap:10px">
+    ${!jn&&V.vid?`<div class="seg" role="tablist" style="margin:0"><button role="tab" type="button" id="vthThis" aria-selected="${!!onlyVid}">This video</button><button role="tab" type="button" id="vthAll" aria-selected="${!onlyVid}">All videos</button></div>`:''}
+    ${pOk?`<button class="vtresume" type="button" id="vthResume"><b>▶ Continue the paused test</b><span data-noi18n>${esc(p.title||'')}</span><span>${Math.min(p.round===2?p.res2.length:p.res.length,99)} / ${(p.round===2?p.rq:p.qs).length}${p.round===2?' · ↻':''}</span></button>`:''}
+    ${list.length?list.map(row).join(''):`<div class="card empty">${jn?'No journal tests yet. Tap Test on an entry.':'No tests yet. Open a video and tap Test.'}</div>`}</div>`);
   if($('vthAll')){$('vthAll').onclick=()=>vtHistory(null);$('vthThis').onclick=()=>vtHistory(V.vid)}
-  $('sheetBody').onclick=e=>{const r=e.target.closest('[data-vth]');if(r) vtHistDetail(r.dataset.vth,onlyVid)};
+  if($('vthResume')) $('vthResume').onclick=()=>{closeSheet();vtResume()};
+  $('sheetBody').onclick=e=>{const r=e.target.closest('[data-vth]');if(r) vtHistDetail(r.dataset.vth,scope)};
   xtLoad().then(()=>{});
 }
 function vtHistDetail(id,back){
   const h=xt().vtests.find(x=>x.id===id);if(!h) return;
-  const pct=h.total?Math.round(h.ok/h.total*100):0;
+  const pct=h.total?Math.round(h.ok/h.total*100):0,jn=h.kind==='jn';
   openSheet('Test result',`<div class="stack" style="gap:10px">
     <div class="card" style="gap:6px"><b data-noi18n style="font:800 15px var(--f-ui)">${esc(h.title||h.vid)}</b>
       <span class="note" style="margin:0"><span>${esc(agoOrTime(h.at))}</span> · ⏱ ${vFmt(h.secs)}${h.quit?' · <span>Stopped</span>':''}</span>
       <span style="font:900 26px var(--f-ui);color:${pctColor(pct)}">${h.ok} / ${h.total} <small style="font-size:14px;color:var(--muted)">${h.items.length<h.total?`(${h.items.length} answered)`:pct+'%'}</small></span></div>
     <div class="vtres">${vtItemsHTML(h.items||[],h.vid,h.title)}</div>
     ${h.retry&&h.retry.items&&h.retry.items.length?`<span class="label" style="color:var(--orange-d)">↻ Missed sentences · retry ${h.retry.ok} / ${h.retry.total}</span><div class="vtres">${vtItemsHTML(h.retry.items,h.vid,h.title)}</div>`:''}
-    <div class="vtbtnrow"><button class="btn ghost" id="vthBack" type="button">‹ Test history</button>${V.vid===h.vid?'':`<button class="btn" id="vthOpen" type="button">Open video</button>`}</div></div>`);
+    <div class="vtbtnrow"><button class="btn ghost" id="vthBack" type="button">‹ Test history</button>${jn||V.vid===h.vid?'':`<button class="btn" id="vthOpen" type="button">Open video</button>`}</div></div>`);
   $('sheetBody').onclick=null;
   $('vthBack').onclick=()=>vtHistory(back);
   if($('vthOpen')) $('vthOpen').onclick=()=>{closeSheet();show('video');if(V.vid) closeVideo();openVideo(h.vid)};
@@ -5877,9 +5996,11 @@ const I18N_KO={
 'Already in your list':'이미 목록에 있어요','Removed from Sentences':'문장 목록에서 뺐어요','Saved to Writing → Sentences':'글쓰기 → 문장에 저장했어요','Save to Sentences':'문장에 저장',
 'Sentence test':'문장 테스트','Test history':'테스트 기록','This video':'이 영상','All videos':'모든 영상','No tests yet. Open a video and tap Test.':'아직 테스트가 없어요. 영상을 열고 테스트를 눌러 보세요.',
 'Test result':'테스트 결과','‹ Test history':'‹ 테스트 기록','Open video':'영상 열기','Quit the test?':'테스트를 그만할까요?','Nothing is saved yet.':'아직 저장된 게 없어요.',
-'Correct!':'정답!','Build this in English':'이 문장을 영어로 만들어 보세요','↻ Missed sentences · try again':'↻ 틀린 문제 다시 풀기','↻ Missed sentence':'↻ 틀린 문제',
+'Correct!':'정답!','Hint':'힌트','Skipped':'건너뜀','Pause and continue later':'멈추고 나중에 이어하기','Paused. Continue it from Test history.':'멈췄어요. 테스트 기록에서 이어서 할 수 있어요.',
+'▶ Continue test':'▶ 테스트 이어하기','▶ Continue the paused test':'▶ 멈춘 테스트 이어하기','Test latest video':'최근 영상 테스트','That journal entry is gone.':'그 일기가 없어졌어요.',
+'Journal test history':'일기 테스트 기록','No journal tests yet. Tap Test on an entry.':'아직 일기 테스트가 없어요. 일기에서 테스트를 눌러 보세요.','EN → EN':'영 → 영','KO → EN':'한 → 영','Memory':'메모리','Build this in English':'이 문장을 영어로 만들어 보세요','↻ Missed sentences · try again':'↻ 틀린 문제 다시 풀기','↻ Missed sentence':'↻ 틀린 문제',
 'Missed sentences':'틀린 문제 다시 풀기','Your score stays as it was. This round is practice.':'점수는 그대로예요. 이번 판은 연습이에요.','Start the retry':'다시 풀기 시작','Skip':'건너뛰기',
-'↻ Missed sentences · retry':'↻ 틀린 문제 다시 풀기','Journal tests are not saved.':'일기 테스트는 저장되지 않아요.','Your test is already saved in Test history.':'테스트는 이미 테스트 기록에 저장됐어요.',
+'↻ Missed sentences · retry':'↻ 틀린 문제 다시 풀기','Your test is already saved in Test history.':'테스트는 이미 테스트 기록에 저장됐어요.',
 'Choose a test':'테스트 방식 고르기','🔤 English → English':'🔤 영 → 영','🇰🇷 Korean → English':'🇰🇷 한 → 영','🧠 Memory':'🧠 메모리',
 "See the English sentence. When you're ready, build it from blocks.":'영어 문장을 보고, 준비되면 블록으로 맞춰요.',"See the Korean translation. When you're ready, build the English from blocks.":'한글 번역을 보고, 준비되면 영어 문장을 블록으로 맞춰요.',
 'No hints. Build each sentence from the blocks, in the order you wrote them.':'힌트 없이 쓴 순서대로 블록으로 문장을 맞춰요.','Write a few English sentences first.':'먼저 영어 문장을 몇 개 써 주세요.','Remember this sentence':'이 문장을 기억하세요',"I'm ready":'도전!','Answer':'정답','Test again':'다시 테스트','Add the transcript first.':'먼저 자막을 추가하세요.','This video has no sentences long enough for a test.':'이 영상에는 테스트할 만큼 긴 문장이 없어요.',
