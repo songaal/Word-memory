@@ -932,7 +932,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.47.2</span> · <span class="version-date">2026/11/02</span></p>
+          <p class="note"><span class="version-tag">v2.47.3</span> · <span class="version-date">2026/11/02</span></p>
         </div>
       </div></div>
     </div>
@@ -3256,18 +3256,17 @@ function vtQuestion(){
   };
   $('vtGo').onclick=()=>{if(!VT||VT.tk!==tk) return;VT.phase='build';$('vtPop').remove();vtDrawAns()};
 }
-// 💡 Hint: the Korean of the sentence in a full-screen popup with Close, once per sentence (it isn't left on screen while building)
+// 💡 Hint: the Korean of the sentence in a full-screen popup with Close; unlimited (it isn't left on screen while building)
 async function vtHint(){
-  if(!VT||VT.phase!=='build'||VT.hinted) return;
+  if(!VT||VT.phase!=='build'||$('vtHintPop')) return;
   const t=vtList()[VT.k],tk=VT.tk;
-  VT.hinted=true;$('vtHint').disabled=true;
   $('vtStage').insertAdjacentHTML('beforeend',`<div class="vtpop" id="vtHintPop"><div class="vtpopc">
       <span class="label">💡 Hint</span>
       <div class="flash ko" id="vtHintKo" data-noi18n>…</div>
     </div><button class="btn ghost block" id="vtHintX" type="button">Close</button></div>`);
   $('vtHintX').onclick=()=>{const p=$('vtHintPop');if(p) p.remove()};
   try{const k=await vtKoGet(t);if(VT&&VT.tk===tk&&$('vtHintKo')) $('vtHintKo').textContent=k}
-  catch(e){if(VT&&VT.tk===tk){VT.hinted=false;$('vtHint').disabled=false;if($('vtHintKo')) $('vtHintKo').textContent=e.message}}
+  catch(e){if(VT&&VT.tk===tk&&$('vtHintKo')) $('vtHintKo').textContent=e.message}
 }
 // Korean for a test sentence: journal KO mode, this session, the journal cache, or Google
 async function vtKoGet(t){
