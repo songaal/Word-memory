@@ -21,6 +21,8 @@ import { FREQ_WORDS } from './freq.js';
 //   wm:totp:<sub>      → authenticator-app secret {secret, lastStep, created}; wm:totpPending:<sub> during setup;
 //   wm:totpTry:<email> → wrong sign-in tries (10 minutes)
 //   wm:journal:<sub>   → journal entries (merged per entry on save)
+//   wm:note:<word>     → shared notes on a word (anyone signed in can edit) {text, at, by, history:[{at, by, text}]}
+//   wm:extra:<sub>     → saved sentences + video test results {sentences:[…], vtests:[…], updatedAt} (merged per item)
 //   wm:dict3:<word>    → cached dictionary entry (90 days; "not found" for 1 day)
 //   wm:vt:<videoId>    → video transcript {sentences:[{text,start,end}], source} (shared by video, 1 year)
 //   wm:vtr:<videoId>   → Korean translations of that transcript {index: text} (1 year)
@@ -58,6 +60,10 @@ export default {
       if (pathname === '/api/journal' && method === 'GET') return await getJournal(request, env);
       if (pathname === '/api/journal' && method === 'PUT') return await putJournal(request, env);
       if (pathname.startsWith('/api/video/')) return await video(request, env, url);
+      if (pathname === '/api/note' && method === 'GET') return await getNote(url, env);
+      if (pathname === '/api/note' && method === 'PUT') return await putNote(request, env, url);
+      if (pathname === '/api/extra' && method === 'GET') return await getExtra(request, env);
+      if (pathname === '/api/extra' && method === 'PUT') return await putExtra(request, env);
       if (pathname === '/api/settings' && method === 'GET') return await getSettings(request, env);
       if (pathname === '/api/settings' && method === 'PUT') return await putSettings(request, env);
       if (pathname.startsWith('/api/')) return json({ error: 'Not found' }, 404);
@@ -297,6 +303,74 @@ async function putJournal(request, env) {
   return json(record);
 }
 
+
+// ── Word notes (shared by everyone) ─────────────
+// GET /api/note?word= (no sign-in) → {text, at, by, history}; PUT {text} (signed in) saves and adds a history line.
+const noteWord = url => (url.searchParams.get('word') || '').trim().toLowerCase();
+const NOTE_OK = /^[a-z][a-z' -]{0,48}$/;
+async function getNote(url, env) {
+  const w = noteWord(url);
+  if (!NOTE_OK.test(w)) return json({ error: 'invalid' }, 400);
+  const n = await env.WORDS.get(`wm:note:${w}`, 'json').catch(() => null);
+  return json(n || { text: '', at: null, by: '', history: [] });
+}
+async function putNote(request, env, url) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
+  const w = noteWord(url);
+  if (!NOTE_OK.test(w)) return json({ error: 'invalid' }, 400);
+  let body; try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+  const text = String((body && body.text) || '').replace(/\r/g, '').trim();
+  if (text.length > 4000) return json({ error: 'too long' }, 413);
+  const key = `wm:note:${w}`;
+  const cur = await env.WORDS.get(key, 'json').catch(() => null) || { text: '', history: [] };
+  if (cur.text === text) return json(cur);
+  const at = new Date().toISOString(), by = String(user.name || user.email || 'Someone').slice(0, 80);
+  const history = [{ at, by, text: text.slice(0, 4000), kind: !cur.text ? 'add' : !text ? 'clear' : 'edit' }, ...(cur.history || [])].slice(0, 50);
+  const rec = { text, at, by, history };
+  await env.WORDS.put(key, JSON.stringify(rec));
+  return json(rec);
+}
+
+// ── Extra: saved sentences and video test results ──
+// Merged per item like the journal: sentences by `updated` (deletions kept as tombstones for 60 days), tests by id.
+async function getExtra(request, env) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
+  const d = await env.WORDS.get(`wm:extra:${user.sub}`, 'json').catch(() => null);
+  return json(d || { sentences: [], vtests: [], updatedAt: null });
+}
+async function putExtra(request, env) {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'Not signed in' }, 401);
+  const text = await request.text();
+  if (text.length > MAX_BODY) return json({ error: 'too large' }, 413);
+  let body; try { body = JSON.parse(text); } catch { return json({ error: 'Invalid JSON' }, 400); }
+  const key = `wm:extra:${user.sub}`;
+  const cur = await env.WORDS.get(key, 'json').catch(() => null) || {};
+  const idOk = x => x && typeof x === 'object' && typeof x.id === 'string' && x.id.length <= 40;
+  const sm = new Map();
+  for (const x of [...(cur.sentences || []), ...((body && body.sentences) || [])]) {
+    if (!idOk(x)) continue;
+    const c = x.deleted ? { id: x.id, updated: Number(x.updated) || 0, deleted: true } : {
+      id: x.id, text: String(x.text || '').slice(0, 1000), ko: String(x.ko || '').slice(0, 2000), at: String(x.at || '').slice(0, 40),
+      updated: Number(x.updated) || 0, vid: /^[A-Za-z0-9_-]{11}$/.test(x.vid || '') ? x.vid : '', title: String(x.title || '').slice(0, 300) };
+    const o = sm.get(c.id);
+    if (!o || c.updated >= o.updated) sm.set(c.id, c);
+  }
+  const cutoff = Date.now() - 60 * 86400000;
+  const sentences = [...sm.values()].filter(x => !x.deleted || x.updated > cutoff).slice(-2000);
+  const tm = new Map();
+  for (const x of [...(cur.vtests || []), ...((body && body.vtests) || [])]) {
+    if (!idOk(x) || !/^[A-Za-z0-9_-]{11}$/.test(x.vid || '')) continue;
+    tm.set(x.id, { id: x.id, at: String(x.at || ''), vid: x.vid, title: String(x.title || '').slice(0, 300), total: +x.total || 0, ok: +x.ok || 0,
+      secs: +x.secs || 0, quit: !!x.quit, items: (Array.isArray(x.items) ? x.items : []).slice(0, 20).map(i => ({ t: String(i && i.t || '').slice(0, 1000), ok: !!(i && i.ok), a: String(i && i.a || '').slice(0, 1000) })) });
+  }
+  const vtests = [...tm.values()].sort((a, b) => a.at < b.at ? 1 : -1).slice(0, 300);
+  const rec = { sentences, vtests, updatedAt: new Date().toISOString() };
+  await env.WORDS.put(key, JSON.stringify(rec));
+  return json(rec);
+}
 
 // ── Video (YouTube repeat listening) ───────────
 const VIDEO_TTL = 60 * 60 * 24 * 365;

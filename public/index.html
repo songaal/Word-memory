@@ -119,6 +119,78 @@ textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 .ctool{width:32px;height:28px;flex:none;padding:0;border:1px solid var(--line);background:none;color:var(--accent);border-radius:9px;display:inline-grid;place-items:center;cursor:pointer;-webkit-appearance:none;appearance:none}
 .ctool svg{width:15px;height:15px}
 .ctool.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ctool.has{background:#d6efff;border-color:#7fcdf6;color:#0f6fa3}
+@media (prefers-color-scheme:dark){.ctool.has{background:#1d4a63;border-color:#3a8fbf;color:#bfe7ff}}
+/* word notes (shared) */
+.ntext{white-space:pre-wrap;word-break:break-word;font:500 15.5px/1.6 var(--f-ui);margin:0}
+.ntext.none{color:var(--muted);font-weight:700}
+.nedit{width:100%;min-height:160px;resize:vertical;border:2px solid var(--line);border-radius:14px;padding:12px;font:500 15.5px/1.55 var(--f-ui);background:var(--card);color:var(--fg);box-sizing:border-box}
+.nhist{display:flex;flex-direction:column;gap:0}
+.nhist details{border-top:1px solid var(--line);padding:8px 2px}
+.nhist summary{font:700 13px var(--f-ui);color:var(--muted);cursor:pointer;list-style:none;display:flex;gap:6px;flex-wrap:wrap}
+.nhist summary::-webkit-details-marker{display:none}
+.nhist summary b{color:var(--fg)}
+.nhist .nk{font:800 11px var(--f-ui);border-radius:99px;padding:1px 7px;background:var(--accent-soft);color:var(--accent)}
+.nhist .nv{white-space:pre-wrap;word-break:break-word;font:500 14px/1.5 var(--f-ui);margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--bg)}
+/* Writing → Sentences */
+.sncomp{display:flex;flex-direction:column;gap:8px}
+.sncomp textarea{width:100%;min-height:64px;resize:none;border:2px solid var(--line);border-radius:14px;padding:10px 12px;font:400 16px/1.45 var(--f-word);background:var(--card);color:var(--fg);box-sizing:border-box}
+.snrow{border:2px solid var(--line);border-radius:16px;background:var(--card);padding:12px 12px 10px;display:flex;flex-direction:column;gap:6px;box-shadow:0 3px 0 var(--line)}
+.snrow .t{font:400 17px/1.45 var(--f-word);word-break:break-word}
+.snrow .k{font:600 14.5px/1.45 var(--f-ui);color:var(--muted)}
+.snrow .meta{display:flex;align-items:center;gap:6px;font:700 12px var(--f-ui);color:var(--muted);min-width:0}
+.snrow .meta .src{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.snrow .acts{display:flex;gap:6px;align-items:center}
+.snrow .acts .hintbtn{display:inline-flex;align-items:center;gap:4px;height:32px}
+.snrow .acts .hintbtn svg{width:15px;height:15px}
+.snrow .acts .sp{flex:1}
+.snrow .del{border:0;background:none;color:var(--muted);padding:6px;cursor:pointer;display:grid;place-items:center}
+.snrow .del svg{width:17px;height:17px}
+.snrow .del.sure{color:var(--bad)}
+.sncount{display:flex;justify-content:space-between;font:800 13px var(--f-ui);color:var(--muted);padding:0 4px}
+/* Video test: build the sentence from blocks */
+.vtest{z-index:46}
+.vtstage{display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.vtq{border:2px solid var(--line);border-radius:18px;background:var(--card);padding:16px;min-height:96px;display:flex;flex-direction:column;justify-content:center;gap:10px;position:relative}
+.vtq .flash{font:600 19px/1.5 var(--f-word);text-align:center;word-break:break-word}
+.vtq .hidden{font:800 15px var(--f-ui);color:var(--muted);text-align:center}
+.vtq .tbar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.vtq .tbar i{display:block;height:100%;background:var(--blue);border-radius:99px;width:100%}
+.vtans{min-height:110px;border:2px dashed var(--line);border-radius:16px;padding:10px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px}
+.vtans.ok{border-style:solid;border-color:var(--good);background:var(--good-soft)}
+.vtans.no{border-style:solid;border-color:var(--bad);background:var(--bad-soft)}
+.vtpool{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:44px}
+.vblk{border:2px solid var(--line);border-bottom-width:4px;background:var(--card);color:var(--fg);border-radius:12px;padding:7px 11px;font:600 16px var(--f-word);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.vblk.used{visibility:hidden}
+.vblk.r{border-color:var(--good);color:var(--good)}
+.vblk.w{border-color:var(--bad);color:var(--bad)}
+.vtpool.off{visibility:hidden}
+.vtans .vblk{animation:pop .18s ease-out}
+.vtfoot{display:flex;gap:10px;margin-top:auto;padding-top:4px}
+.vtfoot .btn{flex:1;padding:13px 8px}
+.vtrev{display:flex;align-items:flex-start;gap:8px;border-radius:14px;padding:10px 12px;background:var(--bg);border:2px solid var(--line)}
+.vtrev .t{flex:1;font:500 16px/1.45 var(--f-word)}
+.vtrev .lbl{font:800 12px var(--f-ui);color:var(--muted);display:block;margin-bottom:2px}
+.heart{border:0;background:none;padding:4px;cursor:pointer;color:var(--muted);display:grid;place-items:center;flex:none}
+.heart svg{width:24px;height:24px}
+.heart.on{color:#ff4b6e}
+.heart.on svg path{fill:currentColor}
+.heart.bump{animation:pop .35s cubic-bezier(.2,.9,.3,1.6)}
+.vtres{display:flex;flex-direction:column;gap:8px}
+.vtres .it{display:flex;align-items:flex-start;gap:8px;border:2px solid var(--line);border-radius:14px;padding:8px 10px;background:var(--card)}
+.vtres .it .m{font:900 15px var(--f-ui);flex:none;width:20px;text-align:center;padding-top:2px}
+.vtres .it .m.ok{color:var(--good)}.vtres .it .m.no{color:var(--bad)}
+.vtres .it .t{flex:1;font:400 15px/1.45 var(--f-word);word-break:break-word}
+.vtres .it .a{display:block;font:600 13px/1.4 var(--f-ui);color:var(--bad);margin-top:2px}
+.vthist{display:flex;align-items:center;gap:10px;border:2px solid var(--line);border-radius:16px;background:var(--card);padding:10px 12px;cursor:pointer;box-shadow:0 3px 0 var(--line)}
+.vthist img{width:64px;height:36px;object-fit:cover;border-radius:8px;flex:none;background:#000}
+.vthist .b{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.vthist .t{font:800 14px/1.3 var(--f-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vthist .d{font:700 12px var(--f-ui);color:var(--muted)}
+.vthist .sc{font:900 16px var(--f-ui);flex:none}
+.vtbtnrow{display:flex;gap:8px}
+.vtbtnrow .btn{flex:1}
+
 .lread{background:var(--gold-soft);border-radius:8px;box-shadow:0 0 0 4px var(--gold-soft);transition:background .2s}
 .play{border:1px solid var(--line);background:none;color:var(--fg);border-radius:20px;padding:3px 12px;font:500 12px var(--f-ui);cursor:pointer}
 .say{border:0;background:none;color:var(--accent);cursor:pointer;font-size:12px;padding:0 4px;font-style:normal}
@@ -758,12 +830,14 @@ button.chip:active{filter:brightness(.92)}
     <div class="seg" role="tablist">
       <button role="tab" id="wseg-tr" aria-selected="true" type="button">Translate</button>
       <button role="tab" id="wseg-jn" aria-selected="false" type="button">Journal</button>
+      <button role="tab" id="wseg-sn" aria-selected="false" type="button">Sentences</button>
     </div>
     <div class="pane" id="pane-tr"><div class="scroll"><div class="stack" id="trBody"></div></div></div>
     <div class="pane" id="pane-jn" hidden style="position:relative">
       <div class="scroll" id="jnScroll"><div class="stack" id="jnBody"></div></div>
       <button class="fab" id="jnNew" type="button" aria-label="New entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button>
     </div>
+    <div class="pane" id="pane-sn" hidden><div class="scroll" id="snScroll"><div class="stack" id="snBody"></div></div></div>
   </section>
 
   <!-- Me -->
@@ -780,7 +854,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.44.0</span> · <span class="version-date">2026/10/31</span></p>
+          <p class="note"><span class="version-tag">v2.45.0</span> · <span class="version-date">2026/11/02</span></p>
         </div>
       </div></div>
     </div>
@@ -957,6 +1031,17 @@ button.chip:active{filter:brightness(.92)}
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>
+<div class="learn vtest" id="vtest" hidden>
+  <div class="lhead"><button class="linkbtn" id="vtQuit" type="button">Quit</button><span class="lcount" id="vtCount"></span><span class="ltmr" id="vtTmr">⏱ 0:00</span></div>
+  <div class="lbar"><i id="vtBar"></i></div>
+  <div class="lstage vtstage" id="vtStage"></div>
+</div>
+<div class="sheet" id="noteSheet" hidden style="z-index:72">
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="noteTitle">
+    <div class="sheet-head"><b id="noteTitle">Notes</b><button class="x" id="noteX" type="button" aria-label="Close">✕</button></div>
+    <div class="sheet-body" id="noteBody"></div>
+  </div>
+</div>
 <div class="sheet hideback" id="pracSheet" hidden style="z-index:70">
   <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="pracTitle">
     <div class="sheet-head"><b id="pracTitle">Typing practice</b><button class="x" id="pracX" type="button" aria-label="Close">✕</button></div>
@@ -1628,7 +1713,7 @@ function cardHTML(c,opts={}){
     add=inList?`<button class="btn ghost addw" type="button" disabled>✓ In your list</button>`:`<button class="btn addw" data-add="${esc(c.word)}" type="button">+ Add</button>`;
   }
   return `<div class="word"><h2>${esc(c.word)}</h2><span class="ph">${esc(c.phonetic||'')}</span>
-    <button class="play" data-kind="word" data-say="${esc(c.word)}" data-audio="${esc(c.audio||'')}" type="button">🔊 Listen</button>${opts.tools===false?'':`<button class="ctool" data-cplay="${esc(c.word)}" type="button" aria-label="Play">${LP_PLAY}</button><button class="ctool" data-cprac="${esc(c.word)}" type="button" aria-label="Typing practice">${PRAC_ICON}</button>`}
+    <button class="play" data-kind="word" data-say="${esc(c.word)}" data-audio="${esc(c.audio||'')}" type="button">🔊 Listen</button>${opts.tools===false?'':`<button class="ctool" data-cplay="${esc(c.word)}" type="button" aria-label="Play">${LP_PLAY}</button><button class="ctool" data-cprac="${esc(c.word)}" type="button" aria-label="Typing practice">${PRAC_ICON}</button><button class="ctool${noteHas(c.word)?' has':''}" data-cnote="${esc(c.word)}" type="button" aria-label="Notes">${NOTE_ICON}</button>`}
     ${c.sample?'<span class="tag">Sample</span>':''}${add}</div>${m}${s}`;
 }
 
@@ -1667,6 +1752,87 @@ document.addEventListener('click',async e=>{
     if(curTab==='dict'&&dictPane==='list') renderList();
   }
 });
+
+// ---------- word notes: shared by everyone (anyone signed in can write or edit; every change is kept in a history) ----------
+// GET /api/note?word= → {text, at, by, history:[{at, by, text, kind}]}; the 📝 button on a card is light blue when a note exists.
+const NOTE_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h5"/></svg>';
+const noteCache=new Map(), noteReq=new Map();
+const noteKey=w=>String(w||'').trim().toLowerCase();
+function noteHas(w){const n=noteCache.get(noteKey(w));return !!(n&&n.text)}
+function noteFetch(w,force){
+  const k=noteKey(w);if(!/^[a-z][a-z' -]{0,48}$/.test(k)) return Promise.resolve(null);
+  if(!force&&noteCache.has(k)) return Promise.resolve(noteCache.get(k));
+  if(!force&&noteReq.has(k)) return noteReq.get(k);
+  const p=fetch('/api/note?word='+encodeURIComponent(k)).then(r=>r.ok?r.json():null).then(n=>{if(n){noteCache.set(k,n);notePaintWord(k)}return n}).catch(()=>null).finally(()=>noteReq.delete(k));
+  noteReq.set(k,p);return p;
+}
+function notePaintWord(k){document.querySelectorAll('[data-cnote]').forEach(b=>{if(noteKey(b.dataset.cnote)===k) b.classList.toggle('has',noteHas(k))})}
+// any note button that appears on screen asks whether its word has a note (once per word per session)
+let notePaintQ=0;
+new MutationObserver(()=>{if(notePaintQ) return;notePaintQ=requestAnimationFrame(()=>{notePaintQ=0;
+  document.querySelectorAll('[data-cnote]:not([data-np])').forEach(b=>{b.dataset.np='1';const k=noteKey(b.dataset.cnote);if(noteCache.has(k)) b.classList.toggle('has',noteHas(k));else noteFetch(k)})})})
+  .observe(document.body,{childList:true,subtree:true});
+let noteOpen=null;   // {word, edit}
+let popIgnore=0;   // our own history.back() after closing an overlay: the popstate it causes is skipped
+function closeNote(fromBack){if($('noteSheet').hidden) return;$('noteSheet').hidden=true;$('noteBody').innerHTML='';noteOpen=null;$('noteIn')&&$('noteIn').blur();
+  if(!fromBack&&window.history.state&&window.history.state.note){popIgnore++;window.history.back()}}
+$('noteX').onclick=()=>closeNote();
+$('noteSheet').addEventListener('click',e=>{if(e.target===$('noteSheet')) closeNote()});
+async function openNote(w,edit){
+  const k=noteKey(w);noteOpen={word:k,edit:!!edit};
+  if($('noteSheet').hidden) try{window.history.pushState({...(window.history.state||{}),note:1},'')}catch(_){}
+  $('noteTitle').textContent=k;$('noteSheet').hidden=false;
+  if(!noteCache.has(k)) $('noteBody').innerHTML=`<div class="card"><p class="note"><span class="spin"></span> Loading…</p></div>`;
+  else renderNote();
+  await noteFetch(k,true);
+  if(noteOpen&&noteOpen.word===k&&!noteOpen.edit) renderNote();
+}
+function renderNote(){
+  const o=noteOpen;if(!o) return;
+  const n=noteCache.get(o.word)||{text:'',history:[]},can=acct==='cloud';
+  const kindLbl={add:'Added',edit:'Edited',clear:'Removed'};
+  const hist=(n.history||[]).map(h=>`<details><summary><b data-noi18n>${esc(h.by||'Someone')}</b><span>${esc(agoOrTime(h.at))}</span><span class="nk">${kindLbl[h.kind]||'Edited'}</span></summary><div class="nv" data-noi18n>${h.text?esc(h.text):'—'}</div></details>`).join('');
+  if(o.edit){
+    $('noteBody').innerHTML=`<div class="card">
+      <span class="label">${n.text?'Edit the note':'Write a note'}</span>
+      <textarea class="nedit" id="noteIn" maxlength="4000" placeholder="Extra explanation, tips, usage, Korean meaning…" data-noi18n></textarea>
+      <p class="note" style="margin:0">Everyone using Word Story sees this note and can edit it. Your name and the time are saved in the history.</p>
+      <div class="vtbtnrow"><button class="btn ghost" id="noteCancel" type="button">Cancel</button><button class="btn" id="noteSave" type="button">Save</button></div>
+      <div class="msg" id="noteMsg"></div></div>`;
+    $('noteIn').value=n.text||'';
+    $('noteCancel').onclick=()=>{if(n.text){o.edit=false;renderNote()}else closeNote()};
+    $('noteSave').onclick=saveNote;
+    setTimeout(()=>{const t=$('noteIn');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length)}},60);
+    return;
+  }
+  $('noteBody').innerHTML=`<div class="card">
+    ${n.text?`<p class="ntext" data-noi18n>${esc(n.text)}</p>`:`<p class="ntext none">No notes for this word yet.</p>`}
+    ${can?`<button class="btn${n.text?' ghost':''} block" id="noteEdit" type="button">${n.text?'✏️ Edit':'+ Write a note'}</button>`:`<p class="note" style="margin:0">Sign in to write or edit notes.</p>`}
+    ${n.at?`<p class="note" style="margin:0"><span>Last change:</span> <b data-noi18n>${esc(n.by||'')}</b> · <span>${esc(agoOrTime(n.at))}</span></p>`:''}
+  </div>
+  ${hist?`<div class="card"><span class="label">History</span><div class="nhist">${hist}</div></div>`:''}`;
+  if($('noteEdit')) $('noteEdit').onclick=()=>{o.edit=true;renderNote()};
+}
+async function saveNote(){
+  const o=noteOpen;if(!o) return;
+  const text=$('noteIn').value.trim(),b=$('noteSave');
+  b.disabled=true;$('noteMsg').className='msg';$('noteMsg').textContent='Saving…';
+  try{
+    const r=await api('/api/note?word='+encodeURIComponent(o.word),{method:'PUT',body:JSON.stringify({text})});
+    if(r.status===401){expired();return}
+    if(!r.ok) throw new Error('save');
+    noteCache.set(o.word,await r.json());notePaintWord(o.word);
+    if(noteOpen===o){o.edit=false;renderNote()}
+    toast('Saved');
+  }catch(_){if($('noteMsg')){$('noteMsg').className='msg err';$('noteMsg').textContent="Couldn't save. Check your connection and try again."}}
+  finally{if($('noteSave')) $('noteSave').disabled=false}
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-cnote]');if(!b) return;
+  e.stopPropagation();e.preventDefault();
+  if(cr) crStop();
+  openNote(b.dataset.cnote,false);
+},true);
 
 // ---------- tabs ----------
 const TABS=['home','story','dict','video','write','me'];
@@ -2257,7 +2423,7 @@ function confetti(cv){
 }
 
 // ---------- writing: translate + journal ----------
-let writePane=lsGet('wm.writePane')==='jn'?'jn':'tr';
+let writePane=['jn','sn'].includes(lsGet('wm.writePane'))?lsGet('wm.writePane'):'tr';
 function toast(msg,ms=1800){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.tm);toast.tm=setTimeout(()=>{t.hidden=true},ms)}
 // ---------- Video: YouTube repeat listening (from video-repeat-player) ----------
 // A transcript is pasted once (youtubetotranscript.com format) and kept per video on the server.
@@ -2276,6 +2442,8 @@ const VI={
 VI.copy='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
 VI.study='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3.5l1.6 4.4 4.4 1.6-4.4 1.6L10 15.5l-1.6-4.4L4 9.5l4.4-1.6z"/><path d="M18 3l.7 1.8 1.8.7-1.8.7L18 8l-.7-1.8-1.8-.7 1.8-.7z"/><path d="M17.5 14.5l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9z"/></svg>';
 VI.chat=VI.study;   // the same three-star AI icon
+VI.test='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="14" y="4" width="7" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/></svg>';
+VI.hist='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>';
 const V={vid:null,title:'',player:null,sents:[],cur:0,loop:-1,pass:0,maxPass:3,token:0,cc:0,auto:false,on:true,blur:false,tr:{},slow:false,
   time:false,trOn:false,repeat:true,sync:0,tracker:null,hist:[],histAt:0,src:'paste',busy:false,trBusy:false};
 const VIDEO_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="M10 9.2v5.6l4.8-2.8z"/></svg>';
@@ -2335,11 +2503,14 @@ function renderVideo(){
   document.body.classList.toggle('vplay',!!V.vid);
   if(V.vid) return;
   vLoadHist();renderVideoList();
+  xtLoad().then(()=>{if(curTab==='video'&&!V.vid) renderVideoList()});
 }
 function renderVideoList(){
   $('s-video').classList.remove('playing');$('vpane-list').hidden=false;$('vpane-play').hidden=true;
   const h=V.hist;
+  const nt=xt().vtests.length;
   $('vList').innerHTML=`<p class="note" style="padding:0 4px;font-size:13px">Paste a YouTube link. Tap a sentence to hear it three times: no caption, Korean, then English.</p>
+    <button class="btn ghost block" id="vHistBtn" type="button" style="display:flex;align-items:center;justify-content:center;gap:6px">${VI.hist.replace('<svg ','<svg width="18" height="18" ')}<span>Test history</span>${nt?`<span class="tag">${nt}</span>`:''}</button>
     ${h.length?`<span class="label">Recent videos</span>${h.map(x=>`<div class="vrow" role="button" tabindex="0" data-vid="${esc(x.videoId)}">
       <img src="https://i.ytimg.com/vi/${esc(x.videoId)}/default.jpg" alt="" loading="lazy">
       <span class="t" data-noi18n>${esc(x.title||x.videoId)}</span><span class="d">${esc(vHistDate(x.date))}</span>
@@ -2347,6 +2518,7 @@ function renderVideoList(){
     :`<div class="card empty">No videos yet. Paste a YouTube link above.</div>`}`;
 }
 $('vList').addEventListener('click',e=>{
+  if(e.target.closest('#vHistBtn')){vtHistory(null);return}
   const d=e.target.closest('[data-vdel]');
   if(d){e.stopPropagation();V.hist=V.hist.filter(h=>h.videoId!==d.dataset.vdel);vSaveHist();renderVideoList();return}
   const r=e.target.closest('[data-vid]');if(r) openVideo(r.dataset.vid);
@@ -2428,6 +2600,7 @@ function renderVideoPlay(){
     ${has?`<button class="ricon" id="vNext" type="button" aria-label="Next sentence">${VI.next}</button>`:''}
     ${has?`<button class="ricon${V.cc?' on':''}" id="vCC" type="button" aria-label="Caption on the video">${['CC','KR','EN'][V.cc]}</button>`:''}`;
   $('vTog').innerHTML=has?`
+    <button class="hintbtn" id="vTestBtn" type="button">${VI.test}<span>Test</span></button>
     <button class="hintbtn" id="vRep" type="button" aria-pressed="${V.repeat}">${VI.headset}<span>${V.repeat?'Repeat 3×':'Play once'}</span></button>
     <button class="hintbtn" id="vSlow" type="button" aria-pressed="${V.slow}">${VI.turtle}<span>${vSlowRate()}×</span></button>
     <button class="hintbtn" id="vTrBtn" type="button" aria-pressed="${V.trOn}">${V.trBusy?'Translating…':'Translate'}</button>
@@ -2461,6 +2634,7 @@ function renderVideoPlay(){
   on('vRep',()=>{V.repeat=!V.repeat;$('vRep').setAttribute('aria-pressed',V.repeat);$('vRep').querySelector('span').textContent=V.repeat?'Repeat 3×':'Play once'});
   on('vSlow',()=>{V.slow=!V.slow;$('vSlow').setAttribute('aria-pressed',V.slow);if(V.player&&V.player.setPlaybackRate) V.player.setPlaybackRate(V.slow?vSlowRate():1)});
   on('vTrBtn',vToggleTr);
+  on('vTestBtn',vtStart);
   on('vBlur',()=>{V.blur=!V.blur;$('vBlur').setAttribute('aria-pressed',V.blur);L.classList.toggle('vblur',V.blur)});
   on('vTimeBtn',()=>{V.time=!V.time;$('vTimeBtn').setAttribute('aria-pressed',V.time);L.classList.toggle('vtime',V.time);vScrollCur()});
   on('vApply',vApplyPaste);
@@ -2489,10 +2663,14 @@ $('vMore').onclick=()=>{
   if(!V.vid) return;
   const has=V.sents.length>0;
   openSheet('Video',`<div class="rmenu">
-    ${has?`<button class="mi2" type="button" id="vmSync" style="border-top:0">${VI.sync}<span>Sync subtitles</span></button>
+    ${has?`<button class="mi2" type="button" id="vmTest" style="border-top:0">${VI.test}<span>Sentence test</span></button>
+    <button class="mi2" type="button" id="vmHist">${VI.hist}<span>Test history</span></button>
+    <button class="mi2" type="button" id="vmSync">${VI.sync}<span>Sync subtitles</span></button>
     <button class="mi2 red" type="button" id="vmClear">${TRASH_ICON}<span>Clear subtitles</span></button>`:''}
     <button class="mi2" type="button" id="vmSet"${has?'':' style="border-top:0"'}>${VI.gear}<span>Video settings</span></button></div>`);
   if(has){
+    $('vmTest').onclick=()=>{closeSheet();vtStart()};
+    $('vmHist').onclick=()=>vtHistory(V.vid);
     $('vmSync').onclick=vSyncSheet;
     $('vmClear').onclick=()=>{
       openSheet('Clear subtitles?',`<div class="card qconfirm"><p>The transcript and its translations for this video are removed. You can paste it again.</p>
@@ -2787,12 +2965,263 @@ $('videoSetBody').addEventListener('click',e=>{
 });
 
 function renderWrite(){
-  $('wseg-tr').setAttribute('aria-selected',writePane==='tr');$('wseg-jn').setAttribute('aria-selected',writePane==='jn');
-  $('pane-tr').hidden=writePane!=='tr';$('pane-jn').hidden=writePane!=='jn';
-  if(writePane==='tr') renderTranslate();else{renderJournal();jnLoad()}
+  for(const k of ['tr','jn','sn']){$('wseg-'+k).setAttribute('aria-selected',writePane===k);$('pane-'+k).hidden=writePane!==k}
+  if(writePane==='tr') renderTranslate();else if(writePane==='jn'){renderJournal();jnLoad()}else{renderSentences();xtLoad()}
 }
-$('wseg-tr').onclick=()=>{writePane='tr';lsSet('wm.writePane','tr');renderWrite()};
-$('wseg-jn').onclick=()=>{writePane='jn';lsSet('wm.writePane','jn');renderWrite()};
+for(const k of ['tr','jn','sn']) $('wseg-'+k).onclick=()=>{writePane=k;lsSet('wm.writePane',k);renderWrite()};
+
+// ---------- extra data: saved sentences + video test results ----------
+// {sentences:[{id, text, ko, vid, title, at, updated, deleted?}], vtests:[{id, at, vid, title, total, ok, secs, quit, items:[{t, ok, a}]}]}
+// Kept in this browser (wm.extra.<sub|guest>) and, signed in, in /api/extra (merged per item on the server, like the journal).
+let XT=null,xtLoadedAt=0,xtPushT=null;
+const xtKey=()=>'wm.extra.'+(acct==='cloud'&&user?user.sub:'guest');
+function xt(){if(!XT){const d=lsJSON(xtKey())||{};XT={sentences:Array.isArray(d.sentences)?d.sentences:[],vtests:Array.isArray(d.vtests)?d.vtests:[]}}return XT}
+function xtSaveLocal(){lsSet(xtKey(),JSON.stringify(xt()))}
+function xtMerge(d){
+  const x=xt(),sm=new Map(x.sentences.map(a=>[a.id,a]));
+  for(const r of (d&&d.sentences)||[]){const l=sm.get(r.id);if(!l||r.updated>l.updated) sm.set(r.id,r)}
+  x.sentences=[...sm.values()];
+  const tm=new Map(x.vtests.map(a=>[a.id,a]));for(const r of (d&&d.vtests)||[]) if(!tm.has(r.id)) tm.set(r.id,r);
+  x.vtests=[...tm.values()].sort((a,b)=>a.at<b.at?1:-1).slice(0,300);
+}
+async function xtLoad(force){
+  if(acct!=='cloud'||(!force&&Date.now()-xtLoadedAt<15000)) return;
+  xtLoadedAt=Date.now();
+  try{const r=await api('/api/extra');if(!r.ok) return;xtMerge(await r.json());xtSaveLocal();xtRedraw()}catch(_){}
+}
+function xtPush(){
+  xtSaveLocal();
+  if(acct!=='cloud') return;
+  clearTimeout(xtPushT);
+  xtPushT=setTimeout(async()=>{
+    try{const r=await api('/api/extra',{method:'PUT',body:JSON.stringify(xt())});if(r.ok){xtMerge(await r.json());xtSaveLocal()}}catch(_){}
+  },900);
+}
+function xtRedraw(){if(curTab==='write'&&writePane==='sn'&&!snBusy()) renderSentences()}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&curTab==='write'&&writePane==='sn') xtLoad()});
+const xtId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const snNorm=t=>String(t||'').replace(/\s+/g,' ').trim();
+const snLive=()=>xt().sentences.filter(a=>!a.deleted);
+function snFind(text){const n=snNorm(text).toLowerCase();return snLive().find(a=>snNorm(a.text).toLowerCase()===n)}
+function snAdd(text,src){
+  text=snNorm(text);if(!text) return null;
+  const ex=snFind(text);if(ex) return ex;
+  const now=Date.now(),it={id:xtId(),text,ko:'',vid:(src&&src.vid)||'',title:(src&&src.title)||'',at:new Date(now).toISOString(),updated:now};
+  xt().sentences.push(it);xtPush();return it;
+}
+function snRemove(id){const a=xt().sentences.find(x=>x.id===id);if(!a) return;Object.keys(a).forEach(k=>{if(k!=='id') delete a[k]});a.deleted=true;a.updated=Date.now();xtPush()}
+// a heart toggles a sentence in Writing → Sentences
+const HEART_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.4C1.6 8 3.6 4.5 7.1 4.5c2 0 3.5 1.1 4.9 3 1.4-1.9 2.9-3 4.9-3 3.5 0 5.5 3.5 4.4 6.6-1.8 4.8-9.3 9.4-9.3 9.4z"/></svg>';
+function heartHTML(text){return `<button class="heart${snFind(text)?' on':''}" type="button" data-heart="${esc(text)}" aria-label="Save to Sentences">${HEART_ICON}</button>`}
+document.addEventListener('click',e=>{
+  const h=e.target.closest('[data-heart]');if(!h) return;
+  e.stopPropagation();
+  const t=h.dataset.heart,ex=snFind(t);
+  if(ex){snRemove(ex.id);toast('Removed from Sentences')}
+  else{snAdd(t,{vid:h.dataset.hvid||V.vid||'',title:h.dataset.htitle||V.title||''});toast('Saved to Writing → Sentences')}
+  const on=!ex;document.querySelectorAll('[data-heart]').forEach(b=>{if(snNorm(b.dataset.heart).toLowerCase()===snNorm(t).toLowerCase()){b.classList.toggle('on',on);b.classList.remove('bump');void b.offsetWidth;if(on) b.classList.add('bump')}});
+});
+
+// ---- Writing → Sentences: sentences you like, each with ▶ Play and Translate ----
+const SN_TR=new Set();   // ids showing their Korean
+function snBusy(){const t=$('snIn');return !!(t&&(document.activeElement===t||t.value.trim()))}
+function renderSentences(){
+  const list=snLive().sort((a,b)=>a.at<b.at?1:-1),keep=$('snIn')?$('snIn').value:'';
+  $('snBody').innerHTML=`<div class="card sncomp">
+      <span class="label">Add a sentence you like</span>
+      <textarea id="snIn" rows="2" placeholder="Type or paste an English sentence" enterkeyhint="done" data-noi18n></textarea>
+      <button class="btn" id="snAdd" type="button">+ Add</button>
+    </div>
+    ${list.length?`<div class="sncount"><span>${list.length===1?'1 sentence':list.length+' sentences'}</span><span>Newest first</span></div>`+list.map(a=>`<div class="snrow" data-sn="${esc(a.id)}">
+      <div class="t" data-noi18n>${tapWordsHTML(a.text)}</div>
+      <div class="k" id="snk-${esc(a.id)}" data-noi18n${SN_TR.has(a.id)&&a.ko?'':' hidden'}>${esc(a.ko||'')}</div>
+      <div class="meta">${a.vid?`<span>${VIDEO_ICON.replace('<svg ','<svg width="14" height="14" ')}</span><span class="src" data-noi18n>${esc(a.title||a.vid)}</span>`:`<span class="src">Added by you</span>`}<span>${esc(agoOrTime(a.at))}</span></div>
+      <div class="acts">
+        <button class="hintbtn" type="button" data-snplay="${esc(a.id)}">${LP_PLAY}<span>Play</span></button>
+        <button class="hintbtn" type="button" data-sntr="${esc(a.id)}" aria-pressed="${SN_TR.has(a.id)&&!!a.ko}">${TR_ICON}<span>Translate</span></button>
+        <span class="sp"></span>
+        <button class="del" type="button" data-sndel="${esc(a.id)}" aria-label="Delete">${TRASH_ICON}</button>
+      </div></div>`).join('')
+    :`<div class="card empty">No sentences yet. Add one above, or tap ♡ on a sentence in a video test.</div>`}`;
+  $('snIn').value=keep;
+  const add=()=>{const t=$('snIn').value;if(!snNorm(t)){$('snIn').focus();return}
+    if(snFind(t)){toast('Already in your list');return}
+    snAdd(t,null);$('snIn').value='';$('snIn').blur();renderSentences();toast('Added')};
+  $('snAdd').onclick=add;
+  $('snIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();add()}});
+}
+$('snBody').addEventListener('click',async e=>{
+  const pl=e.target.closest('[data-snplay]'),tr=e.target.closest('[data-sntr]'),del=e.target.closest('[data-sndel]');
+  const id=(pl||tr||del)&&(pl||tr||del).dataset[pl?'snplay':tr?'sntr':'sndel'];
+  const a=id&&xt().sentences.find(x=>x.id===id);if(!a) return;
+  if(pl){e.stopPropagation();sayExample(a.text);return}
+  if(del){
+    e.stopPropagation();
+    if(!del.classList.contains('sure')){del.classList.add('sure');toast('Tap again to delete');setTimeout(()=>del.isConnected&&del.classList.remove('sure'),2500);return}
+    snRemove(id);SN_TR.delete(id);renderSentences();return;
+  }
+  if(tr){
+    e.stopPropagation();
+    const box=$('snk-'+id);
+    if(SN_TR.has(id)){SN_TR.delete(id);tr.setAttribute('aria-pressed','false');box.hidden=true;return}
+    SN_TR.add(id);tr.setAttribute('aria-pressed','true');box.hidden=false;
+    if(a.ko){box.textContent=a.ko;return}
+    if(!settings.translateKey){box.textContent='Add your Google Translate API key in Me → Settings to see translations.';return}
+    box.textContent='Translating…';
+    try{a.ko=await translateKo(a.text);a.updated=Date.now();xtPush();if(box.isConnected) box.textContent=a.ko}
+    catch(err){if(box.isConnected) box.textContent=err.message}
+  }
+});
+
+// ---------- Video test: the sentence flashes, then you build it from word blocks ----------
+// 10 sentences picked at random from the transcript (≥ 25 characters), avoiding ones asked in earlier tests of
+// this video; each is shown for 1–4 s by length; Check grades it. Results go to XT.vtests (Test history).
+const VT_N=10;
+let VT=null;   // {vid, title, qs:[text], k, ok, res:[{t, ok, a}], el:secs, t0, tm, phase, pick:[block index], blocks:[text], order:[]}
+const vtClean=t=>snNorm(String(t||'').replace(/\[[^\]]*\]|\([^)]*\)/g,' ').replace(/[♪]/g,' '));
+const vtWords=t=>vtClean(t).split(' ').filter(Boolean);
+const vtShowMs=t=>Math.round(Math.min(4,Math.max(1,t.length/25))*1000);
+function vtAsked(vid){const s=new Set();for(const h of xt().vtests) if(h.vid===vid) for(const i of h.items||[]) s.add(snNorm(i.t));return s}
+function vtPick(){
+  const seen=new Set(),all=[];
+  for(const x of V.sents){const t=vtClean(x.text),n=vtWords(t).length;if(t.length>=25&&t.length<=180&&n>=4&&n<=28&&!seen.has(t)){seen.add(t);all.push(t)}}
+  const asked=vtAsked(V.vid),shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+  const fresh=shuffle(all.filter(t=>!asked.has(t))),old=shuffle(all.filter(t=>asked.has(t)));
+  return{qs:[...fresh,...old].slice(0,VT_N),fresh:fresh.length,all:all.length};
+}
+function vtStart(){
+  if(!V.sents.length){toast('Add the transcript first.');return}
+  const p=vtPick();
+  if(!p.qs.length){toast('This video has no sentences long enough for a test.');return}
+  vPause();vChatClose();
+  VT={vid:V.vid,title:V.title||V.vid,qs:p.qs,k:0,ok:0,res:[],el:0,t0:Date.now(),tm:null,phase:'show',done:false,id:xtId(),at:new Date().toISOString()};
+  $('vtest').hidden=false;
+  try{window.history.pushState({video:V.vid,vtest:1},'')}catch(_){}
+  if(p.fresh<p.qs.length) toast(p.fresh?`Only ${p.fresh} new sentences left; some come back from earlier tests.`:'All sentences were asked before; starting a new round.',3200);
+  vtTick();VT.tm=setInterval(vtTick,500);
+  vtQuestion();
+}
+function vtSecs(){if(!VT) return 0;return VT.el+(VT.t0?(Date.now()-VT.t0)/1000:0)}
+function vtTick(){if(!VT) return;$('vtTmr').textContent='⏱ '+vFmt(vtSecs())}
+document.addEventListener('visibilitychange',()=>{if(!VT||VT.done) return;if(document.visibilityState==='visible'){if(!VT.t0) VT.t0=Date.now()}else if(VT.t0){VT.el+=(Date.now()-VT.t0)/1000;VT.t0=0}});
+function vtHead(){
+  const n=VT.qs.length,answered=VT.res.length;
+  $('vtCount').innerHTML=VT.done?`${VT.ok} / ${n}`:`${Math.min(VT.k+1,n)} / ${n} <small>· ✓ ${VT.ok}</small>`;
+  $('vtBar').style.width=(answered/n*100)+'%';
+  $('vtQuit').textContent=VT.done?'Done':'Quit';
+}
+function vtQuestion(){
+  const t=VT.qs[VT.k],words=vtWords(t),ms=vtShowMs(t),tk=VT.id+':'+VT.k;
+  const order=words.map((_,i)=>i);for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}
+  if(order.length>1&&order.every((v,i)=>v===i)) order.push(order.shift());
+  Object.assign(VT,{phase:'show',words,order,pick:[],tk});
+  vtHead();
+  $('vtStage').innerHTML=`<div class="vtq" id="vtQ"><div class="flash" data-noi18n>${esc(t)}</div><div class="tbar"><i id="vtT"></i></div></div>
+    <div class="vtans" id="vtAns"></div>
+    <div class="vtpool off" id="vtPool">${order.map(i=>`<button class="vblk" type="button" data-vb="${i}" data-noi18n>${esc(words[i])}</button>`).join('')}</div>
+    <div class="vtfoot"><button class="btn" id="vtCheck" type="button" disabled>Check</button></div>`;
+  const bar=$('vtT');bar.style.transition='none';bar.style.width='100%';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.transition=`width ${ms}ms linear`;bar.style.width='0%'}));
+  setTimeout(()=>{if(!VT||VT.tk!==tk) return;VT.phase='build';
+    $('vtQ').innerHTML=`<div class="hidden">Put the blocks in order (${words.length} words)</div>`;
+    $('vtPool').classList.remove('off');vtDrawAns()},ms);
+  $('vtCheck').onclick=vtCheck;
+}
+function vtDrawAns(){
+  const a=$('vtAns');if(!a) return;
+  a.innerHTML=VT.pick.map((i,p)=>`<button class="vblk" type="button" data-va="${p}" data-noi18n>${esc(VT.words[i])}</button>`).join('');
+  $('vtPool').querySelectorAll('[data-vb]').forEach(b=>b.classList.toggle('used',VT.pick.includes(+b.dataset.vb)));
+  $('vtCheck').disabled=VT.pick.length!==VT.words.length;
+}
+$('vtStage').addEventListener('click',e=>{
+  if(!VT||VT.phase!=='build') return;
+  const b=e.target.closest('[data-vb]'),a=e.target.closest('[data-va]');
+  if(b&&!b.classList.contains('used')){VT.pick.push(+b.dataset.vb);vtDrawAns();return}
+  if(a){VT.pick.splice(+a.dataset.va,1);vtDrawAns()}
+});
+function vtCheck(){
+  if(!VT||VT.phase!=='build'||VT.pick.length!==VT.words.length) return;
+  VT.phase='checked';
+  const t=VT.qs[VT.k],built=VT.pick.map(i=>VT.words[i]),ok=built.join(' ')===VT.words.join(' ');
+  if(ok){VT.ok++;chime()}
+  VT.res.push({t,ok,a:ok?'':built.join(' ')});
+  $('vtAns').classList.add(ok?'ok':'no');
+  $('vtAns').querySelectorAll('[data-va]').forEach((b,p)=>b.classList.add(VT.words[VT.pick[p]]===VT.words[p]?'r':'w'));
+  $('vtPool').remove();
+  const last=VT.k>=VT.qs.length-1;
+  $('vtQ').outerHTML=`<div class="vtrev"><div class="t"><span class="lbl">${ok?'Correct!':'Answer'}</span><span data-noi18n>${esc(t)}</span></div>
+    <button class="ctool" type="button" data-say="${esc(t)}" data-kind="ex" aria-label="Listen">${SPK_ICON}</button>${heartHTML(t)}</div>`;
+  document.querySelector('.vtrev [data-heart]').dataset.hvid=VT.vid;document.querySelector('.vtrev [data-heart]').dataset.htitle=VT.title;
+  $('vtStage').querySelector('.vtfoot').innerHTML=`<button class="btn${ok?'':' blue'}" id="vtNext" type="button">${last?'See results':'Next'}</button>`;
+  $('vtNext').onclick=()=>{if(last) vtFinish(false);else{VT.k++;vtQuestion()}};
+  vtHead();
+}
+function vtSave(quit){
+  if(!VT||!VT.res.length) return;
+  const h={id:VT.id,at:VT.at,vid:VT.vid,title:VT.title,total:VT.qs.length,ok:VT.ok,secs:Math.round(vtSecs()),quit:!!quit,items:VT.res.slice()};
+  const x=xt();x.vtests=[h,...x.vtests.filter(a=>a.id!==h.id)].slice(0,300);xtPush();
+}
+function vtFinish(quit){
+  if(!VT) return;
+  vtSave(quit);
+  clearInterval(VT.tm);
+  if(quit){vtClose();return}
+  VT.el=vtSecs();VT.t0=0;VT.done=true;vtTick();vtHead();
+  const n=VT.qs.length,pct=Math.round(VT.ok/n*100);
+  $('vtStage').innerHTML=`<canvas class="confetti" id="vtConf"></canvas>
+    <div class="ldone" style="flex:none;padding-top:8px"><div class="big">${pct===100?'🏆':pct>=70?'🎉':'💪'}</div>
+      <h2 style="color:${pctColor(pct)}">${VT.ok} / ${n}</h2>
+      <p>${pct}% · ⏱ ${vFmt(VT.el)}</p></div>
+    <div class="vtres">${vtItemsHTML(VT.res,VT.vid,VT.title)}</div>
+    <div class="vtbtnrow" style="padding-bottom:6px"><button class="btn ghost" id="vtAgain" type="button">Test again</button><button class="btn" id="vtDone" type="button">Done</button></div>`;
+  fanfare();confetti($('vtConf'));
+  $('vtDone').onclick=vtClose;
+  $('vtAgain').onclick=()=>{vtClose();setTimeout(vtStart,50)};
+}
+function vtItemsHTML(items,vid,title){
+  return items.map(i=>`<div class="it"><span class="m ${i.ok?'ok':'no'}">${i.ok?'✓':'✗'}</span><span class="t" data-noi18n>${esc(i.t)}${!i.ok&&i.a?`<span class="a">${esc(i.a)}</span>`:''}</span>${heartHTML(i.t).replace('data-heart=',`data-hvid="${esc(vid)}" data-htitle="${esc(title)}" data-heart=`)}</div>`).join('');
+}
+function vtClose(fromBack){
+  if(!VT) return;clearInterval(VT.tm);VT=null;
+  $('vtest').hidden=true;$('vtStage').innerHTML='';
+  if(!fromBack&&window.history.state&&window.history.state.vtest){popIgnore++;window.history.back()}
+}
+function vtAskQuit(){
+  if(!VT) return;
+  if(VT.done){vtClose();return}
+  openSheet('Quit the test?',`<div class="card qconfirm"><p>${VT.res.length?`Your ${VT.res.length} answered ${VT.res.length===1?'sentence is':'sentences are'} saved in Test history.`:'Nothing is saved yet.'}</p>
+    <button class="btn ghost block" id="vtKeep" type="button">Keep going</button><button class="btn danger block" id="vtStop" type="button">Quit</button></div>`);
+  $('vtKeep').onclick=closeSheet;
+  $('vtStop').onclick=()=>{closeSheet();vtFinish(true)};
+}
+$('vtQuit').onclick=vtAskQuit;
+// ---- Test history: every video test, newest first ----
+function vtHistory(onlyVid){
+  const list=xt().vtests.filter(h=>!onlyVid||h.vid===onlyVid);
+  const row=h=>{const pct=h.total?Math.round(h.ok/h.total*100):0;return `<div class="vthist" role="button" tabindex="0" data-vth="${esc(h.id)}">
+      <img src="https://i.ytimg.com/vi/${esc(h.vid)}/default.jpg" alt="" loading="lazy">
+      <div class="b"><span class="t" data-noi18n>${esc(h.title||h.vid)}</span><span class="d"><span>${esc(agoOrTime(h.at))}</span> · ⏱ ${vFmt(h.secs)}${h.quit?` · <span class="tag">Stopped</span>`:''}</span></div>
+      <span class="sc" style="color:${pctColor(pct)}">${h.ok}/${h.total}</span></div>`};
+  openSheet('Test history',`<div class="stack" style="gap:10px">
+    ${V.vid?`<div class="seg" role="tablist" style="margin:0"><button role="tab" type="button" id="vthThis" aria-selected="${!!onlyVid}">This video</button><button role="tab" type="button" id="vthAll" aria-selected="${!onlyVid}">All videos</button></div>`:''}
+    ${list.length?list.map(row).join(''):`<div class="card empty">No tests yet. Open a video and tap Test.</div>`}</div>`);
+  if($('vthAll')){$('vthAll').onclick=()=>vtHistory(null);$('vthThis').onclick=()=>vtHistory(V.vid)}
+  $('sheetBody').onclick=e=>{const r=e.target.closest('[data-vth]');if(r) vtHistDetail(r.dataset.vth,onlyVid)};
+  xtLoad().then(()=>{});
+}
+function vtHistDetail(id,back){
+  const h=xt().vtests.find(x=>x.id===id);if(!h) return;
+  const pct=h.total?Math.round(h.ok/h.total*100):0;
+  openSheet('Test result',`<div class="stack" style="gap:10px">
+    <div class="card" style="gap:6px"><b data-noi18n style="font:800 15px var(--f-ui)">${esc(h.title||h.vid)}</b>
+      <span class="note" style="margin:0"><span>${esc(agoOrTime(h.at))}</span> · ⏱ ${vFmt(h.secs)}${h.quit?' · <span>Stopped</span>':''}</span>
+      <span style="font:900 26px var(--f-ui);color:${pctColor(pct)}">${h.ok} / ${h.total} <small style="font-size:14px;color:var(--muted)">${h.items.length<h.total?`(${h.items.length} answered)`:pct+'%'}</small></span></div>
+    <div class="vtres">${vtItemsHTML(h.items||[],h.vid,h.title)}</div>
+    <div class="vtbtnrow"><button class="btn ghost" id="vthBack" type="button">‹ Test history</button>${V.vid===h.vid?'':`<button class="btn" id="vthOpen" type="button">Open video</button>`}</div></div>`);
+  $('sheetBody').onclick=null;
+  $('vthBack').onclick=()=>vtHistory(back);
+  if($('vthOpen')) $('vthOpen').onclick=()=>{closeSheet();show('video');if(V.vid) closeVideo();openVideo(h.vid)};
+}
 
 // ---- Translate: EN→KO / KO→EN with Google (default) or an AI that has a key ----
 let trPref=(()=>{try{return JSON.parse(lsGet('wm.trPref'))||{}}catch(_){return {}}})();
@@ -4680,6 +5109,14 @@ try{speechSynthesis.addEventListener('voiceschanged',()=>{if(curTab==='me'){if(m
 
 // Phone back gesture / browser back closes a settings page instead of leaving the app
 window.addEventListener('popstate',e=>{
+  if(popIgnore){popIgnore--;return}
+  if(!$('noteSheet').hidden){closeNote(true);return}
+  if(VT&&!$('vtest').hidden){
+    if(VT.done){vtClose(true);return}
+    try{window.history.pushState({video:VT.vid,vtest:1},'')}catch(_){}
+    if($('sheet').hidden) vtAskQuit();else closeSheet();
+    return;
+  }
   if(!$('pop').hidden){closePop();return}
   if(!$('sheet').hidden){closeSheet();return}
   if(!$('vchat').hidden){vChatClose(true);return}
@@ -5139,11 +5576,27 @@ const I18N_KO={
 'Your API key is restricted. In Google Cloud → APIs & Services → Credentials → your key → API restrictions, add "Cloud Text-to-Speech API" and save. It can take a few minutes.':'API 키에 사용 제한이 있어요. Google Cloud → API 및 서비스 → 사용자 인증 정보 → 내 키 → API 제한사항에 "Cloud Text-to-Speech API"를 추가하고 저장하세요. 몇 분 걸릴 수 있어요.',
 'The Google API key was rejected.':'Google API 키가 거부됐어요.',
 'The app reloads to switch. Words, sentences and stories stay in English.':'바꾸면 앱이 다시 시작돼요. 단어, 예문, 스토리는 영어 그대로예요.',
+'Notes':'설명','Edit the note':'설명 수정','Write a note':'설명 쓰기','Extra explanation, tips, usage, Korean meaning…':'추가 설명, 팁, 쓰임, 한국어 뜻…',
+'Everyone using Word Story sees this note and can edit it. Your name and the time are saved in the history.':'Word Story를 쓰는 모든 사람이 이 설명을 보고 수정할 수 있어요. 수정한 사람과 시간이 히스토리에 남아요.',
+'Save':'저장','No notes for this word yet.':'아직 이 단어의 설명이 없어요.','✏️ Edit':'✏️ 수정','+ Write a note':'+ 설명 쓰기','Sign in to write or edit notes.':'로그인하면 설명을 쓰거나 수정할 수 있어요.',
+'Last change:':'마지막 수정:','Added':'추가','Edited':'수정','Removed':'삭제',"Couldn't save. Check your connection and try again.":'저장하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.',
+'Sentences':'문장','Add a sentence you like':'좋아하는 문장 추가','Type or paste an English sentence':'영어 문장을 입력하거나 붙여넣으세요','1 sentence':'문장 1개','Added by you':'직접 추가',
+'Tap again to delete':'한 번 더 누르면 삭제돼요','No sentences yet. Add one above, or tap ♡ on a sentence in a video test.':'아직 문장이 없어요. 위에서 추가하거나 비디오 테스트에서 ♡를 눌러 보세요.',
+'Already in your list':'이미 목록에 있어요','Removed from Sentences':'문장 목록에서 뺐어요','Saved to Writing → Sentences':'글쓰기 → 문장에 저장했어요','Save to Sentences':'문장에 저장',
+'Sentence test':'문장 테스트','Test history':'테스트 기록','This video':'이 영상','All videos':'모든 영상','No tests yet. Open a video and tap Test.':'아직 테스트가 없어요. 영상을 열고 테스트를 눌러 보세요.',
+'Test result':'테스트 결과','‹ Test history':'‹ 테스트 기록','Open video':'영상 열기','Quit the test?':'테스트를 그만할까요?','Nothing is saved yet.':'아직 저장된 게 없어요.',
+'Correct!':'정답!','Answer':'정답','Test again':'다시 테스트','Add the transcript first.':'먼저 자막을 추가하세요.','This video has no sentences long enough for a test.':'이 영상에는 테스트할 만큼 긴 문장이 없어요.',
+'All sentences were asked before; starting a new round.':'모든 문장을 이미 풀었어요. 새로 한 바퀴 시작해요.',
 };
 const POS_KO={adjective:'형용사',noun:'명사',verb:'동사',adverb:'부사',preposition:'전치사',conjunction:'접속사',pronoun:'대명사',interjection:'감탄사',phrase:'구'};
 const durKo=d=>d.replace('<1 min','1분 미만').replace(/(\d+) min/,'$1분');
 const dueKo=d=>d==='today'?'오늘':d==='tomorrow'?'내일':d.replace(/^in (\d+) days?$/,'$1일 뒤');
 const I18N_KO_RE=[
+[/^(\d+) sentences$/,'문장 $1개'],
+[/^Put the blocks in order \((\d+) words\)$/,'블록을 순서대로 놓으세요 ($1단어)'],
+[/^Your (\d+) answered sentences? (?:is|are) saved in Test history\.$/,'푼 문장 $1개는 테스트 기록에 저장돼요.'],
+[/^Only (\d+) new sentences left; some come back from earlier tests\.$/,'새 문장이 $1개뿐이라 전에 푼 문장도 나와요.'],
+[/^\((\d+) answered\)$/,'($1개 풀었음)'],
 [/^Good (morning|afternoon|evening)(?:, (.+))?!$/,(m,t,n)=>({morning:'좋은 아침이에요',afternoon:'좋은 오후예요',evening:'좋은 저녁이에요'}[t])+(n?', '+n+'님':'')+'!'],
 [/^(\d+) sentences? waiting\. Keep your (\d+)-day streak alive!$/,'$1개 문장이 기다려요. $2일 연속 기록을 이어가요!'],
 [/^(\d+) sentences? waiting\. Start a streak today!$/,'$1개 문장이 기다려요. 오늘부터 연속 기록을 시작해요!'],
