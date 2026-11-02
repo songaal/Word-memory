@@ -151,11 +151,6 @@ textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 /* Video test: build the sentence from blocks */
 .vtest{z-index:46}
 .vtstage{display:flex;flex-direction:column;gap:12px;overflow-y:auto}
-.vtq{border:2px solid var(--line);border-radius:18px;background:var(--card);padding:16px;min-height:96px;display:flex;flex-direction:column;justify-content:center;gap:10px;position:relative}
-.vtq .flash{font:600 19px/1.5 var(--f-word);text-align:center;word-break:break-word}
-.vtq .hidden{font:800 15px var(--f-ui);color:var(--muted);text-align:center}
-.vtq .tbar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
-.vtq .tbar i{display:block;height:100%;background:var(--blue);border-radius:99px;width:100%}
 .vtans{min-height:110px;border:2px dashed var(--line);border-radius:16px;padding:10px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px}
 .vtans.ok{border-style:solid;border-color:var(--good);background:var(--good-soft)}
 .vtans.no{border-style:solid;border-color:var(--bad);background:var(--bad-soft)}
@@ -164,8 +159,20 @@ textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 .vblk.used{visibility:hidden}
 .vblk.r{border-color:var(--good);color:var(--good)}
 .vblk.w{border-color:var(--bad);color:var(--bad)}
-.vtpool.off{visibility:hidden}
-.vtans .vblk{animation:pop .18s ease-out}
+.vtans .vblk.new{animation:pop .18s ease-out}
+.vtpool .vblk.used{display:none}
+.vtstage.vtplay{overflow:hidden}
+.vtstage.vtplay>*{flex:none}
+.vtstage.vtplay .vtans{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.vtstage.vtplay .vtpool{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;align-content:flex-start;padding:2px 0 6px}
+.vtstage.vtplay .vtrev{max-height:34%;overflow-y:auto}
+.vtstage.vtplay .vtfoot{margin-top:0}
+.vtpop{position:absolute;inset:0;z-index:5;background:var(--bg);display:flex;flex-direction:column;gap:14px;padding-bottom:2px}
+.vtpopc{flex:1;min-height:0;overflow-y:auto;border:2px solid var(--line);border-radius:20px;background:var(--card);padding:22px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center}
+.vtpopc .flash{font:600 22px/1.55 var(--f-word);word-break:break-word}
+.vtpopc .ctool{width:44px;height:38px}
+.vtpopc .ctool svg{width:20px;height:20px}
+.vtpop #vtGo{flex:none;padding:14px 8px;font-size:16px}
 .vtfoot{display:flex;gap:10px;margin-top:auto;padding-top:4px}
 .vtfoot .btn{flex:1;padding:13px 8px}
 .vtrev{display:flex;align-items:flex-start;gap:8px;border-radius:14px;padding:10px 12px;background:var(--bg);border:2px solid var(--line)}
@@ -276,6 +283,8 @@ button.chip:active{filter:brightness(.92)}
 .lcard .lctl button{flex:none;width:46px;height:40px;min-width:46px;padding:0;-webkit-appearance:none;appearance:none;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--accent);display:grid;place-items:center;cursor:pointer;box-shadow:0 3px 0 var(--line)}
 .lcard .lctl button:active{transform:translateY(3px);box-shadow:none}
 .lcard .lctl button.off{color:var(--muted,#999)}
+.lcard .lctl button.has{background:#d6efff;border-color:#7fcdf6;color:#0f6fa3;box-shadow:0 3px 0 #7fcdf6}
+@media (prefers-color-scheme:dark){.lcard .lctl button.has{background:#1d4a63;border-color:#3a8fbf;color:#bfe7ff;box-shadow:0 3px 0 #3a8fbf}}
 .lcard .lctl button.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 3px 0 var(--blue-d,#1899d6)}
 .lcard .lctl svg{width:20px;height:20px;flex:none}
 .sheet.hideback{background:var(--bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
@@ -854,7 +863,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.45.0</span> · <span class="version-date">2026/11/02</span></p>
+          <p class="note"><span class="version-tag">v2.45.2</span> · <span class="version-date">2026/11/02</span></p>
         </div>
       </div></div>
     </div>
@@ -1831,6 +1840,7 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-cnote]');if(!b) return;
   e.stopPropagation();e.preventDefault();
   if(cr) crStop();
+  if(lp&&lp.playing&&!$('learn').hidden) lpPause();
   openNote(b.dataset.cnote,false);
 },true);
 
@@ -2005,7 +2015,7 @@ function lnNext(){
   if(!r.queue.length){lnFinish();return}
   const c=r.queue[0];
   st.innerHTML=`<div class="lcard enter" id="lnCard"><div class="lbody" id="lnBody">${cardHTML(c,{tools:false})}</div><div class="lmore" id="lnMore" hidden></div>
-    <div class="lctl"><button type="button" id="lpPlay" aria-label="Pause"></button><button type="button" id="lpLoop" aria-label="Repeat"></button><button type="button" id="lpAuto" aria-label="Auto play"></button><button type="button" id="lpPrac" aria-label="Typing practice">${PRAC_ICON}</button></div></div>`;
+    <div class="lctl"><button type="button" id="lpPlay" aria-label="Pause"></button><button type="button" id="lpLoop" aria-label="Repeat"></button><button type="button" id="lpAuto" aria-label="Auto play"></button><button type="button" id="lpPrac" aria-label="Typing practice">${PRAC_ICON}</button><button type="button" id="lpNote" data-cnote="${esc(c.word)}" aria-label="Notes">${NOTE_ICON}</button></div></div>`;
   $('lpPrac').onclick=()=>openPractice(c);
   $('lpPlay').onclick=()=>{lp&&lp.playing?lpPause():lpPlay()};
   $('lpLoop').onclick=()=>{lpLoop=lpLoop==='all'?'one':'all';lsSet('wm.lpLoop',lpLoop);lpIcons();if(lp&&lp.mode==='track') gAudio.loop=lpLoop==='all'};
@@ -3078,9 +3088,11 @@ $('snBody').addEventListener('click',async e=>{
 // this video; each is shown for 1–4 s by length; Check grades it. Results go to XT.vtests (Test history).
 const VT_N=10;
 let VT=null;   // {vid, title, qs:[text], k, ok, res:[{t, ok, a}], el:secs, t0, tm, phase, pick:[block index], blocks:[text], order:[]}
-const vtClean=t=>snNorm(String(t||'').replace(/\[[^\]]*\]|\([^)]*\)/g,' ').replace(/[♪]/g,' '));
+// transcript noise out of test sentences: [Music] / [ __ ] / (laughs), speaker marks >>, ♪, stray brackets and dashes;
+// a "word" with no letter or digit is dropped
+const vtClean=t=>snNorm(String(t||'').replace(/\[[^\]]*\]|\([^)]*\)|\{[^}]*\}/g,' ').replace(/\[\s*(?:music|applause|laughter|laughs)\b|\b(?:music|applause|laughter)\s*\]/gi,' ')
+  .replace(/>>+|<<+|[♪♫♬\[\](){}<>|*_#~^]/g,' ').split(' ').filter(w=>/[A-Za-z0-9]/.test(w)).join(' '));
 const vtWords=t=>vtClean(t).split(' ').filter(Boolean);
-const vtShowMs=t=>Math.round(Math.min(4,Math.max(1,t.length/25))*1000);
 function vtAsked(vid){const s=new Set();for(const h of xt().vtests) if(h.vid===vid) for(const i of h.items||[]) s.add(snNorm(i.t));return s}
 function vtPick(){
   const seen=new Set(),all=[];
@@ -3111,32 +3123,36 @@ function vtHead(){
   $('vtQuit').textContent=VT.done?'Done':'Quit';
 }
 function vtQuestion(){
-  const t=VT.qs[VT.k],words=vtWords(t),ms=vtShowMs(t),tk=VT.id+':'+VT.k;
+  const t=VT.qs[VT.k],words=vtWords(t),tk=VT.id+':'+VT.k;
   const order=words.map((_,i)=>i);for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}
   if(order.length>1&&order.every((v,i)=>v===i)) order.push(order.shift());
   Object.assign(VT,{phase:'show',words,order,pick:[],tk});
   vtHead();
-  $('vtStage').innerHTML=`<div class="vtq" id="vtQ"><div class="flash" data-noi18n>${esc(t)}</div><div class="tbar"><i id="vtT"></i></div></div>
-    <div class="vtans" id="vtAns"></div>
-    <div class="vtpool off" id="vtPool">${order.map(i=>`<button class="vblk" type="button" data-vb="${i}" data-noi18n>${esc(words[i])}</button>`).join('')}</div>
-    <div class="vtfoot"><button class="btn" id="vtCheck" type="button" disabled>Check</button></div>`;
-  const bar=$('vtT');bar.style.transition='none';bar.style.width='100%';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.transition=`width ${ms}ms linear`;bar.style.width='0%'}));
-  setTimeout(()=>{if(!VT||VT.tk!==tk) return;VT.phase='build';
-    $('vtQ').innerHTML=`<div class="hidden">Put the blocks in order (${words.length} words)</div>`;
-    $('vtPool').classList.remove('off');vtDrawAns()},ms);
+  // play layout: answer area and block pool each scroll on their own; the Check bar stays put
+  $('vtStage').className='lstage vtstage vtplay';
+  $('vtStage').innerHTML=`<div class="vtans" id="vtAns"></div>
+    <div class="vtpool" id="vtPool">${order.map(i=>`<button class="vblk" type="button" data-vb="${i}" data-noi18n>${esc(words[i])}</button>`).join('')}</div>
+    <div class="vtfoot"><button class="btn" id="vtCheck" type="button" disabled>Check</button></div>
+    <div class="vtpop" id="vtPop"><div class="vtpopc">
+      <span class="label">Remember this sentence</span>
+      <div class="flash" data-noi18n>${esc(t)}</div>
+      <button class="ctool" type="button" data-say="${esc(t)}" data-kind="ex" aria-label="Listen">${SPK_ICON}</button>
+    </div><button class="btn block" id="vtGo" type="button">I'm ready</button></div>`;
+  $('vtGo').onclick=()=>{if(!VT||VT.tk!==tk) return;VT.phase='build';$('vtPop').remove();vtDrawAns()};
   $('vtCheck').onclick=vtCheck;
 }
 function vtDrawAns(){
   const a=$('vtAns');if(!a) return;
-  a.innerHTML=VT.pick.map((i,p)=>`<button class="vblk" type="button" data-va="${p}" data-noi18n>${esc(VT.words[i])}</button>`).join('');
+  const fresh=VT.justAdded;VT.justAdded=false;
+  a.innerHTML=VT.pick.map((i,p)=>`<button class="vblk${fresh&&p===VT.pick.length-1?' new':''}" type="button" data-va="${p}" data-noi18n>${esc(VT.words[i])}</button>`).join('');
+  if(fresh) a.scrollTop=a.scrollHeight;
   $('vtPool').querySelectorAll('[data-vb]').forEach(b=>b.classList.toggle('used',VT.pick.includes(+b.dataset.vb)));
   $('vtCheck').disabled=VT.pick.length!==VT.words.length;
 }
 $('vtStage').addEventListener('click',e=>{
   if(!VT||VT.phase!=='build') return;
   const b=e.target.closest('[data-vb]'),a=e.target.closest('[data-va]');
-  if(b&&!b.classList.contains('used')){VT.pick.push(+b.dataset.vb);vtDrawAns();return}
+  if(b&&!b.classList.contains('used')){VT.pick.push(+b.dataset.vb);VT.justAdded=true;vtDrawAns();return}
   if(a){VT.pick.splice(+a.dataset.va,1);vtDrawAns()}
 });
 function vtCheck(){
@@ -3149,8 +3165,8 @@ function vtCheck(){
   $('vtAns').querySelectorAll('[data-va]').forEach((b,p)=>b.classList.add(VT.words[VT.pick[p]]===VT.words[p]?'r':'w'));
   $('vtPool').remove();
   const last=VT.k>=VT.qs.length-1;
-  $('vtQ').outerHTML=`<div class="vtrev"><div class="t"><span class="lbl">${ok?'Correct!':'Answer'}</span><span data-noi18n>${esc(t)}</span></div>
-    <button class="ctool" type="button" data-say="${esc(t)}" data-kind="ex" aria-label="Listen">${SPK_ICON}</button>${heartHTML(t)}</div>`;
+  $('vtAns').insertAdjacentHTML('beforebegin',`<div class="vtrev"><div class="t"><span class="lbl">${ok?'Correct!':'Answer'}</span><span data-noi18n>${esc(t)}</span></div>
+    <button class="ctool" type="button" data-say="${esc(t)}" data-kind="ex" aria-label="Listen">${SPK_ICON}</button>${heartHTML(t)}</div>`);
   document.querySelector('.vtrev [data-heart]').dataset.hvid=VT.vid;document.querySelector('.vtrev [data-heart]').dataset.htitle=VT.title;
   $('vtStage').querySelector('.vtfoot').innerHTML=`<button class="btn${ok?'':' blue'}" id="vtNext" type="button">${last?'See results':'Next'}</button>`;
   $('vtNext').onclick=()=>{if(last) vtFinish(false);else{VT.k++;vtQuestion()}};
@@ -3168,6 +3184,7 @@ function vtFinish(quit){
   if(quit){vtClose();return}
   VT.el=vtSecs();VT.t0=0;VT.done=true;vtTick();vtHead();
   const n=VT.qs.length,pct=Math.round(VT.ok/n*100);
+  $('vtStage').className='lstage vtstage';
   $('vtStage').innerHTML=`<canvas class="confetti" id="vtConf"></canvas>
     <div class="ldone" style="flex:none;padding-top:8px"><div class="big">${pct===100?'🏆':pct>=70?'🎉':'💪'}</div>
       <h2 style="color:${pctColor(pct)}">${VT.ok} / ${n}</h2>
@@ -5585,7 +5602,7 @@ const I18N_KO={
 'Already in your list':'이미 목록에 있어요','Removed from Sentences':'문장 목록에서 뺐어요','Saved to Writing → Sentences':'글쓰기 → 문장에 저장했어요','Save to Sentences':'문장에 저장',
 'Sentence test':'문장 테스트','Test history':'테스트 기록','This video':'이 영상','All videos':'모든 영상','No tests yet. Open a video and tap Test.':'아직 테스트가 없어요. 영상을 열고 테스트를 눌러 보세요.',
 'Test result':'테스트 결과','‹ Test history':'‹ 테스트 기록','Open video':'영상 열기','Quit the test?':'테스트를 그만할까요?','Nothing is saved yet.':'아직 저장된 게 없어요.',
-'Correct!':'정답!','Answer':'정답','Test again':'다시 테스트','Add the transcript first.':'먼저 자막을 추가하세요.','This video has no sentences long enough for a test.':'이 영상에는 테스트할 만큼 긴 문장이 없어요.',
+'Correct!':'정답!','Remember this sentence':'이 문장을 기억하세요',"I'm ready":'도전!','Answer':'정답','Test again':'다시 테스트','Add the transcript first.':'먼저 자막을 추가하세요.','This video has no sentences long enough for a test.':'이 영상에는 테스트할 만큼 긴 문장이 없어요.',
 'All sentences were asked before; starting a new round.':'모든 문장을 이미 풀었어요. 새로 한 바퀴 시작해요.',
 };
 const POS_KO={adjective:'형용사',noun:'명사',verb:'동사',adverb:'부사',preposition:'전치사',conjunction:'접속사',pronoun:'대명사',interjection:'감탄사',phrase:'구'};
@@ -5593,7 +5610,6 @@ const durKo=d=>d.replace('<1 min','1분 미만').replace(/(\d+) min/,'$1분');
 const dueKo=d=>d==='today'?'오늘':d==='tomorrow'?'내일':d.replace(/^in (\d+) days?$/,'$1일 뒤');
 const I18N_KO_RE=[
 [/^(\d+) sentences$/,'문장 $1개'],
-[/^Put the blocks in order \((\d+) words\)$/,'블록을 순서대로 놓으세요 ($1단어)'],
 [/^Your (\d+) answered sentences? (?:is|are) saved in Test history\.$/,'푼 문장 $1개는 테스트 기록에 저장돼요.'],
 [/^Only (\d+) new sentences left; some come back from earlier tests\.$/,'새 문장이 $1개뿐이라 전에 푼 문장도 나와요.'],
 [/^\((\d+) answered\)$/,'($1개 풀었음)'],
