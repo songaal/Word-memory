@@ -177,6 +177,9 @@ textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 .vtfoot .btn{flex:1;padding:13px 8px}
 .vtrev{display:flex;align-items:flex-start;gap:8px;border-radius:14px;padding:10px 12px;background:var(--bg);border:2px solid var(--line)}
 .vtrev .t{flex:1;font:500 16px/1.45 var(--f-word)}
+.vtrev .vtic{display:flex;flex-direction:column;gap:6px;flex:none}
+.vtrev .vtko{display:block;font:600 14.5px/1.45 var(--f-ui);color:var(--muted);margin-top:6px}
+.vtrev .vtko.err{color:var(--bad)}
 .vtrev .lbl{font:800 12px var(--f-ui);color:var(--muted);display:block;margin-bottom:2px}
 .heart{border:0;background:none;padding:4px;cursor:pointer;color:var(--muted);display:grid;place-items:center;flex:none}
 .heart svg{width:24px;height:24px}
@@ -863,7 +866,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.45.2</span> · <span class="version-date">2026/11/02</span></p>
+          <p class="note"><span class="version-tag">v2.45.3</span> · <span class="version-date">2026/11/02</span></p>
         </div>
       </div></div>
     </div>
@@ -3165,12 +3168,25 @@ function vtCheck(){
   $('vtAns').querySelectorAll('[data-va]').forEach((b,p)=>b.classList.add(VT.words[VT.pick[p]]===VT.words[p]?'r':'w'));
   $('vtPool').remove();
   const last=VT.k>=VT.qs.length-1;
-  $('vtAns').insertAdjacentHTML('beforebegin',`<div class="vtrev"><div class="t"><span class="lbl">${ok?'Correct!':'Answer'}</span><span data-noi18n>${esc(t)}</span></div>
-    <button class="ctool" type="button" data-say="${esc(t)}" data-kind="ex" aria-label="Listen">${SPK_ICON}</button>${heartHTML(t)}</div>`);
+  $('vtAns').insertAdjacentHTML('beforebegin',`<div class="vtrev"><div class="t"><span class="lbl">${ok?'Correct!':'Answer'}</span><span data-noi18n>${esc(t)}</span><span class="vtko" id="vtKo" data-noi18n hidden></span></div>
+    <div class="vtic"><button class="ctool" type="button" data-say="${esc(t)}" data-kind="ex" aria-label="Listen">${SPK_ICON}</button><button class="ctool" type="button" id="vtTr" aria-pressed="false" aria-label="Show Korean translation">${TR_ICON}</button></div>${heartHTML(t)}</div>`);
+  $('vtTr').onclick=()=>vtTranslate(t);
   document.querySelector('.vtrev [data-heart]').dataset.hvid=VT.vid;document.querySelector('.vtrev [data-heart]').dataset.htitle=VT.title;
   $('vtStage').querySelector('.vtfoot').innerHTML=`<button class="btn${ok?'':' blue'}" id="vtNext" type="button">${last?'See results':'Next'}</button>`;
   $('vtNext').onclick=()=>{if(last) vtFinish(false);else{VT.k++;vtQuestion()}};
   vtHead();
+}
+// Korean for the answer sentence (Google key), kept for this session
+const vtKoCache=new Map();
+async function vtTranslate(t){
+  const b=$('vtTr'),box=$('vtKo');if(!b||!box) return;
+  if(b.getAttribute('aria-pressed')==='true'){b.setAttribute('aria-pressed','false');b.classList.remove('on');box.hidden=true;return}
+  b.setAttribute('aria-pressed','true');b.classList.add('on');box.hidden=false;box.classList.remove('err');
+  if(vtKoCache.has(t)){box.textContent=vtKoCache.get(t);return}
+  if(!settings.translateKey){box.classList.add('err');box.textContent='Add your Google Translate API key in Me → Settings to see translations.';box.removeAttribute('data-noi18n');return}
+  box.textContent='Translating…';box.removeAttribute('data-noi18n');
+  try{const ko=await translateKo(t);vtKoCache.set(t,ko);if(box.isConnected){box.setAttribute('data-noi18n','');box.textContent=ko}}
+  catch(e){if(box.isConnected){box.classList.add('err');box.textContent=e.message}}
 }
 function vtSave(quit){
   if(!VT||!VT.res.length) return;
