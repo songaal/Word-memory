@@ -936,7 +936,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.48.0</span> · <span class="version-date">2026/11/02</span></p>
+          <p class="note"><span class="version-tag">v2.48.1</span> · <span class="version-date">2026/11/02</span></p>
         </div>
       </div></div>
     </div>
@@ -3388,10 +3388,22 @@ function vtCheck(skip){
   if(!ok&&!skip){vtWrong(built);return}
   vtReveal(ok,skip,built);
 }
-// Wrong: the answer stays hidden; Fix brings the blocks back as submitted (a right fix counts as right), Next gives up
+// The answer row above the blocks (🔊, ♡, sentence, translate); shown on check, hidden again by Fix
+function vtShowAnswer(t,ok){
+  const old=$('vtStage').querySelector('.vtrev');if(old) old.remove();
+  $('vtAns').insertAdjacentHTML('beforebegin',`<div class="vtrev">
+    <div class="vth"><span class="lbl">${ok?'Correct!':'Answer'}</span><span class="sp"></span>
+      <button class="ctool" type="button" data-say="${esc(t)}" data-kind="ex" aria-label="Listen">${SPK_ICON}</button>${vtHeart(t)}</div>
+    <div class="vts"><span data-noi18n>${esc(t)}</span> <button class="vttr" type="button" id="vtTr" aria-pressed="false" aria-label="Show Korean translation">${TR_ICON}</button></div>
+    <span class="vtko" id="vtKo" data-noi18n hidden></span></div>`);
+  $('vtTr').onclick=()=>vtTranslate(t);
+}
+// Wrong: the answer is shown; Fix brings the blocks back as submitted (a right fix counts as right), Next gives up
 function vtWrong(built){
   VT.phase='wrong';
   if($('vtHintPop')) $('vtHintPop').remove();
+  $('vtStage').classList.add('vtdone');
+  vtShowAnswer(vtList()[VT.k],false);
   $('vtAns').classList.add('no');
   $('vtAns').querySelectorAll('[data-va]').forEach((b,p)=>b.classList.add(VT.words[VT.pick[p]]===VT.words[p]?'r':'w'));
   const f=$('vtStage').querySelector('.vtfoot');
@@ -3404,11 +3416,13 @@ function vtFix(){
   if(!VT||VT.phase!=='wrong') return;
   VT.phase='build';
   $('vtAns').classList.remove('no');
+  const rv=$('vtStage').querySelector('.vtrev');if(rv) rv.remove();   // hide the answer again while fixing
+  $('vtStage').classList.remove('vtdone');
   const f=$('vtStage').querySelector('.vtfoot');
   f.className='vtfoot vtfoot2';
   f.innerHTML=`<button class="btn ghost" id="vtSkip" type="button">Skip</button><button class="btn" id="vtCheck" type="button">Check</button>`;
   $('vtCheck').onclick=()=>vtCheck(false);$('vtSkip').onclick=()=>vtCheck(true);
-  vtDrawAns();
+  vtDrawAns();requestAnimationFrame(vtFit);
 }
 function vtReveal(ok,skip,built){
   VT.phase='checked';$('vtStage').classList.add('vtdone');
@@ -3422,12 +3436,7 @@ function vtReveal(ok,skip,built){
   $('vtPool').remove();$('vtStage').querySelector('.vthrow').remove();if($('vtHintPop')) $('vtHintPop').remove();
   if(skip) $('vtAns').innerHTML=`<span class="vtskipped">Skipped</span>`;
   const last=VT.k>=L.length-1,missed=VT.res.filter(x=>!x.ok).length,toRetry=last&&VT.round===1&&missed>0;
-  $('vtAns').insertAdjacentHTML('beforebegin',`<div class="vtrev">
-    <div class="vth"><span class="lbl">${ok?'Correct!':'Answer'}</span><span class="sp"></span>
-      <button class="ctool" type="button" data-say="${esc(t)}" data-kind="ex" aria-label="Listen">${SPK_ICON}</button>${vtHeart(t)}</div>
-    <div class="vts"><span data-noi18n>${esc(t)}</span> <button class="vttr" type="button" id="vtTr" aria-pressed="false" aria-label="Show Korean translation">${TR_ICON}</button></div>
-    <span class="vtko" id="vtKo" data-noi18n hidden></span></div>`);
-  $('vtTr').onclick=()=>vtTranslate(t);
+  vtShowAnswer(t,ok);
   $('vtStage').querySelector('.vtfoot').className='vtfoot';
   $('vtStage').querySelector('.vtfoot').innerHTML=`<button class="btn${ok?'':' blue'}" id="vtNext" type="button">${last&&!toRetry?'See results':'Next'}</button>`;
   $('vtNext').onclick=()=>{if(!last){VT.k++;vtQuestion()}else if(toRetry) vtRetryIntro();else vtFinish(false)};
