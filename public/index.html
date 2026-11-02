@@ -56,6 +56,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .stack .stack{margin:0;max-width:none;width:100%}
 .kb .tabbar,.intest .tabbar{display:none}
 .tabbar{transition:transform .28s ease,margin-bottom .28s ease;will-change:transform}
+body.vplay .tabbar{display:none!important}
 .tbhide .tabbar{transform:translateY(100%);margin-bottom:calc(-1 * var(--tbh,64px))}
 .tabbar{display:flex;background:var(--bar);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 6px) var(--gutter-l)}
 .tabbar button{flex:1;background:none;border:2px solid transparent;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:3px 0;color:var(--muted);font:800 11px var(--f-ui);cursor:pointer;position:relative;margin:0 3px}
@@ -168,8 +169,8 @@ textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 .vtgapm{display:inline-block;width:4px;height:40px;border-radius:2px;background:var(--blue);align-self:center;animation:pop .15s ease-out}
 .vtstage.vtplay{overflow:hidden}
 .vtstage.vtplay>*{flex:none}
-.vtstage.vtplay .vtans{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-.vtstage.vtplay .vtpool{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;align-content:flex-start;padding:2px 0 6px}
+.vtstage.vtplay .vtans{flex:0 0 auto;min-height:30%;overflow:visible;transition:min-height .2s}
+.vtstage.vtplay .vtpool{flex:1 1 0;min-height:0;overflow:hidden;align-content:flex-start;padding:2px 0 6px}
 .vtstage.vtplay .vtrev{max-height:44%;overflow-y:auto}
 .vthrow{display:flex;align-items:center;gap:8px}
 #vtHintPop .vtpopc{background:#fffbea;border-color:#ffe08a}
@@ -931,7 +932,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.47.1</span> · <span class="version-date">2026/11/02</span></p>
+          <p class="note"><span class="version-tag">v2.47.2</span> · <span class="version-date">2026/11/02</span></p>
         </div>
       </div></div>
     </div>
@@ -1928,7 +1929,7 @@ function setTabbarHidden(h){
   tbIgnore=Date.now()+350;   // the scroll area resizes during the slide; ignore those scroll events
   document.body.classList.toggle('tbhide',h);
 }
-document.querySelectorAll('#s-dict .scroll:not(#testScroll), #s-story .scroll:not(#storyTestScroll)').forEach(el=>{
+document.querySelectorAll('#s-dict .scroll:not(#testScroll), #s-story .scroll:not(#storyTestScroll), #vpane-list .scroll, #jnScroll').forEach(el=>{
   let last=0;
   el.addEventListener('scroll',()=>{
     const max=el.scrollHeight-el.clientHeight, top=Math.max(0,Math.min(el.scrollTop,max)), d=top-last;
