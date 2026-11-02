@@ -349,6 +349,7 @@ async function putExtra(request, env) {
   const key = `wm:extra:${user.sub}`;
   const cur = await env.WORDS.get(key, 'json').catch(() => null) || {};
   const idOk = x => x && typeof x === 'object' && typeof x.id === 'string' && x.id.length <= 40;
+  const cleanItems = a => (Array.isArray(a) ? a : []).slice(0, 20).map(i => ({ t: String(i && i.t || '').slice(0, 1000), ok: !!(i && i.ok), a: String(i && i.a || '').slice(0, 1000) }));
   const sm = new Map();
   for (const x of [...(cur.sentences || []), ...((body && body.sentences) || [])]) {
     if (!idOk(x)) continue;
@@ -364,7 +365,8 @@ async function putExtra(request, env) {
   for (const x of [...(cur.vtests || []), ...((body && body.vtests) || [])]) {
     if (!idOk(x) || !/^[A-Za-z0-9_-]{11}$/.test(x.vid || '')) continue;
     tm.set(x.id, { id: x.id, at: String(x.at || ''), vid: x.vid, title: String(x.title || '').slice(0, 300), total: +x.total || 0, ok: +x.ok || 0,
-      secs: +x.secs || 0, quit: !!x.quit, items: (Array.isArray(x.items) ? x.items : []).slice(0, 20).map(i => ({ t: String(i && i.t || '').slice(0, 1000), ok: !!(i && i.ok), a: String(i && i.a || '').slice(0, 1000) })) });
+      secs: +x.secs || 0, quit: !!x.quit, items: cleanItems(x.items),
+      ...(x.retry && typeof x.retry === 'object' ? { retry: { ok: +x.retry.ok || 0, total: +x.retry.total || 0, items: cleanItems(x.retry.items) } } : {}) });
   }
   const vtests = [...tm.values()].sort((a, b) => a.at < b.at ? 1 : -1).slice(0, 300);
   const rec = { sentences, vtests, updatedAt: new Date().toISOString() };
