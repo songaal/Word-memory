@@ -182,6 +182,7 @@ textarea{font:400 16px/1.5 var(--f-mono);resize:vertical;width:100%}
 .vthrow .hintbtn{flex:none;height:34px;display:inline-flex;align-items:center;gap:4px}
 .vthrow .hintbtn:disabled{opacity:.45}
 .vtfoot2{display:grid!important;grid-template-columns:1fr 3fr;gap:10px}
+.vtfoot3{display:grid!important;grid-template-columns:1fr 1fr;gap:10px}
 .vtskipped{margin:auto;font:800 16px var(--f-ui);color:var(--bad)}
 .vtpopb{display:flex;gap:10px;justify-content:center}
 .vtpopc .ctool[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -935,7 +936,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.47.5</span> · <span class="version-date">2026/11/02</span></p>
+          <p class="note"><span class="version-tag">v2.48.0</span> · <span class="version-date">2026/11/02</span></p>
         </div>
       </div></div>
     </div>
@@ -3180,7 +3181,7 @@ $('snBody').addEventListener('click',async e=>{
 // ---------- Video test: the sentence flashes, then you build it from word blocks ----------
 // 10 sentences picked at random from the transcript (≥ 25 characters), avoiding ones asked in earlier tests of
 // this video; each is shown for 1–4 s by length; Check grades it. Results go to XT.vtests (Test history).
-const VT_N=10;
+const VT_N=5;
 let VT=null;   // {vid, title, qs:[text], k, ok, res:[{t, ok, a}], el:secs, t0, tm, phase, pick:[block index], blocks:[text], order:[]}
 // transcript noise out of test sentences: [Music] / [ __ ] / (laughs), speaker marks >>, ♪, stray brackets and dashes;
 // a "word" with no letter or digit is dropped
@@ -3382,8 +3383,37 @@ function vtDrEnd(){
 }
 function vtCheck(skip){
   if(!VT||VT.phase!=='build'||(!skip&&VT.pick.length!==VT.words.length)) return;
-  vtDrEnd();VT.phase='checked';$('vtStage').classList.add('vtdone');
-  const L=vtList(),t=L[VT.k],built=skip?[]:VT.pick.map(i=>VT.words[i]),ok=!skip&&built.join(' ')===VT.words.join(' ');
+  vtDrEnd();
+  const built=skip?[]:VT.pick.map(i=>VT.words[i]),ok=!skip&&built.join(' ')===VT.words.join(' ');
+  if(!ok&&!skip){vtWrong(built);return}
+  vtReveal(ok,skip,built);
+}
+// Wrong: the answer stays hidden; Fix brings the blocks back as submitted (a right fix counts as right), Next gives up
+function vtWrong(built){
+  VT.phase='wrong';
+  if($('vtHintPop')) $('vtHintPop').remove();
+  $('vtAns').classList.add('no');
+  $('vtAns').querySelectorAll('[data-va]').forEach((b,p)=>b.classList.add(VT.words[VT.pick[p]]===VT.words[p]?'r':'w'));
+  const f=$('vtStage').querySelector('.vtfoot');
+  f.className='vtfoot vtfoot3';
+  f.innerHTML=`<button class="btn orange" id="vtFix" type="button">Fix</button><button class="btn blue" id="vtNext" type="button">Next</button>`;
+  $('vtFix').onclick=vtFix;
+  $('vtNext').onclick=()=>{if(VT&&VT.phase==='wrong') vtReveal(false,false,built)};
+}
+function vtFix(){
+  if(!VT||VT.phase!=='wrong') return;
+  VT.phase='build';
+  $('vtAns').classList.remove('no');
+  const f=$('vtStage').querySelector('.vtfoot');
+  f.className='vtfoot vtfoot2';
+  f.innerHTML=`<button class="btn ghost" id="vtSkip" type="button">Skip</button><button class="btn" id="vtCheck" type="button">Check</button>`;
+  $('vtCheck').onclick=()=>vtCheck(false);$('vtSkip').onclick=()=>vtCheck(true);
+  vtDrawAns();
+}
+function vtReveal(ok,skip,built){
+  VT.phase='checked';$('vtStage').classList.add('vtdone');
+  const L=vtList(),t=L[VT.k];
+  $('vtAns').classList.remove('no');
   if(ok) chime();
   const r={t,ok,a:skip?'(skipped)':ok?'':built.join(' ')};
   if(VT.round===2){if(ok) VT.ok2++;VT.res2.push(r)}else{if(ok) VT.ok++;VT.res.push(r)}
@@ -6016,7 +6046,7 @@ const I18N_KO={
 'Already in your list':'이미 목록에 있어요','Removed from Sentences':'문장 목록에서 뺐어요','Saved to Writing → Sentences':'글쓰기 → 문장에 저장했어요','Save to Sentences':'문장에 저장',
 'Sentence test':'문장 테스트','Test history':'테스트 기록','This video':'이 영상','All videos':'모든 영상','No tests yet. Open a video and tap Test.':'아직 테스트가 없어요. 영상을 열고 테스트를 눌러 보세요.',
 'Test result':'테스트 결과','‹ Test history':'‹ 테스트 기록','Open video':'영상 열기','Quit the test?':'테스트를 그만할까요?','Nothing is saved yet.':'아직 저장된 게 없어요.',
-'Correct!':'정답!','Hint':'힌트','Skipped':'건너뜀','Pause and continue later':'멈추고 나중에 이어하기','Paused. Continue it from Test history.':'멈췄어요. 테스트 기록에서 이어서 할 수 있어요.',
+'Correct!':'정답!','Fix':'수정하기','Hint':'힌트','Skipped':'건너뜀','Pause and continue later':'멈추고 나중에 이어하기','Paused. Continue it from Test history.':'멈췄어요. 테스트 기록에서 이어서 할 수 있어요.',
 '▶ Continue test':'▶ 테스트 이어하기','▶ Continue the paused test':'▶ 멈춘 테스트 이어하기','Test latest video':'최근 영상 테스트','That journal entry is gone.':'그 일기가 없어졌어요.',
 'Journal test history':'일기 테스트 기록','No journal tests yet. Tap Test on an entry.':'아직 일기 테스트가 없어요. 일기에서 테스트를 눌러 보세요.','EN → EN':'영 → 영','KO → EN':'한 → 영','Memory':'메모리','Build this in English':'이 문장을 영어로 만들어 보세요','↻ Missed sentences · try again':'↻ 틀린 문제 다시 풀기','↻ Missed sentence':'↻ 틀린 문제',
 'Missed sentences':'틀린 문제 다시 풀기','Your score stays as it was. This round is practice.':'점수는 그대로예요. 이번 판은 연습이에요.','Start the retry':'다시 풀기 시작','Skip':'건너뛰기',
