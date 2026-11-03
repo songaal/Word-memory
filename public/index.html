@@ -936,7 +936,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.49.1</span> · <span class="version-date">2026/11/03</span></p>
+          <p class="note"><span class="version-tag">v2.49.2</span> · <span class="version-date">2026/11/03</span></p>
         </div>
       </div></div>
     </div>
@@ -1937,7 +1937,7 @@ const URL_DICT={search:'dictionary',list:'',test:'test'};
 const URL_WRITE={tr:'',jn:'journal',sn:'sentences'};
 const URL_DICT_OLD={dictionary:'search',words:'list',test:'test'},URL_WRITE_OLD={translate:'tr',journal:'jn',sentences:'sn'};
 const urlInv=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[v,k]));
-const ROUTE=(()=>{
+function parseRoute(){
   const q=new URLSearchParams(location.search);
   const seg=location.pathname.split('/').filter(Boolean).map(x=>decodeURIComponent(x));
   const old=q.get('tab')!=null;   // v2.49.0 query-string link
@@ -1948,7 +1948,8 @@ const ROUTE=(()=>{
   if(r.tab==='write'&&(old?sub:true)) r.write=old?URL_WRITE_OLD[sub]||'':urlInv(URL_WRITE)[sub]||'tr';
   if(r.tab==='me') r.page=sub;
   return r;
-})();
+}
+const ROUTE=parseRoute();
 let urlReady=false,routeDone=false,routeStoryRetry=false;
 function urlNow(){
   const path=[URL_TAB[curTab]],q=new URLSearchParams();
@@ -1960,10 +1961,49 @@ function urlNow(){
   const p='/'+path.filter(Boolean).join('/'),t=q.toString();return p+(t?'?'+t:'');
 }
 const urlFull=()=>location.origin+urlNow();
+// Each screen change gets its own history entry (pushState, v2.49.2), so the back gesture walks back through screens
+// (and iOS Chrome, which ignores replaceState in its address bar, shows the path). An entry's state carries u = its URL;
+// an entry pushed by older code without u (story / video / settings page / overlays) is just given the URL (replace).
+// Changes that keep the screen (the selected video sentence, ?s=) replace instead of pushing.
+let urlApplying=false,urlLast=null;   // urlLast = the screen entry on top {u, st}: put back when back only closed a sheet or popup
+const urlKey=u=>u.replace(/[?&]s=\d+/,'').replace(/\?$/,'');
+function urlMarks(){
+  const m={};
+  if(curTab==='video'&&V.vid) m.video=V.vid;
+  if(curTab==='story'&&storyPane==='list'&&storyView) m.story=storyView;
+  if(curTab==='me'&&mePage&&mePage!=='main') m.me=mePage;
+  return m;
+}
 function urlSync(){
-  if(!urlReady) return;
-  const u=urlNow();if(u===location.pathname+location.search) return;
-  try{window.history.replaceState(window.history.state,'',u)}catch(e){}
+  if(!urlReady||urlApplying) return;
+  const u=urlNow(),st=window.history.state;
+  if(u===location.pathname+location.search&&st&&st.u===u){urlLast={u,st};return}
+  try{
+    if(!st||st.u==null||urlKey(st.u)===urlKey(u)) window.history.replaceState({...(st||{}),...urlMarks(),u},'',u);
+    else window.history.pushState({...urlMarks(),u},'',u);
+  }catch(e){}
+  urlLast={u,st:window.history.state};
+}
+function urlRestore(){if(urlLast&&location.pathname+location.search!==urlLast.u) try{window.history.pushState(urlLast.st,'',urlLast.u)}catch(e){}}
+// back / forward landed on a screen entry: show what its URL says
+function routeApply(r){
+  urlApplying=true;
+  try{
+    if(V.vid&&!(r.tab==='video'&&r.v===V.vid)) closeVideo();
+    if(r.tab==='dict') dictPane=r.dict;
+    if(r.tab==='story'){
+      storyPane=r.story;
+      const sv=r.story==='list'&&r.id&&storyById(r.id)?r.id:null;
+      if(sv!==storyView){stopReading();storyView=sv;storyConfirm=false;srPos=null}
+    }
+    if(r.tab==='write'&&r.write){writePane=r.write;lsSet('wm.writePane',writePane)}
+    if(r.tab==='me') mePage=SETTINGS_MENU.some(m=>m.id===r.page)?r.page:'main';
+    show(r.tab);
+    if(r.tab==='video'&&r.v&&r.v!==V.vid&&/^[A-Za-z0-9_-]{6,20}$/.test(r.v)){V.startS=r.s;openVideo(r.v)}
+  }finally{urlApplying=false}
+  const u=urlNow();
+  if(u!==location.pathname+location.search) try{window.history.replaceState({...(window.history.state||{}),...urlMarks(),u},'',u)}catch(e){}
+  urlLast={u,st:window.history.state};
 }
 // before the first render: tab and sub-tab from the URL
 function routeBoot(){
@@ -5666,13 +5706,10 @@ window.addEventListener('popstate',e=>{
     return;
   }
   if(!$('jlearn').hidden){jlClose(true);return}
-  if(!$('pop').hidden){closePop();return}
-  if(!$('sheet').hidden){closeSheet();return}
+  if(!$('pop').hidden){closePop();urlRestore();return}   // sheets and the word popup have no history entry of their own
+  if(!$('sheet').hidden){closeSheet();urlRestore();return}
   if(!$('vchat').hidden){vChatClose(true);return}
-  if(curTab==='video'&&V.vid&&!(e.state&&e.state.video)){closeVideo();return}
-  if(curTab==='story'&&storyView&&!(e.state&&e.state.story)){stopReading();storyView=null;storyConfirm=false;if(curTab==='story') renderStories();return}
-  const page=(e.state&&e.state.me)||'main';
-  if(curTab==='me'){mePage=page;renderMe()}else mePage=page;
+  routeApply(parseRoute());
 });
 async function loadSettings(){
   if(acct==='cloud'){
