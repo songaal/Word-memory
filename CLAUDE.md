@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.48.1</span> · <span class="version-date">2026/11/02</span>
+<span class="version-tag">v2.49.0</span> · <span class="version-date">2026/11/03</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.48.1 — 2026/11/02**
+**Current version: v2.49.0 — 2026/11/03**
 
 ## How to start a new session (read this first)
 
@@ -46,7 +46,7 @@ word-memory/
    - `account & storage`, `language` (`LANG`, `LOC()`), sample story, `keep in step with other devices` (`refreshCloud`, `rerenderCurrent`), `sign-in` (`initEmailLogin`, Google GSI, `api()`, `save()`, `mergeData`, `migrate`, `applySeeds`)
    - `dates` (`today()`, `addDays`, `diffDays`), `built-in words`, `helpers` (`wordSummary`, `stageLabel`, `INTERVALS`), `test items` (`itemsOf`, `allItems`, `isDue`), `dictionary lookup` (`lookup`, `findCard`, `tapCache`)
    - `sound` / `Google Cloud Text-to-Speech` (`gSay`, `gAudio`, `makeUtter`, `speak`, `sayExample`), `story reader` (`startReading`/`stopReading`/`markReading`), `translation` (`translateText`, `translateManyKo`, `SETTINGS0`), `word card` (`cardHTML`)
-   - `tabs` (`TABS`, `show(name)`, tab-bar auto hide), `home` (`renderHome`), `learn` (`startLearn`, `lp*` card reader, typing practice `openPractice`, card ▶ `crPlay`)
+   - `tabs` (`TABS`, `show(name)`, then `page URLs`: `URL_TAB`/`URL_DICT`/`URL_WRITE`, `ROUTE`, `urlNow`/`urlSync`/`urlFull`, `routeBoot`/`routeAfter`/`routeStory`; tab-bar auto hide), `home` (`renderHome`), `learn` (`startLearn`, `lp*` card reader, typing practice `openPractice`, card ▶ `crPlay`)
    - `word notes` (shared per word: `NOTE_ICON`, `noteCache`/`noteFetch`, `openNote`/`renderNote`/`saveNote`, `#noteSheet`)
    - `writing` → `Video` (state `V`, `openVideo`, `renderVideoPlay`, `vPlaySingle`/`vStartTracker`, `vFetchTr`, sentence study `vStudyAsk`/`vChat*`) → `renderWrite` → `extra data` (`XT`, `xt()`, `xtLoad`/`xtPush`, sentences `snAdd`/`snFind`/`snRemove`, hearts `heartHTML`) → Writing → Sentences (`renderSentences`) → `Video test` (`VT` from `vtNew`, `vtStart`, `vtOpenOverlay`, `vtQuestion`, `vtHint`, `vtKoGet`, `vtCheck(skip)`, `vtRetryIntro`, `vtFinish`, pause `vtPauseLater`/`vtResume`/`vtContinue`, `vtStartLatest`, `vtHistory(scope)`/`vtHistDetail`) → Journal Learn/Test (`jnSentences`, `jko`/`jkoFetch`, `jlOpen`/`jlRender`/`jlClose`, `jtStart`/`jtModes`) → Translate (`renderTranslate`) → Journal (`jn*`) → Enhance
    - `test` (`renderResult`, history), `test tab` (`testPane`, `storyPane`, `renderStoryTab`, `setQuit`, timer `tmr*`, `openWordsTest`/`openStoryTest`), `stories: shared helpers` (`storyMatches`, `storyHTML`, `tapWordsHTML`), `story test`, `letter-slot blank` (`gapHTML`/`setupGap`), `schedule test` (`startTest`, `grade` = **the review schedule**)
@@ -73,6 +73,7 @@ word-memory/
 - **Call an AI**: `aiComplete(system, user, p, {maxTokens, stream})` for one JSON answer, `aiChat(system, messages)` for a conversation (plain text), `aiVision(prompt, images)` for photos. Always check `aiKey()` first and point to Me → Settings → AI when it is missing.
 - **Add a worker endpoint**: a route line in `fetch`, a handler using `currentUser`, `json()`; keys start with `wm:`; document it in the Backend section below.
 - **Any UI text**: write it in English and add the Korean to `I18N_KO` (exact string) or `I18N_KO_RE` (pattern). Mark learning content `data-noi18n` or add a selector to `I18N_SKIP`. Check for an existing key before adding (duplicate keys silently override).
+- **Page URLs (v2.49.0)**: every screen has a GET URL on `/` so a copied link opens the same screen elsewhere: `/` (Home) · `?tab=story` (+ `&view=test` or `&id=<story id>`) · `?tab=words&view=dictionary|words|test` · `?tab=video` (+ `&v=<YouTube id>&s=<sentence, 1-based>`) · `?tab=writing&view=translate|journal|sentences` · `?tab=me` (+ `&page=<SETTINGS_MENU id>`). `urlNow()` builds it from state (`curTab`, `dictPane`, `storyPane`/`storyView`, `V.vid`/`V.cur`, `writePane`, `mePage`); `urlSync()` (replaceState, keeps `history.state`, no-op until the first render) is called at the end of `show`, `renderDict`, `renderStoryTab`, `renderStories`, `renderWrite`, `openMePage`, `openVideo`, `closeVideo`, `vHighlight`. On start `ROUTE` is parsed; the first `renderAll` runs `routeBoot` (tab/sub-tab) and `routeAfter` (story page, settings page, video — each pushed as its own history entry so back returns to the tab; `V.startS` makes `openVideo` select `?s=`; a story missing from the cache is retried once when account data arrives). Video ⋯ and story ⋯ menus have **Copy link** (`urlFull()`, for the home-screen app with no address bar). A new screen or sub-tab needs a key in `urlNow`/`routeBoot` and a `urlSync()` call.
 - **Navigation / back gesture**: use `window.history` (never bare `history` — that name is the test-history array). Push a state when opening a page-like view and handle it in the `popstate` listener (scoped by `curTab`).
 - **Bottom sheets**: `openSheet(title, html)` / `closeSheet()`; word popup `openPop(card)`; a sheet that must stay open over others needs its own element with a higher z-index (see `#pracSheet`, `#vchat`).
 
