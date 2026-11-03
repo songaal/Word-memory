@@ -5,7 +5,7 @@
 The app version is shown in the About card on the Me tab in `public/index.html`:
 
 ```html
-<span class="version-tag">v2.49.0</span> · <span class="version-date">2026/11/03</span>
+<span class="version-tag">v2.49.1</span> · <span class="version-date">2026/11/03</span>
 ```
 
 1. **Always bump the version** — no commit should leave the version unchanged.
@@ -13,7 +13,7 @@ The app version is shown in the About card on the Me tab in `public/index.html`:
 3. **Minor (second digit)**: new user-facing feature (reset patch to 0). e.g. v1.0.x → v1.1.0
 4. **Date**: update to today's date in `YYYY/MM/DD` format every time.
 
-**Current version: v2.49.0 — 2026/11/03**
+**Current version: v2.49.1 — 2026/11/03**
 
 ## How to start a new session (read this first)
 
@@ -56,7 +56,7 @@ word-memory/
 
 ### src/index.js — the Worker
 
-`export default { fetch }` routes `/api/*` (anything else → `env.ASSETS`). Groups: auth (`login`, `newSession`, `linkEmail`, `logout`, `me`, `currentUser` reads `Authorization: Bearer <session>`), TOTP (`totp*`), words (`getWords`/`putWords` with the 409 conflict check), journal (`getJournal`/`putJournal`, per-entry merge), video (`video()` handles `/api/video/*`), settings (`getSettings`/`putSettings`, whitelist `SETTING_FIELDS`), dictionary (`lookup` → `fromMerriamWebster` + `fromThesaurus`, `freqRank`). Helpers: `json()`, `MAX_BODY`.
+`export default { fetch }` routes `/api/*`; app screen paths (`APP_PATH`: `/story`, `/words/test`, `/me/voice` …) get `index.html`; anything else → `env.ASSETS`. Groups: auth (`login`, `newSession`, `linkEmail`, `logout`, `me`, `currentUser` reads `Authorization: Bearer <session>`), TOTP (`totp*`), words (`getWords`/`putWords` with the 409 conflict check), journal (`getJournal`/`putJournal`, per-entry merge), video (`video()` handles `/api/video/*`), settings (`getSettings`/`putSettings`, whitelist `SETTING_FIELDS`), dictionary (`lookup` → `fromMerriamWebster` + `fromThesaurus`, `freqRank`). Helpers: `json()`, `MAX_BODY`.
 
 ### Data (per user, KV `wm:words:<sub>`; plus `wm:extra:<sub>` and shared `wm:note:<word>`)
 
@@ -73,7 +73,7 @@ word-memory/
 - **Call an AI**: `aiComplete(system, user, p, {maxTokens, stream})` for one JSON answer, `aiChat(system, messages)` for a conversation (plain text), `aiVision(prompt, images)` for photos. Always check `aiKey()` first and point to Me → Settings → AI when it is missing.
 - **Add a worker endpoint**: a route line in `fetch`, a handler using `currentUser`, `json()`; keys start with `wm:`; document it in the Backend section below.
 - **Any UI text**: write it in English and add the Korean to `I18N_KO` (exact string) or `I18N_KO_RE` (pattern). Mark learning content `data-noi18n` or add a selector to `I18N_SKIP`. Check for an existing key before adding (duplicate keys silently override).
-- **Page URLs (v2.49.0)**: every screen has a GET URL on `/` so a copied link opens the same screen elsewhere: `/` (Home) · `?tab=story` (+ `&view=test` or `&id=<story id>`) · `?tab=words&view=dictionary|words|test` · `?tab=video` (+ `&v=<YouTube id>&s=<sentence, 1-based>`) · `?tab=writing&view=translate|journal|sentences` · `?tab=me` (+ `&page=<SETTINGS_MENU id>`). `urlNow()` builds it from state (`curTab`, `dictPane`, `storyPane`/`storyView`, `V.vid`/`V.cur`, `writePane`, `mePage`); `urlSync()` (replaceState, keeps `history.state`, no-op until the first render) is called at the end of `show`, `renderDict`, `renderStoryTab`, `renderStories`, `renderWrite`, `openMePage`, `openVideo`, `closeVideo`, `vHighlight`. On start `ROUTE` is parsed; the first `renderAll` runs `routeBoot` (tab/sub-tab) and `routeAfter` (story page, settings page, video — each pushed as its own history entry so back returns to the tab; `V.startS` makes `openVideo` select `?s=`; a story missing from the cache is retried once when account data arrives). Video ⋯ and story ⋯ menus have **Copy link** (`urlFull()`, for the home-screen app with no address bar). A new screen or sub-tab needs a key in `urlNow`/`routeBoot` and a `urlSync()` call.
+- **Page URLs (v2.49.0, paths since v2.49.1)**: every screen has its own path so a copied link opens the same screen elsewhere; values that pick an item stay in the query: `/` (Home) · `/story`, `/story/test`, `/story?id=<story id>` · `/words` (word list), `/words/dictionary`, `/words/test` · `/video`, `/video?v=<YouTube id>&s=<sentence, 1-based>` · `/writing` (Translate), `/writing/journal`, `/writing/sentences` · `/me`, `/me/<SETTINGS_MENU id>`. The Worker serves `index.html` for these paths (`APP_PATH` at the end of `src/index.js`, GET only; other unknown paths stay 404), so **every asset link in `index.html` must be absolute (`/icons/…`, `/manifest.json`)**. Old v2.49.0 links (`?tab=…&view=…&page=…`) are still parsed (`URL_DICT_OLD`, `URL_WRITE_OLD`) and rewritten on load. `urlNow()` builds the URL from state (`curTab`, `dictPane`, `storyPane`/`storyView`, `V.vid`/`V.cur`, `writePane`, `mePage`) using `URL_TAB`/`URL_DICT`/`URL_WRITE` ('' = the bare tab path); `urlSync()` (replaceState, keeps `history.state`, no-op until the first render) is called at the end of `show`, `renderDict`, `renderStoryTab`, `renderStories`, `renderWrite`, `openMePage`, `openVideo`, `closeVideo`, `vHighlight`. On start `ROUTE` is parsed; the first `renderAll` runs `routeBoot` (tab/sub-tab) and `routeAfter` (story page, settings page, video — each pushed as its own history entry so back returns to the tab; `V.startS` makes `openVideo` select `?s=`; a story missing from the cache is retried once when account data arrives). Video ⋯ and story ⋯ menus have **Copy link** (`urlFull()`, for the home-screen app with no address bar). A new screen or sub-tab needs a key in `URL_*`/`urlNow`/`ROUTE`, a `urlSync()` call, and its first path segment added to `APP_PATH`.
 - **Navigation / back gesture**: use `window.history` (never bare `history` — that name is the test-history array). Push a state when opening a page-like view and handle it in the `popstate` listener (scoped by `curTab`).
 - **Bottom sheets**: `openSheet(title, html)` / `closeSheet()`; word popup `openPop(card)`; a sheet that must stay open over others needs its own element with a higher z-index (see `#pracSheet`, `#vchat`).
 

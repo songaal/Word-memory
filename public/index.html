@@ -936,7 +936,7 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.49.0</span> · <span class="version-date">2026/11/03</span></p>
+          <p class="note"><span class="version-tag">v2.49.1</span> · <span class="version-date">2026/11/03</span></p>
         </div>
       </div></div>
     </div>
@@ -1926,28 +1926,38 @@ document.addEventListener('click',e=>{
 const TABS=['home','story','dict','video','write','me'];
 let curTab='home';
 // ---------- page URLs ----------
-// Every main screen has its own GET URL (query string on /), so a copied link opens the same screen on another tab or device:
-//   /  ·  ?tab=story[&view=test | &id=<story>]  ·  ?tab=words&view=dictionary|words|test  ·  ?tab=video[&v=<YouTube id>&s=<sentence, 1-based>]
-//   ?tab=writing&view=translate|journal|sentences  ·  ?tab=me[&page=<settings page id>]
+// Every main screen has its own path, so a copied link opens the same screen on another tab or device
+// (the Worker serves index.html for these paths; values that pick an item stay in the query string):
+//   /  ·  /story  /story/test  /story?id=<story>  ·  /words  /words/dictionary  /words/test  ·  /video  /video?v=<YouTube id>&s=<sentence, 1-based>
+//   /writing (Translate)  /writing/journal  /writing/sentences  ·  /me  /me/<settings page id>
+// Old links (?tab=…&view=…&page=…, v2.49.0) are still read and rewritten to the new form.
 // urlSync() rewrites the address (replaceState, history.state kept) after each screen change; ROUTE is the URL read at start, applied once on the first render.
 const URL_TAB={home:'',story:'story',dict:'words',video:'video',write:'writing',me:'me'};
-const URL_DICT={search:'dictionary',list:'words',test:'test'};
-const URL_WRITE={tr:'translate',jn:'journal',sn:'sentences'};
+const URL_DICT={search:'dictionary',list:'',test:'test'};
+const URL_WRITE={tr:'',jn:'journal',sn:'sentences'};
+const URL_DICT_OLD={dictionary:'search',words:'list',test:'test'},URL_WRITE_OLD={translate:'tr',journal:'jn',sentences:'sn'};
 const urlInv=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[v,k]));
 const ROUTE=(()=>{
   const q=new URLSearchParams(location.search);
-  return {tab:urlInv(URL_TAB)[q.get('tab')||'']||'home',view:q.get('view')||'',id:q.get('id')||'',v:q.get('v')||'',s:parseInt(q.get('s'),10)||0,page:q.get('page')||''};
+  const seg=location.pathname.split('/').filter(Boolean).map(x=>decodeURIComponent(x));
+  const old=q.get('tab')!=null;   // v2.49.0 query-string link
+  const tab=old?q.get('tab'):(seg[0]||''),sub=old?(q.get('view')||q.get('page')||''):(seg[1]||'');
+  const r={tab:urlInv(URL_TAB)[tab]||'home',id:q.get('id')||'',v:q.get('v')||'',s:parseInt(q.get('s'),10)||0,dict:'',story:'',write:'',page:''};
+  if(r.tab==='dict') r.dict=old?URL_DICT_OLD[sub]||'list':urlInv(URL_DICT)[sub]||'list';
+  if(r.tab==='story') r.story=sub==='test'?'test':'list';
+  if(r.tab==='write'&&(old?sub:true)) r.write=old?URL_WRITE_OLD[sub]||'':urlInv(URL_WRITE)[sub]||'tr';
+  if(r.tab==='me') r.page=sub;
+  return r;
 })();
 let urlReady=false,routeDone=false,routeStoryRetry=false;
 function urlNow(){
-  const q=new URLSearchParams();
-  if(curTab!=='home') q.set('tab',URL_TAB[curTab]);
-  if(curTab==='story'){if(storyPane==='test') q.set('view','test');else if(storyView) q.set('id',storyView)}
-  else if(curTab==='dict') q.set('view',URL_DICT[dictPane]||'words');
+  const path=[URL_TAB[curTab]],q=new URLSearchParams();
+  if(curTab==='story'){if(storyPane==='test') path.push('test');else if(storyView) q.set('id',storyView)}
+  else if(curTab==='dict') path.push(URL_DICT[dictPane]||'');
   else if(curTab==='video'&&V.vid){q.set('v',V.vid);if(V.sents.length&&V.cur>=0) q.set('s',V.cur+1)}
-  else if(curTab==='write') q.set('view',URL_WRITE[writePane]||'translate');
-  else if(curTab==='me'&&mePage&&mePage!=='main') q.set('page',mePage);
-  const t=q.toString();return '/'+(t?'?'+t:'');
+  else if(curTab==='write') path.push(URL_WRITE[writePane]||'');
+  else if(curTab==='me'&&mePage&&mePage!=='main') path.push(encodeURIComponent(mePage));
+  const p='/'+path.filter(Boolean).join('/'),t=q.toString();return p+(t?'?'+t:'');
 }
 const urlFull=()=>location.origin+urlNow();
 function urlSync(){
@@ -1958,9 +1968,9 @@ function urlSync(){
 // before the first render: tab and sub-tab from the URL
 function routeBoot(){
   const r=ROUTE;curTab=TABS.includes(r.tab)?r.tab:'home';
-  if(curTab==='dict') dictPane=urlInv(URL_DICT)[r.view]||'list';
-  if(curTab==='story') storyPane=r.view==='test'?'test':'list';
-  if(curTab==='write'&&urlInv(URL_WRITE)[r.view]){writePane=urlInv(URL_WRITE)[r.view];lsSet('wm.writePane',writePane)}
+  if(curTab==='dict') dictPane=r.dict;
+  if(curTab==='story') storyPane=r.story;
+  if(curTab==='write'&&r.write){writePane=r.write;lsSet('wm.writePane',writePane)}
   if(curTab==='me') mePage='main';
 }
 // after it: pages inside a tab get their own history entry, so the back gesture returns to the tab instead of leaving the app

@@ -70,9 +70,12 @@ export default {
     } catch (e) {
       return json({ error: 'Server error', detail: String(e && e.message || e).slice(0, 200) }, 500);
     }
+    // App screens have their own paths (/story, /words/test, /me/voice …): serve the single page for them
+    if (method === 'GET' && APP_PATH.test(pathname)) return env.ASSETS.fetch(new Request(new URL('/', url), { headers: request.headers }));
     return env.ASSETS.fetch(request);
   },
 };
+const APP_PATH = /^\/(story|words|video|writing|me)(\/[A-Za-z0-9_-]{1,32})?\/?$/;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
