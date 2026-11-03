@@ -936,7 +936,8 @@ button.chip:active{filter:brightness(.92)}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.49.2</span> · <span class="version-date">2026/11/03</span></p>
+          <p class="note"><span class="version-tag">v2.49.3</span> · <span class="version-date">2026/11/03</span></p>
+          <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
     </div>
@@ -1965,7 +1966,8 @@ const urlFull=()=>location.origin+urlNow();
 // (and iOS Chrome, which ignores replaceState in its address bar, shows the path). An entry's state carries u = its URL;
 // an entry pushed by older code without u (story / video / settings page / overlays) is just given the URL (replace).
 // Changes that keep the screen (the selected video sentence, ?s=) replace instead of pushing.
-let urlApplying=false,urlLast=null;   // urlLast = the screen entry on top {u, st}: put back when back only closed a sheet or popup
+let urlApplying=false,urlLast=null,urlErr='';
+window.addEventListener('error',e=>{urlErr=(e.message||'error')+(e.lineno?' @'+e.lineno:'')});   // urlLast = the screen entry on top {u, st}: put back when back only closed a sheet or popup
 const urlKey=u=>u.replace(/[?&]s=\d+/,'').replace(/\?$/,'');
 function urlMarks(){
   const m={};
@@ -1981,7 +1983,7 @@ function urlSync(){
   try{
     if(!st||st.u==null||urlKey(st.u)===urlKey(u)) window.history.replaceState({...(st||{}),...urlMarks(),u},'',u);
     else window.history.pushState({...urlMarks(),u},'',u);
-  }catch(e){}
+  }catch(e){urlErr='history: '+e.message}
   urlLast={u,st:window.history.state};
 }
 function urlRestore(){if(urlLast&&location.pathname+location.search!==urlLast.u) try{window.history.pushState(urlLast.st,'',urlLast.u)}catch(e){}}
@@ -2046,6 +2048,9 @@ document.querySelectorAll('#s-dict .scroll:not(#testScroll), #s-story .scroll:no
   },{passive:true});
 });
 function show(name){
+  try{showIn(name)}finally{urlSync()}   // the address follows the screen even if a renderer throws
+}
+function showIn(name){
   if(name!==curTab) stopReading();
   setTabbarHidden(false);
   if(name!=='dict') listSel=null;
@@ -2060,7 +2065,6 @@ function show(name){
   if(name==='me') renderMe();
   if(name==='write') renderWrite();
   if(name==='video') renderVideo();else{vPause();document.body.classList.remove('vplay');vChatClose()}
-  urlSync();
 }
 for(const t of TABS) $('tab-'+t).onclick=()=>{if(t==='dict'&&!inTest) dictPane='list';show(t)};   // the Words tab always opens on the word list
 function renderBadge(){
@@ -2068,10 +2072,10 @@ function renderBadge(){
   $('dueBadge').hidden=!n;$('dueBadge').textContent=n>99?'99+':n;
 }
 function renderAll(){
-  const first=!routeDone;if(first){routeDone=true;routeBoot()}
-  renderBadge();show(curTab);setSync(syncState);
-  if(first){urlReady=true;urlSync();routeAfter()}
-  else if(routeStoryRetry&&curTab==='story'&&storyPane==='list'&&!storyView){routeStoryRetry=false;if(storyById(ROUTE.id)) routeStory()}
+  const first=!routeDone;if(first){routeDone=true;routeBoot();urlReady=true}
+  try{renderBadge();show(curTab);setSync(syncState)}
+  finally{if(first){urlSync();try{routeAfter()}catch(e){urlErr='route: '+e.message}}}
+  if(!first&&routeStoryRetry&&curTab==='story'&&storyPane==='list'&&!storyView){routeStoryRetry=false;if(storyById(ROUTE.id)) routeStory()}
 }
 
 // ---------- home ----------
@@ -5493,6 +5497,7 @@ const SETTINGS_MENU=[
 ];
 let mePage='main';
 function renderMe(){
+  if($('urlDbg')) $('urlDbg').textContent=`${location.pathname}${location.search} · ${urlReady?'ready':'not ready'} · ${window.history.length}${urlErr?' · '+urlErr:''}`;
   if(acct==='cloud'&&totpOn===null&&!totpAsked){totpAsked=true;totpRefresh().then(()=>{if(curTab==='me'&&mePage==='main') renderMe()})}
   const p=$('profile');
   if(acct==='cloud'){
