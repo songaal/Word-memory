@@ -612,6 +612,9 @@ body.vfull .vtop,body.vfull .vctl,body.vfull .vtog,body.vfull #vScroll{display:n
 body.vfull .vwrap{flex:1 1 auto;min-height:0;aspect-ratio:unset}
 body.vfull .vbar{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 6px)}
 body.vfull #vpane-play{background:#000}
+@media (orientation:portrait){   /* the 16:9 picture sits in the middle: start the caption just under it */
+  body.vfull .vwrap:not(.off) .vcap{top:calc(50% + 28.125vw + 10px);bottom:auto}
+}
 .vctl{display:flex;gap:6px;padding:6px var(--gutter-r) 4px var(--gutter-l);flex:none}
 .vctl .ricon{flex:1;width:auto;min-width:0;height:42px;font:900 13px var(--f-ui)}
 .vctl .ricon svg{width:20px;height:20px}
@@ -657,7 +660,8 @@ body.vfull #vpane-play{background:#000}
 .vs.vsplit .t{filter:none!important}
 .vspw{display:inline;cursor:pointer;border-radius:4px;padding:1px 0}
 .vspw:active{background:var(--line)}
-.vspm{display:inline-block;color:var(--orange);font:900 20px/1 var(--f-ui);margin:0 3px;vertical-align:-2px}
+.vspm{display:inline-block;color:var(--orange);font:900 20px/1 var(--f-ui);margin:0 1px;padding:2px 6px;vertical-align:-2px;cursor:pointer;border-radius:6px}
+.vspm:active{background:var(--line)}
 .vsprow{display:flex;gap:8px;margin-top:6px;align-items:center}
 .vsprow .note{flex:1;font-size:12px;margin:0}
 .vrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid var(--line);border-radius:16px;background:var(--card);color:var(--fg);padding:10px 12px;box-shadow:0 3px 0 var(--line);cursor:pointer;font:inherit}
@@ -982,7 +986,7 @@ body.vfull #vpane-play{background:#000}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.50.0</span> · <span class="version-date">2026/11/04</span></p>
+          <p class="note"><span class="version-tag">v2.50.1</span> · <span class="version-date">2026/11/04</span></p>
           <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
@@ -3002,6 +3006,7 @@ document.addEventListener('keydown',e=>{
   else if(k==='<'||k===','){vSeekBy(-vRewind())}
   else if(k==='>'||k==='.'){vSeekBy(vForward())}
   else switch(k.toLowerCase()){
+    case 'r':if(has) vPlaySingle(V.cur);break;
     case 't':click('vTrBtn');break;
     case 'b':click('vBlur');break;
     case 'v':click('vOn');break;
@@ -3027,7 +3032,7 @@ function vSplitPaint(){
   const row=$('vs'+sp.i);if(!row) return;
   row.classList.add('vsplit');
   const t=row.querySelector('.t');
-  t.innerHTML=sp.words.map((w,k)=>`<span class="vspw" data-sw="${k}">${esc(w)}</span>`+(k<sp.words.length-1?(sp.cuts.has(k+1)?'<span class="vspm">/</span>':' '):'')).join('');
+  t.innerHTML=sp.words.map((w,k)=>`<span class="vspw" data-sw="${k}">${esc(w)}</span>`+(k<sp.words.length-1?(sp.cuts.has(k+1)?`<span class="vspm" data-cut="${k+1}">/</span>`:' '):'')).join('');
   let bar=row.querySelector('.vsprow');
   if(!bar){
     bar=document.createElement('div');bar.className='vsprow';
@@ -3040,6 +3045,8 @@ function vSplitTap(e){
   const sp=V.split;if(!sp) return;
   const b=e.target.closest('[data-spx]');
   if(b){if(b.dataset.spx==='1') vSplitApply();else vSplitCancel();return}
+  const m=e.target.closest('[data-cut]');
+  if(m){sp.cuts.delete(+m.dataset.cut);vSplitPaint();return}   // tap the / again to remove it
   const w=e.target.closest('[data-sw]');if(!w) return;
   const k=+w.dataset.sw,r=w.getBoundingClientRect();
   const cut=e.clientX<r.left+r.width/2?k:k+1;   // the gap nearest the tap: before or after this word
