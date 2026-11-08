@@ -675,6 +675,52 @@ body.vfull .voverlay{touch-action:none}
 .vrow .x{border:0;background:none;color:var(--muted);font-size:16px;padding:6px;cursor:pointer;flex:none}
 .vpaste textarea{width:100%;min-height:140px;font:13px/1.5 var(--f-mono)}
 #s-video.playing > .bar{display:none}
+/* video player scrolls the page itself (v2.52.0, body.vdoc): the browser's address bar can slide away;
+   title bar scrolls off, video + controls stay pinned on top (.vstick), the sentence list flows in the page */
+.vstick{display:contents}
+html.vdoc,html.vdoc body{height:auto;overflow:visible}
+html.vdoc{overflow-y:auto}
+html.vdoc body{position:static;min-height:100%}
+html.vdoc .view{position:relative;top:0;height:auto;min-height:100vh;display:block}
+html.vdoc #s-video,html.vdoc #vpane-play{display:block;min-height:0}
+html.vdoc .vstick{display:block;position:sticky;top:0;z-index:5;background:var(--bg)}
+html.vdoc #vScroll{overflow:visible;flex:none;min-height:0;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 40vh)}
+/* reading mode (v2.52.0): the transcript as a document */
+.vread{position:fixed;left:0;right:0;top:var(--vvtop,0px);height:var(--vvh,100%);z-index:46;display:flex;flex-direction:column;
+  --rbg:var(--bg);--rfg:var(--fg);--rmut:var(--muted);--rline:var(--line);--rhl:var(--accent-soft);background:var(--rbg);color:var(--rfg)}
+.vread.th-white{--rbg:#ffffff;--rfg:#1d1d1f;--rmut:#6e6e73;--rline:#e3e3e8;--rhl:#e8f4fd}
+.vread.th-sepia{--rbg:#f7f0e2;--rfg:#45362a;--rmut:#8c7760;--rline:#e6dac3;--rhl:#efe2c4}
+.vread.th-gray{--rbg:#3a3b3f;--rfg:#e9e9ea;--rmut:#a8a9ad;--rline:#4c4d52;--rhl:#4a4c53}
+.vread.th-dark{--rbg:#121214;--rfg:#d6d6d8;--rmut:#8b8b90;--rline:#2a2a2e;--rhl:#1f2a33}
+.vrhead{flex:none;display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 8px) var(--gutter-r) 8px var(--gutter-l);border-bottom:1px solid var(--rline);background:var(--rbg)}
+.vrhead .linkbtn{color:var(--rfg)}
+.vrhead .vrt{flex:1;min-width:0;font:800 14px var(--f-ui);color:var(--rmut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.vrb{flex:none;height:36px;min-width:40px;padding:0 10px;border:2px solid var(--rline);border-radius:12px;background:transparent;color:var(--rfg);display:inline-flex;align-items:center;justify-content:center;gap:4px;font:900 14px var(--f-ui);cursor:pointer}
+.vrb svg{width:18px;height:18px}
+.vrb[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.vrset{flex:none;border-bottom:1px solid var(--rline);background:var(--rbg);padding:10px var(--gutter-r) 12px var(--gutter-l);display:flex;flex-direction:column;gap:10px;font:800 13px var(--f-ui)}
+.vrset .row2{display:flex;align-items:center;gap:10px}
+.vrset .lb{width:76px;flex:none;color:var(--rmut)}
+.vrseg{flex:1;display:flex;border:2px solid var(--rline);border-radius:12px;overflow:hidden}
+.vrseg button{flex:1;border:0;background:transparent;color:var(--rfg);font:800 13px var(--f-ui);padding:7px 4px;cursor:pointer}
+.vrseg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.vrset input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
+.vrsz{border:2px solid var(--rline);background:transparent;color:var(--rfg);border-radius:10px;font:900 13px var(--f-ui);padding:4px 8px;cursor:pointer;flex:none}
+#vrSzVal{min-width:3ch;text-align:right;font-variant-numeric:tabular-nums;color:var(--rmut)}
+.vrth{flex:1;display:flex;gap:8px}
+.vrth button{flex:1;height:34px;border-radius:10px;border:2px solid var(--rline);cursor:pointer;font:800 12px var(--f-ui)}
+.vrth button[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:1px}
+.vrbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 60px) var(--gutter-l)}
+.vrdoc{max-width:680px;margin:0 auto;font:400 var(--rsz,19px)/1.7 var(--f-word);color:var(--rfg)}
+.vrdoc p{margin:0 0 .9em}
+.vrdoc .rs{border-radius:6px;transition:background .3s}
+.vrdoc.line .rs{display:block;margin:0 0 .75em}
+.vrdoc .rs.on{background:var(--rhl)}
+.vrdoc .rk{display:block;font:600 calc(var(--rsz,19px) * .8)/1.55 var(--f-ui);color:var(--rmut);margin-top:2px}
+.vrdoc.para .rkp{font:600 calc(var(--rsz,19px) * .8)/1.6 var(--f-ui);color:var(--rmut);margin:-.4em 0 1.3em;padding-left:10px;border-left:3px solid var(--rline)}
+.vrdoc .tw{cursor:pointer}
+.vrdoc .tw:active{background:var(--rhl)}
+.vrempty{color:var(--rmut);text-align:center;padding:40px 0;font:700 15px var(--f-ui)}
 @media (orientation:landscape) and (max-height:500px){
   body.vplay .tabbar,body.vplay .vtop,body.vplay .vtog,body.vplay #vScroll{display:none!important}
   body.vplay .vwrap{flex:1 1 auto;min-height:0;aspect-ratio:unset}
@@ -948,7 +994,8 @@ body.vfull .voverlay{touch-action:none}
       <div class="scroll"><div class="stack" id="vList"></div></div>
     </div>
     <div class="pane" id="vpane-play" hidden>
-      <div class="vtop"><button class="linkbtn inlineback" id="vBack" type="button">‹ Videos</button><span class="vtitle" id="vTitle" data-noi18n></span><button class="ricon plain vchatbtn" id="vChatBtn" type="button" aria-label="Sentence study with AI"></button><button class="ricon plain" id="vMore" type="button" aria-label="More"></button></div>
+      <div class="vtop"><button class="linkbtn inlineback" id="vBack" type="button">‹ Videos</button><span class="vtitle" id="vTitle" data-noi18n></span><button class="ricon plain vchatbtn" id="vReadBtn" type="button" aria-label="Reading mode" hidden></button><button class="ricon plain vchatbtn" id="vChatBtn" type="button" aria-label="Sentence study with AI"></button><button class="ricon plain" id="vMore" type="button" aria-label="More"></button></div>
+      <div class="vstick" id="vStick">
       <div class="vwrap" id="vWrap"><div id="ytPlayer"></div><div class="voverlay" id="vOverlay"></div><div class="vcap" id="vCap" data-noi18n></div>
         <div class="vcset" id="vCset" hidden><div class="vcset-h"><b>Caption size</b><button type="button" class="vcset-x" id="vCsetX" aria-label="Close">✕</button></div>
           <div class="vcset-r"><button type="button" class="vcset-b" id="vCsMinus" aria-label="Smaller">A−</button><input type="range" id="vCsRange" min="11" max="32" step="1" aria-label="Caption size"><button type="button" class="vcset-b" id="vCsPlus" aria-label="Larger">A+</button><span id="vCsVal" data-noi18n></span></div></div>
@@ -958,6 +1005,7 @@ body.vfull .voverlay{touch-action:none}
           <div class="vbrow"><button class="vpp" id="vPP" type="button" aria-label="Play"></button><div class="vprog" id="vProg"><div class="vprog-t"><i id="vProgFill"></i></div></div></div></div></div>
       <div class="vctl" id="vCtl"></div>
       <div class="vtog" id="vTog"></div>
+      </div>
       <div class="scroll" id="vScroll"><div id="vSents"></div></div>
     </div>
   </section>
@@ -991,7 +1039,7 @@ body.vfull .voverlay{touch-action:none}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.51.1</span> · <span class="version-date">2026/11/04</span></p>
+          <p class="note"><span class="version-tag">v2.52.0</span> · <span class="version-date">2026/11/08</span></p>
           <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
@@ -1137,6 +1185,21 @@ body.vfull .voverlay{touch-action:none}
   <div class="lstage" id="lnStage"></div>
   <div id="lnFootWrap"><div class="lfoot"><button class="btn danger" id="lnAgain" type="button">← Again</button><button class="btn" id="lnGot" type="button">↑ Got it</button></div>
   <div class="lhint">Swipe up when you know it · swipe left to see it again later</div></div>
+</div>
+<div class="vread" id="vread" hidden>
+  <div class="vrhead"><button class="linkbtn" id="vrBack" type="button">‹ Back</button><span class="vrt" id="vrTitle" data-noi18n></span>
+    <button class="vrb" id="vrTr" type="button" aria-pressed="false" aria-label="Translate"></button><button class="vrb" id="vrSetBtn" type="button" aria-pressed="false" aria-label="Reading settings">Aa</button></div>
+  <div class="vrset" id="vrSet" hidden>
+    <div class="row2"><span class="lb">Layout</span><div class="vrseg" id="vrMode"><button type="button" data-vrmode="line">Line by line</button><button type="button" data-vrmode="para">Paragraphs</button></div></div>
+    <div class="row2"><span class="lb">Text size</span><button type="button" class="vrsz" id="vrSzM" aria-label="Smaller">A−</button><input type="range" id="vrSz" min="14" max="32" step="1" aria-label="Text size"><button type="button" class="vrsz" id="vrSzP" aria-label="Larger">A+</button><span id="vrSzVal" data-noi18n></span></div>
+    <div class="row2"><span class="lb">Background</span><div class="vrth" id="vrTh">
+      <button type="button" data-vrth="auto" style="background:var(--bg);color:var(--fg)">Auto</button>
+      <button type="button" data-vrth="white" style="background:#fff;color:#1d1d1f">Aa</button>
+      <button type="button" data-vrth="sepia" style="background:#f7f0e2;color:#45362a">Aa</button>
+      <button type="button" data-vrth="gray" style="background:#3a3b3f;color:#e9e9ea">Aa</button>
+      <button type="button" data-vrth="dark" style="background:#121214;color:#d6d6d8">Aa</button></div></div>
+  </div>
+  <div class="vrbody" id="vrBody"><div class="vrdoc" id="vrDoc" data-noi18n></div></div>
 </div>
 <div class="learn jlearn" id="jlearn" hidden>
   <div class="lhead"><button class="linkbtn" id="jlBack" type="button">‹ Back</button><span class="lcount" id="jlTitle" style="font-size:16px"></span><button class="hintbtn" id="jlTr" type="button" aria-pressed="false"></button></div>
@@ -2119,7 +2182,7 @@ function showIn(name){
   if(name==='dict'){renderDict();if(dictPane==='search') $('searchIn').focus()}
   if(name==='me') renderMe();
   if(name==='write') renderWrite();
-  if(name==='video') renderVideo();else{vPause();document.body.classList.remove('vplay');vChatClose()}
+  if(name==='video') renderVideo();else{vPause();document.body.classList.remove('vplay');vChatClose();vrClose();vDocSync()}
 }
 for(const t of TABS) $('tab-'+t).onclick=()=>{if(t==='dict'&&!inTest) dictPane='list';show(t)};   // the Words tab always opens on the word list
 function renderBadge(){
@@ -2696,6 +2759,8 @@ const VI={
 VI.copy='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
 VI.study='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3.5l1.6 4.4 4.4 1.6-4.4 1.6L10 15.5l-1.6-4.4L4 9.5l4.4-1.6z"/><path d="M18 3l.7 1.8 1.8.7-1.8.7L18 8l-.7-1.8-1.8-.7 1.8-.7z"/><path d="M17.5 14.5l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9z"/></svg>';
 VI.chat=VI.study;   // the same three-star AI icon
+VI.read='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg>';
+VI.clean='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4l5 5-9.5 9.5H6v-4.5z"/><path d="M4 21h16"/></svg>';
 VI.split='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg>';
 VI.ext='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
 VI.back2='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 6v12L3 12zM21 6v12l-8-6z"/></svg>';
@@ -2757,9 +2822,19 @@ function vHistDate(d){
   const t=Date.parse(d);if(isNaN(t)) return d||'';
   return dayLabel(new Date(t).toISOString());
 }
+// ---- the player page scrolls the document (v2.52.0) so the browser's address bar can hide ----
+function vDocOn(){return document.documentElement.classList.contains('vdoc')}
+function vDocSync(){
+  const b=document.body,on=curTab==='video'&&!!V.vid&&b.classList.contains('vplay')&&!b.classList.contains('vfull')&&!(innerWidth>innerHeight&&innerHeight<=500);
+  const was=vDocOn();if(on===was) return;
+  document.documentElement.classList.toggle('vdoc',on);
+  if(!on) window.scrollTo(0,0);
+  else setTimeout(()=>vScrollCur(false),60);
+}
+window.addEventListener('resize',()=>vDocSync());
 // ---- list screen ----
 function renderVideo(){
-  document.body.classList.toggle('vplay',!!V.vid);
+  document.body.classList.toggle('vplay',!!V.vid);vDocSync();
   if(V.vid) return;
   vLoadHist();renderVideoList();
   xtLoad().then(()=>{if(curTab==='video'&&!V.vid) renderVideoList()});
@@ -2819,8 +2894,8 @@ async function openVideo(vid){
   const h=V.hist.find(x=>x.videoId===vid);V.title=h&&h.title&&h.title!==vid?h.title:'';
   try{if(!(window.history.state&&window.history.state.video)) window.history.pushState({video:vid},'')}catch(e){}
   urlSync();
-  $('s-video').classList.add('playing');$('vpane-list').hidden=true;$('vpane-play').hidden=false;document.body.classList.add('vplay');
-  $('vChatBtn').hidden=false;$('vChatBtn').innerHTML=VI.chat;
+  $('s-video').classList.add('playing');$('vpane-list').hidden=true;$('vpane-play').hidden=false;document.body.classList.add('vplay');window.scrollTo(0,0);vDocSync();
+  $('vChatBtn').hidden=false;$('vChatBtn').innerHTML=VI.chat;$('vReadBtn').hidden=true;$('vReadBtn').innerHTML=VI.read;
   $('vTitle').textContent=V.title||'Loading…';$('vSents').innerHTML='';$('vCtl').innerHTML='';$('vTog').innerHTML='';
   const [t,tr]=await Promise.all([vGet('transcript',vid),vGet('translations',vid)]);
   if(V.vid!==vid) return;
@@ -2850,7 +2925,7 @@ async function openVideo(vid){
 function closeVideo(){
   vDestroy();vFull(false);vCsetOpen(false);
   if(V.vid&&V.sents.length) vTouchHist(V.vid,V.title,V.cur+1);
-  V.vid=null;document.body.classList.remove('vplay');
+  vrClose();V.vid=null;document.body.classList.remove('vplay');vDocSync();
   if(curTab==='video') renderVideo();
   urlSync();
 }
@@ -2859,7 +2934,7 @@ $('vBack').onclick=()=>{if(window.history.state&&window.history.state.video) win
 function renderVideoPlay(){
   const has=V.sents.length>0,rw=vRewind(),fw=vForward();
   $('vWrap').classList.toggle('off',!V.on);
-  $('vMore').innerHTML=MORE_ICON;
+  $('vMore').innerHTML=MORE_ICON;$('vReadBtn').hidden=!has;
   $('vCtl').innerHTML=`
     <button class="ricon" id="vOn" type="button" aria-label="Video on or off">${V.on?VI.video:VI.videoOff}</button>
     ${has?`<button class="ricon" id="vPrev" type="button" aria-label="Previous sentence">${VI.prev}</button>`:''}
@@ -2991,6 +3066,7 @@ function vFull(on){
     else if(!on&&fs){const f=d.exitFullscreen||d.webkitExitFullscreen;if(f){const pr=f.call(d);if(pr&&pr.catch) pr.catch(()=>{})}}
   }catch(e){}
   if(!on) vZoomSet(1,0,0);
+  vDocSync();
   if(was&&!on) setTimeout(()=>vScrollCur(false),60);
 }
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{
@@ -3063,7 +3139,7 @@ $('vZReset').onclick=e=>{e.stopPropagation();vZoomSet(1,0,0)};
 // ---- keyboard on the player ----
 function vKeysOn(){
   if(curTab!=='video'||!V.vid||$('vpane-play').hidden) return false;
-  for(const id of ['sheet','pop','vchat','vtest','noteSheet','pracSheet']){const el=$(id);if(el&&!el.hidden) return false}
+  for(const id of ['sheet','pop','vchat','vtest','noteSheet','pracSheet','vread']){const el=$(id);if(el&&!el.hidden) return false}
   const a=document.activeElement;
   if(a&&(a.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return false;
   return true;
@@ -3169,6 +3245,7 @@ $('vMore').onclick=()=>{
     <button class="mi2" type="button" id="vmHist">${VI.hist}<span>Test history</span></button>
     <button class="mi2" type="button" id="vmSync">${VI.sync}<span>Sync subtitles</span></button>
     <button class="mi2" type="button" id="vmTr">${VI.sync}<span>Update translation</span></button>
+    <button class="mi2" type="button" id="vmClean">${VI.clean}<span>Clean up transcript</span></button>
     <button class="mi2 red" type="button" id="vmClear">${TRASH_ICON}<span>Clear subtitles</span></button>`:''}
     <a class="mi2" id="vmYT" href="https://www.youtube.com/watch?v=${esc(V.vid)}" target="_blank" rel="noopener"${has?'':' style="border-top:0"'}>${VI.ext}<span>Open on YouTube</span></a>
     <button class="mi2" type="button" id="vmLink">${LINK_ICON}<span>Copy link</span></button>
@@ -3184,6 +3261,7 @@ $('vMore').onclick=()=>{
     $('vmHist').onclick=()=>vtHistory(V.vid);
     $('vmSync').onclick=vSyncSheet;
     $('vmTr').onclick=()=>{closeSheet();vUpdateTr()};
+    $('vmClean').onclick=()=>{closeSheet();vCleanTranscript()};
     $('vmClear').onclick=()=>{
       openSheet('Clear subtitles?',`<div class="card qconfirm"><p>The transcript and its translations for this video are removed. You can paste it again.</p>
         <button class="btn ghost block" id="vcKeep" type="button">Cancel</button><button class="btn danger block" id="vcGo" type="button">Clear transcript</button></div>`);
@@ -3207,10 +3285,19 @@ function vSyncSheet(){
   $('vsMinus').onclick=()=>set(V.sync-.1);$('vsPlus').onclick=()=>set(V.sync+.1);$('vsReset').onclick=()=>set(0);$('vsDone').onclick=closeSheet;
 }
 // ---- transcript paste: "[HH:MM:SS] text" lines → sentences with start/end ----
+// Drop caption junk on import (v2.52.0): [Music]-style tags, (…) and {…} notes, >> speaker marks, ♪, leading dashes
+function vImportClean(t){
+  return String(t||'').replace(/&amp;/g,'&').replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+    .replace(/\[[^\]]*\]|\([^)]*\)|\{[^}]*\}/g,' ')
+    .replace(/\[\s*[A-Za-z ]{0,20}$|^[A-Za-z ]{0,20}\]/g,' ')   // a tag cut in half by the line break
+    .replace(/>>+|<<+|[♪♫♬\[\]{}]/g,' ')
+    .replace(/^\s*[-–—:]+\s*/,'').replace(/\s+/g,' ').trim()
+    .replace(/^[^A-Za-z0-9"'‘“$]+$/,'');
+}
 function vParseStamped(text){
   const lines=[],re=/\[(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\]\s*(.+)/g;let m;
   while((m=re.exec(text))!==null){
-    const ms=((parseInt(m[1]||'0'))*3600+parseInt(m[2])*60+parseInt(m[3]))*1000,t=m[4].trim();
+    const ms=((parseInt(m[1]||'0'))*3600+parseInt(m[2])*60+parseInt(m[3]))*1000,t=vImportClean(m[4]);
     if(t) lines.push({text:t,offset:ms});
   }
   if(!lines.length) return null;
@@ -3242,6 +3329,23 @@ function vSentences(transcript){
   for(const x of out){const p=merged[merged.length-1];if(p&&p.start===x.start&&p.end===x.end) p.text+=' '+x.text;else merged.push({...x})}
   for(let i=0;i<merged.length-1;i++){const a=merged[i],b=merged[i+1];if(b.start>a.start&&b.start-a.start>=.5) a.end=b.start}
   return merged.map(x=>({text:x.text,start:+x.start.toFixed(2),end:+x.end.toFixed(2)}));
+}
+function vCleanTranscript(){   // the import clean-up for a transcript added before v2.52.0
+  const ss=[],tr={};let changed=0,removed=0;
+  V.sents.forEach((x,i)=>{
+    const t=vImportClean(x.text);
+    if(!t){removed++;if(ss.length) ss[ss.length-1].end=Math.max(ss[ss.length-1].end,x.end);return}
+    if(t!==x.text) changed++;
+    if(V.tr[i]) tr[ss.length]=V.tr[i];
+    ss.push({...x,text:t});
+  });
+  if(!changed&&!removed){toast('The transcript is already clean.');return}
+  const cur=V.sents[V.cur];
+  V.sents=ss;V.tr=tr;V.cur=Math.max(0,Math.min(ss.length-1,cur?ss.findIndex(x=>x.start>=cur.start):0));if(V.cur<0) V.cur=ss.length-1;
+  V.loop=-1;V.pass=0;
+  clearTimeout(vSaveT);vPut('transcript',V.vid,{sentences:V.sents,source:V.src});vPut('translations',V.vid,{translations:V.tr});
+  renderVideoPlay();vScrollCur(false);
+  toast(`Cleaned ${changed} sentences, removed ${removed}.`);
 }
 function vApplyPaste(){
   const text=$('vPasteIn').value.trim();if(!text) return;
@@ -3293,6 +3397,10 @@ function vStopTracker(){if(V.tracker){clearInterval(V.tracker);V.tracker=null}}
 function vSentInfo(){$('vSentN').textContent=V.sents.length?`${V.cur+1} / ${V.sents.length}`:''}
 function vScrollCur(smooth=true){
   const el=$('vs'+V.cur),sc=$('vScroll');if(!el||!sc) return;
+  if(vDocOn()){   // the page scrolls: centre the sentence in the space under the pinned video
+    const r=el.getBoundingClientRect(),top=$('vStick').getBoundingClientRect().bottom,h=window.innerHeight-top;
+    window.scrollTo({top:Math.max(0,window.scrollY+r.top-top-h/2+r.height/2),behavior:smooth?'smooth':'auto'});return;
+  }
   const r=el.getBoundingClientRect(),sr=sc.getBoundingClientRect();
   sc.scrollTo({top:Math.max(0,sc.scrollTop+(r.top-sr.top)-sr.height/2+r.height/2),behavior:smooth?'smooth':'auto'});
 }
@@ -3303,6 +3411,7 @@ function vHighlight(i,quiet){
   if(i<0){vCaption();return}
   urlSync();
   const el=$('vs'+i);if(el){el.classList.add('on');vScrollCur(!quiet)}
+  vrMark(i);
   if(V.repeat&&V.loop===i&&V.pass>0) vRepeatCaption(i);else vCaption();
   clearTimeout(vHistSaveT);const vid=V.vid;vHistSaveT=setTimeout(()=>{if(V.vid===vid){const h=V.hist.find(x=>x.videoId===vid);if(h&&h.s!==i+1){h.s=i+1;vSaveHist()}}},2500);
 }
@@ -3424,6 +3533,84 @@ function vChatRender(){
   b.scrollTop=b.scrollHeight;
 }
 function vChatOpen(){if(!vChat) return;if($('vchat').hidden) try{window.history.pushState({video:V.vid,chat:1},'')}catch(e){}$('vchat').hidden=false;$('vChatBtn').innerHTML=VI.chat;vChatRender()}
+// ---- reading mode (v2.52.0): the transcript as a document — line by line or in paragraphs, Korean under it,
+// text size and background in a panel that opens from Aa. Settings per device in localStorage wm.vread.
+const VR0={mode:'line',size:19,th:'auto',tr:false};
+let VR={...VR0,...(lsJSON('wm.vread')||{})};
+function vrSave(){lsSet('wm.vread',JSON.stringify(VR))}
+function vrText(i){const t=V.sents[i]?V.sents[i].text:'';return vImportClean(t)||t}
+function vrParas(){   // group sentences: a pause in speech, 5 sentences or ~550 characters ends a paragraph
+  const out=[];let cur=[],len=0;
+  V.sents.forEach((x,i)=>{
+    const prev=V.sents[i-1];
+    if(cur.length>=2&&(prev&&x.start-prev.end>1.5||cur.length>=5||len>=550)){out.push(cur);cur=[];len=0}
+    cur.push(i);len+=x.text.length;
+  });
+  if(cur.length) out.push(cur);
+  return out;
+}
+function vrRender(){
+  const d=$('vrDoc'),tr=VR.tr;
+  $('vread').className='vread th-'+VR.th;
+  d.className='vrdoc '+VR.mode;d.style.setProperty('--rsz',VR.size+'px');
+  $('vrTr').setAttribute('aria-pressed',tr);
+  $('vrSz').value=VR.size;$('vrSzVal').textContent=VR.size;
+  document.querySelectorAll('#vrMode [data-vrmode]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.vrmode===VR.mode));
+  document.querySelectorAll('#vrTh [data-vrth]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.vrth===VR.th));
+  if(!V.sents.length){d.innerHTML='<div class="vrempty">No transcript yet.</div>';return}
+  const rs=i=>`<span class="rs${i===V.cur?' on':''}" data-ri="${i}">${tapWordsHTML(vrText(i))}${tr&&VR.mode==='line'&&V.tr[i]?`<span class="rk">${esc(V.tr[i])}</span>`:''}</span>`;
+  d.innerHTML=VR.mode==='line'?V.sents.map((_,i)=>rs(i)).join('')
+    :vrParas().map(p=>`<p>${p.map(rs).join(' ')}</p>${tr?`<p class="rkp">${esc(p.map(i=>V.tr[i]||'').filter(Boolean).join(' '))}</p>`:''}`).join('');
+}
+function vrScrollTo(i,smooth){
+  const el=document.querySelector(`#vrDoc [data-ri="${i}"]`),b=$('vrBody');if(!el) return;
+  const r=el.getBoundingClientRect(),br=b.getBoundingClientRect();
+  b.scrollTo({top:Math.max(0,b.scrollTop+r.top-br.top-br.height/3),behavior:smooth?'smooth':'auto'});
+}
+function vrMark(i){   // follow the sentence playing in the player
+  if($('vread').hidden) return;
+  document.querySelectorAll('#vrDoc .rs.on').forEach(x=>x.classList.remove('on'));
+  const el=document.querySelector(`#vrDoc [data-ri="${i}"]`);if(el){el.classList.add('on');vrScrollTo(i,true)}
+}
+function vrOpen(){
+  if(!V.vid||!V.sents.length) return;
+  $('vrTitle').textContent=V.title||$('vTitle').textContent||'';$('vrTr').innerHTML=TR_ICON;
+  $('vrSet').hidden=true;$('vrSetBtn').setAttribute('aria-pressed','false');
+  vrRender();$('vread').hidden=false;$('vrBody').scrollTop=0;
+  requestAnimationFrame(()=>vrScrollTo(V.cur,false));
+  try{window.history.pushState({video:V.vid,vread:1},'')}catch(_){}
+  if(VR.tr&&V.sents.some((_,i)=>!V.tr[i])&&settings.translateKey) vFetchTr().then(ok=>{if(ok&&!$('vread').hidden) vrRender()});
+}
+function vrClose(fromBack){
+  if($('vread').hidden) return;
+  $('vread').hidden=true;
+  if(!fromBack&&window.history.state&&window.history.state.vread){popIgnore++;window.history.back()}
+  vScrollCur(false);
+}
+$('vReadBtn').onclick=vrOpen;
+$('vrBack').onclick=()=>vrClose();
+$('vrSetBtn').onclick=()=>{const h=!$('vrSet').hidden;$('vrSet').hidden=h;$('vrSetBtn').setAttribute('aria-pressed',!h)};
+$('vrTr').onclick=async()=>{
+  if(VR.tr){VR.tr=false;vrSave();vrRender();return}
+  const b=$('vrTr');b.disabled=true;
+  const ok=await vFetchTr();b.disabled=false;
+  if(!ok) return;
+  VR.tr=true;vrSave();vrRender();
+  V.sents.forEach((_,i)=>{const k=$('vk'+i);if(k) k.textContent=V.tr[i]||''});
+};
+$('vrMode').addEventListener('click',e=>{const b=e.target.closest('[data-vrmode]');if(!b) return;VR.mode=b.dataset.vrmode;vrSave();vrRender();vrScrollTo(V.cur,false)});
+$('vrTh').addEventListener('click',e=>{const b=e.target.closest('[data-vrth]');if(!b) return;VR.th=b.dataset.vrth;vrSave();vrRender()});
+const vrSize=n=>{VR.size=Math.max(14,Math.min(32,n));vrSave();vrRender()};
+$('vrSz').addEventListener('input',()=>vrSize(+$('vrSz').value));
+$('vrSzM').onclick=()=>vrSize(VR.size-1);$('vrSzP').onclick=()=>vrSize(VR.size+1);
+$('vrBody').addEventListener('click',e=>{
+  if(!$('vrSet').hidden){$('vrSet').hidden=true;$('vrSetBtn').setAttribute('aria-pressed','false')}
+  if(e.target.closest('[data-tw]')){vPause();return}   // a word: dictionary popup (global handler)
+  const r=e.target.closest('[data-ri]');if(!r) return;
+  const i=+r.dataset.ri;   // a sentence: hear it from the video (tap again to stop)
+  if(vIsPlaying()&&V.loop===i){vPause();return}
+  vPlaySingle(i);
+});
 function vChatClose(fromBack){if($('vchat').hidden) return;$('vchat').hidden=true;$('vchatIn').blur();if(!fromBack&&window.history.state&&window.history.state.chat) window.history.back()}
 async function vChatRun(){
   const c=vChat;if(!c||c.busy) return;
@@ -6018,6 +6205,7 @@ window.addEventListener('popstate',e=>{
   if(!$('pop').hidden){closePop();urlRestore();return}   // sheets and the word popup have no history entry of their own
   if(!$('sheet').hidden){closeSheet();urlRestore();return}
   if(!$('vchat').hidden){vChatClose(true);return}
+  if(!$('vread').hidden){vrClose(true);return}
   routeApply(parseRoute());
 });
 async function loadSettings(){
@@ -6328,7 +6516,7 @@ document.addEventListener('focusout',e=>{if(e.target.matches('input,textarea')){
     raf=0;
     root.style.setProperty('--vvh',Math.round(vv.height)+'px');
     root.style.setProperty('--vvtop',Math.round(vv.offsetTop)+'px');
-    if(window.scrollY||document.documentElement.scrollTop) window.scrollTo(0,0);
+    if(!root.classList.contains('vdoc')&&(window.scrollY||document.documentElement.scrollTop)) window.scrollTo(0,0);
   }
   const later=()=>{if(!raf) raf=requestAnimationFrame(fit)};
   vv.addEventListener('resize',later);vv.addEventListener('scroll',later);
@@ -6347,6 +6535,7 @@ document.addEventListener('touchmove',e=>{if(e.touches.length>1) e.preventDefaul
 
 // ---------- Korean dictionary (exact interface strings, then patterns) ----------
 const I18N_KO={
+'Reading mode':'읽기 모드','Reading settings':'읽기 설정','Layout':'보기','Line by line':'한 줄씩','Paragraphs':'이어붙여 읽기','Background':'배경','Auto':'자동','No transcript yet.':'아직 자막이 없어요.','Clean up transcript':'자막 정리하기','The transcript is already clean.':'자막이 이미 깔끔해요.',
 // tabs, bars, common
 'Home':'홈','Test':'테스트','Words':'단어','Me':'나','Story':'스토리','Stories':'스토리','Dictionary':'사전','Settings':'설정','About':'정보',
 'Back':'뒤로','Close':'닫기','Main':'메인','Cancel':'취소','Delete':'삭제','Edit':'편집','Select':'선택','Search':'검색','Check':'확인','Next':'다음',
@@ -6494,6 +6683,7 @@ const POS_KO={adjective:'형용사',noun:'명사',verb:'동사',adverb:'부사',
 const durKo=d=>d.replace('<1 min','1분 미만').replace(/(\d+) min/,'$1분');
 const dueKo=d=>d==='today'?'오늘':d==='tomorrow'?'내일':d.replace(/^in (\d+) days?$/,'$1일 뒤');
 const I18N_KO_RE=[
+[/^Cleaned (\d+) sentences, removed (\d+)\.$/,'$1문장을 정리하고 $2문장을 지웠어요.'],
 [/^Split into (\d+) sentences\.$/,'$1문장으로 나눴어요.'],[/^Translated (\d+) sentences\.$/,'$1문장을 번역했어요.'],
 [/^(\d+) sentences$/,'문장 $1개'],
 [/^(\d+) sentences from this entry$/,'이 일기의 문장 $1개'],[/^1 sentence from this entry$/,'이 일기의 문장 1개'],
