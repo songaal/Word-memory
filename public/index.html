@@ -692,6 +692,17 @@ html.vdoc #vScroll{overflow:visible;flex:none;min-height:0;padding-bottom:calc(e
 .vread.th-sepia{--rbg:#f7f0e2;--rfg:#45362a;--rmut:#8c7760;--rline:#e6dac3;--rhl:#efe2c4}
 .vread.th-gray{--rbg:#3a3b3f;--rfg:#e9e9ea;--rmut:#a8a9ad;--rline:#4c4d52;--rhl:#4a4c53}
 .vread.th-dark{--rbg:#121214;--rfg:#d6d6d8;--rmut:#8b8b90;--rline:#2a2a2e;--rhl:#1f2a33}
+.vrtop{flex:none;z-index:2;transition:transform .25s ease}
+/* reading mode scrolls the page itself (v2.52.1, html.vrd) so the browser's address bar can hide;
+   the app behind is hidden, the header slides up while reading down and comes back on scrolling up */
+html.vrd,html.vrd body{height:auto;overflow:visible}
+html.vrd{overflow-y:auto}
+html.vrd body{position:static;min-height:100%;background:var(--rbg-page,var(--bg))}
+html.vrd .view{display:none!important}
+html.vrd .vread{position:relative;top:0;height:auto;min-height:100vh;display:block}
+html.vrd .vrtop{position:sticky;top:0}
+html.vrd .vrtop.hid{transform:translateY(-100%)}
+html.vrd .vrbody{overflow:visible;min-height:0}
 .vrhead{flex:none;display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 8px) var(--gutter-r) 8px var(--gutter-l);border-bottom:1px solid var(--rline);background:var(--rbg)}
 .vrhead .linkbtn{color:var(--rfg)}
 .vrhead .vrt{flex:1;min-width:0;font:800 14px var(--f-ui);color:var(--rmut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
@@ -1039,7 +1050,7 @@ html.vdoc #vScroll{overflow:visible;flex:none;min-height:0;padding-bottom:calc(e
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.52.0</span> · <span class="version-date">2026/11/08</span></p>
+          <p class="note"><span class="version-tag">v2.52.1</span> · <span class="version-date">2026/11/08</span></p>
           <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
@@ -1187,7 +1198,7 @@ html.vdoc #vScroll{overflow:visible;flex:none;min-height:0;padding-bottom:calc(e
   <div class="lhint">Swipe up when you know it · swipe left to see it again later</div></div>
 </div>
 <div class="vread" id="vread" hidden>
-  <div class="vrhead"><button class="linkbtn" id="vrBack" type="button">‹ Back</button><span class="vrt" id="vrTitle" data-noi18n></span>
+  <div class="vrtop" id="vrTop"><div class="vrhead"><button class="linkbtn" id="vrBack" type="button">‹ Back</button><span class="vrt" id="vrTitle" data-noi18n></span>
     <button class="vrb" id="vrTr" type="button" aria-pressed="false" aria-label="Translate"></button><button class="vrb" id="vrSetBtn" type="button" aria-pressed="false" aria-label="Reading settings">Aa</button></div>
   <div class="vrset" id="vrSet" hidden>
     <div class="row2"><span class="lb">Layout</span><div class="vrseg" id="vrMode"><button type="button" data-vrmode="line">Line by line</button><button type="button" data-vrmode="para">Paragraphs</button></div></div>
@@ -1198,6 +1209,7 @@ html.vdoc #vScroll{overflow:visible;flex:none;min-height:0;padding-bottom:calc(e
       <button type="button" data-vrth="sepia" style="background:#f7f0e2;color:#45362a">Aa</button>
       <button type="button" data-vrth="gray" style="background:#3a3b3f;color:#e9e9ea">Aa</button>
       <button type="button" data-vrth="dark" style="background:#121214;color:#d6d6d8">Aa</button></div></div>
+  </div>
   </div>
   <div class="vrbody" id="vrBody"><div class="vrdoc" id="vrDoc" data-noi18n></div></div>
 </div>
@@ -3552,6 +3564,7 @@ function vrParas(){   // group sentences: a pause in speech, 5 sentences or ~550
 function vrRender(){
   const d=$('vrDoc'),tr=VR.tr;
   $('vread').className='vread th-'+VR.th;
+  if(vrDocOn()) document.documentElement.style.setProperty('--rbg-page',getComputedStyle($('vread')).getPropertyValue('--rbg'));
   d.className='vrdoc '+VR.mode;d.style.setProperty('--rsz',VR.size+'px');
   $('vrTr').setAttribute('aria-pressed',tr);
   $('vrSz').value=VR.size;$('vrSzVal').textContent=VR.size;
@@ -3562,8 +3575,10 @@ function vrRender(){
   d.innerHTML=VR.mode==='line'?V.sents.map((_,i)=>rs(i)).join('')
     :vrParas().map(p=>`<p>${p.map(rs).join(' ')}</p>${tr?`<p class="rkp">${esc(p.map(i=>V.tr[i]||'').filter(Boolean).join(' '))}</p>`:''}`).join('');
 }
+function vrDocOn(){return document.documentElement.classList.contains('vrd')}
 function vrScrollTo(i,smooth){
   const el=document.querySelector(`#vrDoc [data-ri="${i}"]`),b=$('vrBody');if(!el) return;
+  if(vrDocOn()){const r=el.getBoundingClientRect();window.scrollTo({top:Math.max(0,window.scrollY+r.top-window.innerHeight/3),behavior:smooth?'smooth':'auto'});return}
   const r=el.getBoundingClientRect(),br=b.getBoundingClientRect();
   b.scrollTo({top:Math.max(0,b.scrollTop+r.top-br.top-br.height/3),behavior:smooth?'smooth':'auto'});
 }
@@ -3577,16 +3592,35 @@ function vrOpen(){
   $('vrTitle').textContent=V.title||$('vTitle').textContent||'';$('vrTr').innerHTML=TR_ICON;
   $('vrSet').hidden=true;$('vrSetBtn').setAttribute('aria-pressed','false');
   vrRender();$('vread').hidden=false;$('vrBody').scrollTop=0;
+  vrDocSet(true);
   requestAnimationFrame(()=>vrScrollTo(V.cur,false));
   try{window.history.pushState({video:V.vid,vread:1},'')}catch(_){}
   if(VR.tr&&V.sents.some((_,i)=>!V.tr[i])&&settings.translateKey) vFetchTr().then(ok=>{if(ok&&!$('vread').hidden) vrRender()});
 }
 function vrClose(fromBack){
   if($('vread').hidden) return;
-  $('vread').hidden=true;
+  $('vread').hidden=true;vrDocSet(false);
   if(!fromBack&&window.history.state&&window.history.state.vread){popIgnore++;window.history.back()}
   vScrollCur(false);
 }
+function vrDocSet(on){   // the page scrolls while reading (not in a short landscape window, where the app stays fixed)
+  const root=document.documentElement;
+  on=on&&!(innerWidth>innerHeight&&innerHeight<=500);
+  $('vrTop').classList.remove('hid');vrLastY=0;
+  if(on===root.classList.contains('vrd')) return;
+  root.classList.toggle('vrd',on);
+  root.style.setProperty('--rbg-page',on?getComputedStyle($('vread')).getPropertyValue('--rbg'):'');
+  window.scrollTo(0,0);
+}
+let vrLastY=0;
+window.addEventListener('scroll',()=>{   // header: hide while reading down, show again on scrolling up / near the top
+  if(!vrDocOn()||!$('vrSet').hidden) return;
+  const y=window.scrollY,d=y-vrLastY;
+  if(y<60) $('vrTop').classList.remove('hid');
+  else if(d>8) $('vrTop').classList.add('hid');
+  else if(d<-8) $('vrTop').classList.remove('hid');
+  if(Math.abs(d)>8||y<60) vrLastY=y;
+},{passive:true});
 $('vReadBtn').onclick=vrOpen;
 $('vrBack').onclick=()=>vrClose();
 $('vrSetBtn').onclick=()=>{const h=!$('vrSet').hidden;$('vrSet').hidden=h;$('vrSetBtn').setAttribute('aria-pressed',!h)};
@@ -6516,7 +6550,7 @@ document.addEventListener('focusout',e=>{if(e.target.matches('input,textarea')){
     raf=0;
     root.style.setProperty('--vvh',Math.round(vv.height)+'px');
     root.style.setProperty('--vvtop',Math.round(vv.offsetTop)+'px');
-    if(!root.classList.contains('vdoc')&&(window.scrollY||document.documentElement.scrollTop)) window.scrollTo(0,0);
+    if(!root.classList.contains('vdoc')&&!root.classList.contains('vrd')&&(window.scrollY||document.documentElement.scrollTop)) window.scrollTo(0,0);
   }
   const later=()=>{if(!raf) raf=requestAnimationFrame(fit)};
   vv.addEventListener('resize',later);vv.addEventListener('scroll',later);
