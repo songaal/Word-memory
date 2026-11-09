@@ -551,6 +551,8 @@ button.chip:active{filter:brightness(.92)}
 
 /* tappable story words */
 .tw{cursor:pointer;border-radius:4px}
+#vSents .tw,#vrDoc .tw{cursor:inherit;transition:background .45s ease .15s}
+#vSents .tw.twhold,#vrDoc .tw.twhold{background:var(--accent-soft)}
 .tw:active{background:var(--accent-soft)}
 /* story read-aloud: the paragraph being read */
 .storytext > p{transition:background .2s}
@@ -739,7 +741,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
 .vrprog .vprog-t{flex:1;height:4px;border-radius:2px;background:var(--rline);overflow:hidden}
 .vrprog .vprog-t i{display:block;height:100%;width:0;background:var(--accent)}
 .vrdoc .tw{cursor:pointer}
-.vrdoc .tw:active{background:var(--rhl)}
+#vrDoc .tw.twhold{background:var(--rhl)}
 .vrempty{color:var(--rmut);text-align:center;padding:40px 0;font:700 15px var(--f-ui)}
 @media (orientation:landscape) and (max-height:500px){
   body.vplay .tabbar,body.vplay .vtop,body.vplay .vtog,body.vplay #vScroll{display:none!important}
@@ -1059,7 +1061,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.53.0</span> · <span class="version-date">2026/11/09</span></p>
+          <p class="note"><span class="version-tag">v2.53.1</span> · <span class="version-date">2026/11/09</span></p>
           <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
@@ -3013,7 +3015,7 @@ $('vSents').addEventListener('click',e=>{
   }
   const cp=e.target.closest('[data-vcopy]');
   if(cp){e.stopPropagation();vCopy(V.sents[+cp.dataset.vcopy].text);return}
-  if(e.target.closest('[data-tw]')){vPause();return}   // a word: its dictionary entry opens in the popup (global handler)
+  if(Date.now()-twLongAt<900) return;   // a long press on a word just opened the dictionary (twHold); a short tap plays the sentence
   const r=e.target.closest('[data-vi]');if(r) vPlaySingle(+r.dataset.vi);   // anywhere else in the box: play it again
 });
 (()=>{   // tap = play/pause (waits a moment to tell it from a double tap); double tap: left third = previous, right third = next, middle = full screen
@@ -3600,7 +3602,7 @@ $('vrSzM').onclick=()=>vrSize(VR.size-1);$('vrSzP').onclick=()=>vrSize(VR.size+1
 $('vrBody').addEventListener('click',e=>{
   if(!$('vrSet').hidden){$('vrSet').hidden=true;$('vrSetBtn').setAttribute('aria-pressed','false')}
   const cp=e.target.closest('[data-rcopy]');if(cp){vCopy(vrText(+cp.dataset.rcopy));return}   // copy icon after a sentence
-  if(e.target.closest('[data-tw]')){vPause();return}   // a word: dictionary popup (global handler)
+  if(Date.now()-twLongAt<900) return;   // a long press on a word just opened the dictionary (twHold)
   const r=e.target.closest('[data-ri]');if(!r) return;
   const i=+r.dataset.ri;   // a sentence: hear it from the video (tap again to stop)
   if(vIsPlaying()&&V.loop===i){vPause();return}
@@ -5056,10 +5058,29 @@ function renderResult(h,fresh){
 }
 // Tap any word in a story: show its entry (word list first, then the dictionary)
 function normWord(w){return w.toLowerCase().replace(/['’]s$/,'').replace(/['’]/g,'')}
-document.addEventListener('click',async e=>{
+document.addEventListener('click',e=>{
   const t=e.target.closest('[data-tw]');
-  if(!t) return;
-  const w=normWord(t.dataset.tw);
+  if(!t||t.closest(TW_HOLD)) return;   // video sentences and reading mode: long press only (twHold)
+  twOpen(t.dataset.tw);
+});
+// Video sentences and reading mode (v2.53.1): hold a word ~0.6 s to open the dictionary, so a tap can play the sentence
+const TW_HOLD='#vSents,#vrDoc';let twLongAt=0;
+(()=>{
+  let tm=0,x0=0,y0=0,el=null;
+  const cancel=()=>{clearTimeout(tm);tm=0;if(el) el.classList.remove('twhold');el=null};
+  document.addEventListener('pointerdown',e=>{
+    const t=e.target.closest('[data-tw]');if(!t||!t.closest(TW_HOLD)||(e.button&&e.button!==0)) return;
+    cancel();el=t;x0=e.clientX;y0=e.clientY;
+    t.classList.add('twhold');
+    tm=setTimeout(()=>{tm=0;const w=t.dataset.tw;t.classList.remove('twhold');el=null;twLongAt=Date.now();try{haptic()}catch(_){}vPause();twOpen(w)},600);
+  },true);
+  document.addEventListener('pointermove',e=>{if(tm&&Math.hypot(e.clientX-x0,e.clientY-y0)>10) cancel()},true);
+  for(const ev of ['pointerup','pointercancel']) document.addEventListener(ev,()=>{if(tm) cancel()},true);
+  window.addEventListener('scroll',()=>{if(tm) cancel()},{passive:true,capture:true});
+  document.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest(TW_HOLD)) e.preventDefault()});
+})();
+async function twOpen(raw){
+  const w=normWord(raw);
   const known=findCard(w);
   if(known){openPop(known);return}
   $('popTitle').textContent=w;$('popBody').innerHTML='<div class="card empty">Looking it up…</div>';$('pop').hidden=false;
@@ -5070,7 +5091,7 @@ document.addEventListener('click',async e=>{
   if($('pop').hidden||$('popTitle').textContent!==w) return;   // closed or another word tapped meanwhile
   if(tapCache[w]) openPop(tapCache[w]);
   else $('popBody').innerHTML=`<div class="card empty">"${esc(w)}" isn't in the dictionary.</div>`;
-});
+}
 // Tap a filled-in answer (or a word in lists) to see its entry
 document.addEventListener('click',e=>{
   const p=e.target.closest('[data-pop]');
