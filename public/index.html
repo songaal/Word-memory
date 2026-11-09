@@ -1062,7 +1062,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.53.3</span> · <span class="version-date">2026/11/09</span></p>
+          <p class="note"><span class="version-tag">v2.54.0</span> · <span class="version-date">2026/11/09</span></p>
           <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
@@ -1789,6 +1789,65 @@ async function gSay(text,voice,rate){
   try{gAudio.preservesPitch=true;gAudio.webkitPreservesPitch=true}catch(e){}
   await gAudio.play();
   await new Promise(res=>{const done=()=>{gAudio.removeEventListener('ended',done);gAudio.removeEventListener('pause',done);res()};gAudio.addEventListener('ended',done);gAudio.addEventListener('pause',done)});
+}
+// ---- slash reading with the Google voice (v2.54.0): one request per sentence, an SSML <mark> after each chunk;
+// the audio pauses at each mark. Marks work only on Neural2 / WaveNet / Standard voices (not Chirp3-HD).
+const gMarkOK=v=>/-(Neural2|Wavenet|Standard)-/.test(v||gVoice());
+const gMarkMem=new Map();   // voice|m|text → {url, marks}
+const ssmlEsc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+async function gFetchMarked(chunks,voice){   // → {url, marks: seconds where chunk 2, 3, … start (null if missing)}
+  const v=voice||gVoice(),text=chunks.join(' / '),k=v+'|m|'+text;
+  if(gMarkMem.has(k)) return gMarkMem.get(k);
+  const base='/__ttsm/'+encodeURIComponent(v)+'/'+gHash(text);
+  let blob=null,marks=null;
+  try{const c=await caches.open('wm-tts-v1');const a=await c.match(base+'.mp3'),m=await c.match(base+'.json');if(a&&m){blob=await a.blob();marks=await m.json()}}catch(e){}
+  if(!blob||!Array.isArray(marks)){
+    const lang=v.split('-').slice(0,2).join('-');
+    const ssml='<speak>'+chunks.map((c,i)=>ssmlEsc(c)+(i<chunks.length-1?`<mark name="m${i+1}"/>`:'')).join(' ')+'</speak>';
+    const r=await fetch('https://texttospeech.googleapis.com/v1beta1/text:synthesize?key='+encodeURIComponent(settings.translateKey),{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({input:{ssml},voice:{languageCode:lang,name:v},audioConfig:{audioEncoding:'MP3'},enableTimePointing:['SSML_MARK']})});
+    let j=null;try{j=await r.json()}catch(_){}
+    if(!r.ok||!j||!j.audioContent) throw new Error(gErrText((j&&j.error&&j.error.message)||('HTTP '+r.status)));
+    const tp=Array.isArray(j.timepoints)?j.timepoints:[];
+    marks=chunks.slice(1).map((_,i)=>{const t=tp.find(x=>x.markName==='m'+(i+1));return t&&isFinite(+t.timeSeconds)?+t.timeSeconds:null});
+    const bin=atob(j.audioContent),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+    blob=new Blob([u8],{type:'audio/mpeg'});
+    try{const c=await caches.open('wm-tts-v1');await c.put(base+'.mp3',new Response(blob,{headers:{'content-type':'audio/mpeg'}}));await c.put(base+'.json',new Response(JSON.stringify(marks),{headers:{'content-type':'application/json'}}))}catch(e){}
+  }
+  const out={url:URL.createObjectURL(blob),marks};gMarkMem.set(k,out);return out;
+}
+// Play one sentence's chunks from chunk `at`; onChunk(k) when chunk k starts; waits pauseMs at each mark
+async function gSayMarked(chunks,rate,at,onChunk,pauseMs){
+  const token=++gPlayToken;
+  const {url,marks}=await gFetchMarked(chunks);
+  if(token!==gPlayToken) return;
+  gAudio.src=url;gAudio.playbackRate=rate||voicePref.rate||.9;
+  try{gAudio.preservesPitch=true;gAudio.webkitPreservesPitch=true}catch(e){}
+  let k=Math.max(0,at|0);
+  while(k>0&&marks[k-1]==null) k--;   // start where a mark is known
+  if(k>0){
+    if(gAudio.readyState<1) await new Promise(r=>{gAudio.addEventListener('loadedmetadata',r,{once:true});setTimeout(r,3000)});
+    if(token!==gPlayToken) return;
+    try{gAudio.currentTime=marks[k-1]}catch(e){}
+  }
+  onChunk(k);
+  for(;;){
+    let n=k;while(n<marks.length&&marks[n]==null) n++;   // the next known mark
+    const nextAt=n<marks.length?marks[n]:null;
+    await gAudio.play();
+    const how=await new Promise(res=>{
+      let iv=0;
+      const fin=v=>{clearInterval(iv);gAudio.removeEventListener('ended',onEnd);gAudio.removeEventListener('pause',onPause);res(v)};
+      const onEnd=()=>fin('end'),onPause=()=>fin('stop');
+      gAudio.addEventListener('ended',onEnd);gAudio.addEventListener('pause',onPause);
+      if(nextAt!=null) iv=setInterval(()=>{if(token!==gPlayToken) fin('stop');else if(gAudio.currentTime>=nextAt-.03) fin('mark')},20);
+    });
+    if(how!=='mark') return;
+    gAudio.pause();
+    k=n+1;onChunk(k);
+    await srWait(pauseMs);
+    if(token!==gPlayToken) return;
+  }
 }
 // Example sentences: Google voice when chosen, the device voice otherwise (or if Google fails)
 function sayExample(text){
@@ -5306,25 +5365,46 @@ function srPaint(s){
 // EN chunk, then its Korean (when translation is on), then the pause; reads the settings live
 async function slashPlay(s,from){
   const lv=slashCfg().level,list=slashList(s,lv);
-  if(gSent()) gPrime();
+  const google=gSent();
+  if(google&&!gMarkOK()){slashVoiceNote();return}   // chunk pauses need SSML marks: Neural2 voices only
+  if(google) gPrime();
   stopReading();try{speechSynthesis.cancel()}catch(e){}gStop();
   const token=Math.random();
   reader={id:s.id,slash:true,token,parts:[],i:0};
   srPos={id:s.id,lv,i:from};
   const live=()=>reader&&reader.token===token;
-  for(let i=from;i<list.length;i++){
-    if(!live()) return;
-    srPos.i=i;srPaint(s);
-    await srSay(list[i].en,false,slashCfg().rate);
-    if(!live()) return;
-    if(slashCfg().tr&&list[i].ko){
-      await srWait(180);if(!live()) return;
-      await srSay(list[i].ko,true,Math.min(1.1,slashCfg().rate+.1));
+  const pauseMs=()=>Math.round(slashCfg().pause*1000);
+  if(google){   // one request per sentence, paused at each slash (v2.54.0); Korean is not read
+    const groups=[];   // [first chunk index, last+1] per sentence
+    for(let i=0;i<list.length;){let j=i;while(j<list.length&&list[j].si===list[i].si) j++;groups.push([i,j]);i=j}
+    let g=groups.findIndex(([a,b])=>from>=a&&from<b);if(g<0) g=0;
+    const chunksOf=x=>list.slice(x[0],x[1]).map(c=>c.en);
+    for(;g<groups.length;g++){
       if(!live()) return;
+      const [a,b]=groups[g],at=Math.max(0,from-a);from=0;
+      if(groups[g+1]) gFetchMarked(chunksOf(groups[g+1])).catch(()=>{});   // fetch the next sentence meanwhile
+      try{
+        await gSayMarked(chunksOf([a,b]),slashCfg().rate,at,k=>{if(live()){srPos.i=Math.min(b-1,a+k);srPaint(s)}},pauseMs());
+      }catch(e){gLastError=e.message;if(live()){toast(e.message);reader=null;srPaint(s)}return}
+      if(!live()) return;
+      if(g<groups.length-1) await srWait(pauseMs());
     }
-    if(i<list.length-1) await srWait(Math.round(slashCfg().pause*1000));
+  }else{   // device voice: chunk by chunk
+    for(let i=from;i<list.length;i++){
+      if(!live()) return;
+      srPos.i=i;srPaint(s);
+      await srSay(list[i].en,false,slashCfg().rate);
+      if(!live()) return;
+      if(i<list.length-1) await srWait(pauseMs());
+    }
   }
   if(live()){reader=null;srPos=null;srPaint(s)}
+}
+function slashVoiceNote(){
+  openSheet('Slash reading voice',`<div class="card"><p style="margin:0">Slash reading reads each sentence in one go and pauses at every slash. This needs a Neural2 Google voice — the voice you picked can't mark the slashes.</p>
+    <p class="note" style="margin:0">Choose a Neural2 voice in Me → Settings → Voice.</p>
+    <div class="row" style="gap:8px"><button class="btn ghost" id="slvNo" type="button" style="flex:1">Close</button><button class="btn" id="slvSet" type="button" style="flex:1">Open Voice settings</button></div></div>`);
+  $('slvNo').onclick=closeSheet;$('slvSet').onclick=()=>{closeSheet();show('me');openMePage('voice',true)};
 }
 function srPause(s){
   if(reader&&!reader.slash&&reader.id===s.id) srPos={id:s.id,lv:'none',i:reader.i};
@@ -6526,6 +6606,7 @@ document.addEventListener('touchmove',e=>{if(e.touches.length>1) e.preventDefaul
 
 // ---------- Korean dictionary (exact interface strings, then patterns) ----------
 const I18N_KO={
+'Slash reading voice':'끊어읽기 목소리',"Slash reading reads each sentence in one go and pauses at every slash. This needs a Neural2 Google voice — the voice you picked can't mark the slashes.":'끊어읽기는 문장을 한 번에 읽고 / 마다 잠깐 쉬어요. 이 기능은 구글 Neural2 목소리에서만 돼요. 지금 고른 목소리는 / 위치를 표시할 수 없어요.','Choose a Neural2 voice in Me → Settings → Voice.':'나 → 설정 → 음성에서 Neural2 목소리를 골라 주세요.','Open Voice settings':'음성 설정 열기',
 'Reading mode':'읽기 모드','Reading settings':'읽기 설정','Layout':'보기','Line by line':'한 줄씩','Paragraphs':'이어붙여 읽기','Background':'배경','Auto':'자동','No transcript yet.':'아직 자막이 없어요.','Clean up transcript':'자막 정리하기','The transcript is already clean.':'자막이 이미 깔끔해요.',
 // tabs, bars, common
 'Home':'홈','Test':'테스트','Words':'단어','Me':'나','Story':'스토리','Stories':'스토리','Dictionary':'사전','Settings':'설정','About':'정보',
