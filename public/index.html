@@ -682,7 +682,11 @@ html.vdoc{overflow-y:auto}
 html.vdoc body{position:static;min-height:100%}
 html.vdoc .view{position:relative;top:0;height:auto;min-height:100vh;display:block}
 html.vdoc #s-video,html.vdoc #vpane-play{display:block;min-height:0}
-html.vdoc .vstick{display:block;position:sticky;top:0;z-index:5;background:var(--bg)}
+html.vdoc .vstick{display:block;position:sticky;top:var(--vtoph,0px);z-index:5;background:var(--bg);transition:top .25s ease}
+/* v2.54.1: the title bar (Back, reading mode, Test, ⋯) stays pinned too; it slides away while scrolling down and comes back on scrolling up */
+html.vdoc .vtop{position:sticky;top:0;z-index:6;background:var(--bg);transition:transform .25s ease}
+html.vdoc.vtophid .vtop{transform:translateY(-100%)}
+html.vdoc.vtophid .vstick{top:0}
 html.vdoc #vScroll{overflow:visible;flex:none;min-height:0;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 40vh)}
 /* reading mode (v2.52.0): the transcript as a document */
 .vread{position:fixed;left:0;right:0;top:var(--vvtop,0px);height:var(--vvh,100%);z-index:46;display:flex;flex-direction:column;
@@ -1062,7 +1066,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.54.0</span> · <span class="version-date">2026/11/09</span></p>
+          <p class="note"><span class="version-tag">v2.54.1</span> · <span class="version-date">2026/11/09</span></p>
           <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
@@ -2905,10 +2909,21 @@ function vDocSync(){
   const b=document.body,on=curTab==='video'&&!!V.vid&&b.classList.contains('vplay')&&!b.classList.contains('vfull')&&!(innerWidth>innerHeight&&innerHeight<=500);
   const was=vDocOn();if(on===was) return;
   document.documentElement.classList.toggle('vdoc',on);
+  document.documentElement.classList.remove('vtophid');vTopLastY=0;vTopH();
   if(!on) window.scrollTo(0,0);
   else setTimeout(()=>vScrollCur(false),60);
 }
-window.addEventListener('resize',()=>vDocSync());
+window.addEventListener('resize',()=>{vDocSync();vTopH()});
+// pinned title bar in page-scroll mode: hide while scrolling down, show on scrolling up / near the top (not during auto-follow)
+let vTopLastY=0,vAutoScrollUntil=0;
+function vTopH(){const t=document.querySelector('#vpane-play .vtop');if(t&&t.offsetHeight) document.documentElement.style.setProperty('--vtoph',t.offsetHeight+'px')}
+window.addEventListener('scroll',()=>{
+  if(!vDocOn()) return;
+  const y=window.scrollY,d=y-vTopLastY,root=document.documentElement;
+  if(y<40) root.classList.remove('vtophid');
+  else if(Date.now()>vAutoScrollUntil){if(d>8) root.classList.add('vtophid');else if(d<-8) root.classList.remove('vtophid')}
+  if(Math.abs(d)>8||y<40) vTopLastY=y;
+},{passive:true});
 // ---- list screen ----
 function renderVideo(){
   document.body.classList.toggle('vplay',!!V.vid);vDocSync();
@@ -3476,7 +3491,7 @@ function vScrollCur(smooth=true){
   const el=$('vs'+V.cur),sc=$('vScroll');if(!el||!sc) return;
   if(vDocOn()){   // the page scrolls: centre the sentence in the space under the pinned video
     const r=el.getBoundingClientRect(),top=$('vStick').getBoundingClientRect().bottom,h=window.innerHeight-top;
-    window.scrollTo({top:Math.max(0,window.scrollY+r.top-top-h/2+r.height/2),behavior:smooth?'smooth':'auto'});return;
+    vAutoScrollUntil=Date.now()+900;window.scrollTo({top:Math.max(0,window.scrollY+r.top-top-h/2+r.height/2),behavior:smooth?'smooth':'auto'});return;
   }
   const r=el.getBoundingClientRect(),sr=sc.getBoundingClientRect();
   sc.scrollTo({top:Math.max(0,sc.scrollTop+(r.top-sr.top)-sr.height/2+r.height/2),behavior:smooth?'smooth':'auto'});
