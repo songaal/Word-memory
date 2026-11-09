@@ -1066,7 +1066,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.54.1</span> · <span class="version-date">2026/11/09</span></p>
+          <p class="note"><span class="version-tag">v2.54.2</span> · <span class="version-date">2026/11/09</span></p>
           <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
@@ -3681,9 +3681,9 @@ $('vrBody').addEventListener('click',e=>{
   const cp=e.target.closest('[data-rcopy]');if(cp){vCopy(vrText(+cp.dataset.rcopy));return}   // copy icon after a sentence
   if(Date.now()-twLongAt<900) return;   // a long press on a word just opened the dictionary (twHold)
   const r=e.target.closest('[data-ri]');if(!r) return;
-  const i=+r.dataset.ri;   // a sentence: hear it from the video (tap again to stop)
-  if(vIsPlaying()&&V.loop===i){vPause();return}
-  vPlaySingle(i);
+  const i=+r.dataset.ri;   // a sentence: play from it on to the end (v2.54.2); tap the playing one again to stop
+  if(vIsPlaying()&&V.cur===i){vPause();return}
+  vPlaySingle(i,true);
 });
 // Leaving the tab or the app pauses the video
 function vPause(){if(V.player&&typeof V.player.pauseVideo==='function'){try{V.player.pauseVideo()}catch(e){}}vStopTracker()}
