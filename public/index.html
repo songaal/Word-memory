@@ -636,10 +636,6 @@ body.vfull .voverlay{touch-action:none}
 .vs.on .vic{color:var(--accent)}
 .vchatbtn{color:var(--accent)}
 .vchatbtn svg{width:22px;height:22px}
-.vchat-panel{height:min(78vh,calc(var(--vvh,100vh) - 40px))}
-#vchatBody{flex:1;display:flex;flex-direction:column;gap:10px}
-.vchat-in{border-top:1px solid var(--line);background:var(--card);padding:8px 12px calc(env(safe-area-inset-bottom,0px) + 8px)}
-.vchat-in textarea{flex:1;resize:none;max-height:120px;min-height:42px;font:15px/1.4 var(--f-ui)}
 .vq{align-self:flex-end;max-width:85%;background:var(--accent-soft);color:var(--fg);border-radius:16px 16px 4px 16px;padding:8px 12px;font:600 14.5px/1.45 var(--f-ui);white-space:pre-wrap;word-break:break-word}
 .va{align-self:flex-start;max-width:100%;background:var(--card);border:2px solid var(--line);border-radius:16px 16px 16px 4px;padding:10px 12px;font:15px/1.6 var(--f-ui);word-break:break-word}
 .va p{margin:0 0 6px}.va p:last-child{margin:0}
@@ -721,7 +717,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
 .vrth{flex:1;display:flex;gap:8px}
 .vrth button{flex:1;height:34px;border-radius:10px;border:2px solid var(--rline);cursor:pointer;font:800 12px var(--f-ui)}
 .vrth button[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:1px}
-.vrbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 60px) var(--gutter-l)}
+.vrbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px var(--gutter-r) calc(env(safe-area-inset-bottom,0px) + 100px) var(--gutter-l)}
 .vrdoc{max-width:680px;margin:0 auto;font:400 var(--rsz,19px)/1.7 var(--f-word);color:var(--rfg)}
 .vrdoc p{margin:0 0 .9em}
 .vrdoc .rs{border-radius:6px;transition:background .3s}
@@ -729,6 +725,19 @@ html.vrd .vrbody{overflow:visible;min-height:0}
 .vrdoc .rs.on{background:var(--rhl)}
 .vrdoc .rk{display:block;font:600 calc(var(--rsz,19px) * .8)/1.55 var(--f-ui);color:var(--rmut);margin-top:2px}
 .vrdoc.para .rkp{font:600 calc(var(--rsz,19px) * .8)/1.6 var(--f-ui);color:var(--rmut);margin:-.4em 0 1.3em;padding-left:10px;border-left:3px solid var(--rline)}
+.vrdoc .rn{font:700 .5em/1 var(--f-ui);color:var(--rmut);opacity:.55;margin-right:3px;vertical-align:super;font-variant-numeric:tabular-nums}
+.vrdoc .rcp{border:0;background:none;color:var(--rmut);opacity:.5;width:1.3em;height:1.3em;margin-left:4px;padding:0;display:inline-grid;place-items:center;vertical-align:-.18em;cursor:pointer;border-radius:6px}
+.vrdoc .rcp svg{width:.8em;height:.8em}
+.vrdoc .rcp:active{opacity:1;background:var(--rline)}
+.vrfab{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:3;width:min(260px,calc(100vw - 32px));display:flex;align-items:center;gap:10px;padding:8px 14px 8px 8px;border-radius:999px;background:var(--rbg);color:var(--rfg);border:1px solid var(--rline);box-shadow:0 6px 20px rgba(0,0,0,.16)}
+.vrpp{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;padding:0}
+.vrpp svg{width:18px;height:18px}
+.vrpp:active{transform:scale(.94)}
+.vrfm{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.vrfi{display:flex;justify-content:space-between;font:800 11px/1 var(--f-ui);color:var(--rmut);font-variant-numeric:tabular-nums}
+.vrprog{height:14px;display:flex;align-items:center;cursor:pointer;touch-action:none}
+.vrprog .vprog-t{flex:1;height:4px;border-radius:2px;background:var(--rline);overflow:hidden}
+.vrprog .vprog-t i{display:block;height:100%;width:0;background:var(--accent)}
 .vrdoc .tw{cursor:pointer}
 .vrdoc .tw:active{background:var(--rhl)}
 .vrempty{color:var(--rmut);text-align:center;padding:40px 0;font:700 15px var(--f-ui)}
@@ -1005,7 +1014,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
       <div class="scroll"><div class="stack" id="vList"></div></div>
     </div>
     <div class="pane" id="vpane-play" hidden>
-      <div class="vtop"><button class="linkbtn inlineback" id="vBack" type="button">‹ Videos</button><span class="vtitle" id="vTitle" data-noi18n></span><button class="ricon plain vchatbtn" id="vReadBtn" type="button" aria-label="Reading mode" hidden></button><button class="ricon plain vchatbtn" id="vChatBtn" type="button" aria-label="Sentence study with AI"></button><button class="ricon plain" id="vMore" type="button" aria-label="More"></button></div>
+      <div class="vtop"><button class="linkbtn inlineback" id="vBack" type="button">‹ Videos</button><span class="vtitle" id="vTitle" data-noi18n></span><button class="ricon plain vchatbtn" id="vReadBtn" type="button" aria-label="Reading mode" hidden></button><button class="ricon plain vchatbtn" id="vTopTest" type="button" aria-label="Sentence test" hidden></button><button class="ricon plain" id="vMore" type="button" aria-label="More"></button></div>
       <div class="vstick" id="vStick">
       <div class="vwrap" id="vWrap"><div id="ytPlayer"></div><div class="voverlay" id="vOverlay"></div><div class="vcap" id="vCap" data-noi18n></div>
         <div class="vcset" id="vCset" hidden><div class="vcset-h"><b>Caption size</b><button type="button" class="vcset-x" id="vCsetX" aria-label="Close">✕</button></div>
@@ -1050,7 +1059,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.52.1</span> · <span class="version-date">2026/11/08</span></p>
+          <p class="note"><span class="version-tag">v2.53.0</span> · <span class="version-date">2026/11/09</span></p>
           <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
@@ -1212,6 +1221,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
   </div>
   </div>
   <div class="vrbody" id="vrBody"><div class="vrdoc" id="vrDoc" data-noi18n></div></div>
+  <div class="vrfab" id="vrFab"><button class="vrpp" id="vrPP" type="button" aria-label="Play"></button><div class="vrfm"><div class="vrfi"><span id="vrTime" data-noi18n>0:00</span><span id="vrN" data-noi18n></span></div><div class="vrprog" id="vrProg"><div class="vprog-t"><i id="vrFill"></i></div></div></div></div>
 </div>
 <div class="learn jlearn" id="jlearn" hidden>
   <div class="lhead"><button class="linkbtn" id="jlBack" type="button">‹ Back</button><span class="lcount" id="jlTitle" style="font-size:16px"></span><button class="hintbtn" id="jlTr" type="button" aria-pressed="false"></button></div>
@@ -1264,13 +1274,6 @@ html.vrd .vrbody{overflow:visible;min-height:0}
   <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="pracTitle">
     <div class="sheet-head"><b id="pracTitle">Typing practice</b><button class="x" id="pracX" type="button" aria-label="Close">✕</button></div>
     <div class="sheet-body" id="pracBody"></div>
-  </div>
-</div>
-<div class="sheet" id="vchat" hidden style="z-index:55">
-  <div class="sheet-panel vchat-panel" role="dialog" aria-modal="true" aria-labelledby="vchatTitle">
-    <div class="sheet-head"><b id="vchatTitle">Sentence study</b><button class="x" id="vchatX" type="button" aria-label="Close">✕</button></div>
-    <div class="sheet-body" id="vchatBody"></div>
-    <form class="composer vchat-in" id="vchatForm" autocomplete="off"><textarea id="vchatIn" rows="1" placeholder="Ask a follow-up question" enterkeyhint="send"></textarea><button class="btn" id="vchatSend" type="submit">Send</button></form>
   </div>
 </div>
 <div class="sheet" id="pop" hidden style="z-index:60">
@@ -2194,7 +2197,7 @@ function showIn(name){
   if(name==='dict'){renderDict();if(dictPane==='search') $('searchIn').focus()}
   if(name==='me') renderMe();
   if(name==='write') renderWrite();
-  if(name==='video') renderVideo();else{vPause();document.body.classList.remove('vplay');vChatClose();vrClose();vDocSync()}
+  if(name==='video') renderVideo();else{vPause();document.body.classList.remove('vplay');vrClose();vDocSync()}
 }
 for(const t of TABS) $('tab-'+t).onclick=()=>{if(t==='dict'&&!inTest) dictPane='list';show(t)};   // the Words tab always opens on the word list
 function renderBadge(){
@@ -2769,8 +2772,6 @@ const VI={
   gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
 };
 VI.copy='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
-VI.study='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3.5l1.6 4.4 4.4 1.6-4.4 1.6L10 15.5l-1.6-4.4L4 9.5l4.4-1.6z"/><path d="M18 3l.7 1.8 1.8.7-1.8.7L18 8l-.7-1.8-1.8-.7 1.8-.7z"/><path d="M17.5 14.5l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9z"/></svg>';
-VI.chat=VI.study;   // the same three-star AI icon
 VI.read='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg>';
 VI.clean='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4l5 5-9.5 9.5H6v-4.5z"/><path d="M4 21h16"/></svg>';
 VI.split='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg>';
@@ -2907,7 +2908,7 @@ async function openVideo(vid){
   try{if(!(window.history.state&&window.history.state.video)) window.history.pushState({video:vid},'')}catch(e){}
   urlSync();
   $('s-video').classList.add('playing');$('vpane-list').hidden=true;$('vpane-play').hidden=false;document.body.classList.add('vplay');window.scrollTo(0,0);vDocSync();
-  $('vChatBtn').hidden=false;$('vChatBtn').innerHTML=VI.chat;$('vReadBtn').hidden=true;$('vReadBtn').innerHTML=VI.read;
+  $('vTopTest').hidden=true;$('vTopTest').innerHTML=VI.test;$('vReadBtn').hidden=true;$('vReadBtn').innerHTML=VI.read;
   $('vTitle').textContent=V.title||'Loading…';$('vSents').innerHTML='';$('vCtl').innerHTML='';$('vTog').innerHTML='';
   const [t,tr]=await Promise.all([vGet('transcript',vid),vGet('translations',vid)]);
   if(V.vid!==vid) return;
@@ -2946,7 +2947,7 @@ $('vBack').onclick=()=>{if(window.history.state&&window.history.state.video) win
 function renderVideoPlay(){
   const has=V.sents.length>0,rw=vRewind(),fw=vForward();
   $('vWrap').classList.toggle('off',!V.on);
-  $('vMore').innerHTML=MORE_ICON;$('vReadBtn').hidden=!has;
+  $('vMore').innerHTML=MORE_ICON;$('vReadBtn').hidden=!has;$('vTopTest').hidden=!has;
   $('vCtl').innerHTML=`
     <button class="ricon" id="vOn" type="button" aria-label="Video on or off">${V.on?VI.video:VI.videoOff}</button>
     ${has?`<button class="ricon" id="vPrev" type="button" aria-label="Previous sentence">${VI.prev}</button>`:''}
@@ -2956,7 +2957,6 @@ function renderVideoPlay(){
     ${has?`<button class="ricon" id="vNext" type="button" aria-label="Next sentence">${VI.next}</button>`:''}
     ${has?`<button class="ricon${V.cc?' on':''}" id="vCC" type="button" aria-label="Caption on the video">${V_CC[V.cc]}</button>`:''}`;
   $('vTog').innerHTML=has?`
-    <button class="hintbtn" id="vTestBtn" type="button">${VI.test}<span>Test</span></button>
     <button class="hintbtn" id="vRep" type="button" aria-pressed="${V.repeat}">${VI.headset}<span>${V.repeat?'Repeat 3×':'Play once'}</span></button>
     <button class="hintbtn" id="vSlow" type="button" aria-pressed="${V.slow}">${VI.turtle}<span>${vSlowRate()}×</span></button>
     <button class="hintbtn" id="vTrBtn" type="button" aria-pressed="${V.trOn}">${V.trBusy?'Translating…':'Translate'}</button>
@@ -2991,7 +2991,6 @@ function renderVideoPlay(){
   on('vRep',()=>{V.repeat=!V.repeat;$('vRep').setAttribute('aria-pressed',V.repeat);$('vRep').querySelector('span').textContent=V.repeat?'Repeat 3×':'Play once'});
   on('vSlow',()=>{V.slow=!V.slow;$('vSlow').setAttribute('aria-pressed',V.slow);if(V.player&&V.player.setPlaybackRate) V.player.setPlaybackRate(V.slow?vSlowRate():1)});
   on('vTrBtn',vToggleTr);
-  on('vTestBtn',vtStart);
   on('vBlur',()=>{V.blur=!V.blur;$('vBlur').setAttribute('aria-pressed',V.blur);L.classList.toggle('vblur',V.blur)});
   on('vTimeBtn',()=>{V.time=!V.time;$('vTimeBtn').setAttribute('aria-pressed',V.time);L.classList.toggle('vtime',V.time);vScrollCur()});
   on('vApply',vApplyPaste);
@@ -3045,9 +3044,11 @@ function vIsPlaying(){const p=V.player;try{return !!(p&&typeof p.getPlayerState=
 function vPPIcon(playing){
   const b=$('vPP');if(!b) return;
   b.innerHTML=playing?PAUSE_ICON:PLAY_ICON;b.setAttribute('aria-label',playing?'Pause':'Play');
+  const f=$('vrPP');if(f){f.innerHTML=b.innerHTML;f.setAttribute('aria-label',playing?'Pause':'Play')}
   const L=$('vSents');if(L) L.classList.toggle('vpaused',!playing);
 }
 $('vPP').onclick=e=>{e.stopPropagation();vTap()};
+$('vrPP').onclick=e=>{e.stopPropagation();vTap()};   // reading mode floating player
 // ---- player settings (gear on the play bar): caption size, saved on this device (wm.vcapSize) ----
 const vCapSize=()=>{const n=parseInt(lsGet('wm.vcapSize'));return n>=11&&n<=32?n:15};
 function vCapApply(n){$('vWrap').style.setProperty('--vcap',n+'px');$('vCsVal').textContent=n+'px';$('vCsRange').value=n}
@@ -3151,7 +3152,7 @@ $('vZReset').onclick=e=>{e.stopPropagation();vZoomSet(1,0,0)};
 // ---- keyboard on the player ----
 function vKeysOn(){
   if(curTab!=='video'||!V.vid||$('vpane-play').hidden) return false;
-  for(const id of ['sheet','pop','vchat','vtest','noteSheet','pracSheet','vread']){const el=$(id);if(el&&!el.hidden) return false}
+  for(const id of ['sheet','pop','vtest','noteSheet','pracSheet','vread']){const el=$(id);if(el&&!el.hidden) return false}
   const a=document.activeElement;
   if(a&&(a.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return false;
   return true;
@@ -3406,7 +3407,7 @@ function vStartTracker(){
   },50);
 }
 function vStopTracker(){if(V.tracker){clearInterval(V.tracker);V.tracker=null}}
-function vSentInfo(){$('vSentN').textContent=V.sents.length?`${V.cur+1} / ${V.sents.length}`:''}
+function vSentInfo(){const t=V.sents.length?`${V.cur+1} / ${V.sents.length}`:'';$('vSentN').textContent=t;$('vrN').textContent=t}
 function vScrollCur(smooth=true){
   const el=$('vs'+V.cur),sc=$('vScroll');if(!el||!sc) return;
   if(vDocOn()){   // the page scrolls: centre the sentence in the space under the pinned video
@@ -3430,16 +3431,16 @@ function vHighlight(i,quiet){
 function vTimeInfo(now){
   const p=V.player;if(!p||typeof p.getDuration!=='function') return;
   const total=p.getDuration();if(!total) return;
-  $('vTime').textContent=vFmt(now)+' / '+vFmt(total);
-  $('vProgFill').style.width=(now/total*100).toFixed(2)+'%';
+  $('vTime').textContent=$('vrTime').textContent=vFmt(now)+' / '+vFmt(total);
+  $('vProgFill').style.width=$('vrFill').style.width=(now/total*100).toFixed(2)+'%';
 }
-(()=>{
-  const wrap=$('vProg');let drag=false;
+for(const [pid,fid] of [['vProg','vProgFill'],['vrProg','vrFill']]){
+  const wrap=$(pid);let drag=false;
   const seek=e=>{
     const p=V.player;if(!p||typeof p.getDuration!=='function') return;
     const total=p.getDuration();if(!total) return;
     const r=wrap.getBoundingClientRect(),ratio=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),to=ratio*total;
-    p.seekTo(to,true);$('vProgFill').style.width=(ratio*100).toFixed(2)+'%';
+    p.seekTo(to,true);$(fid).style.width=(ratio*100).toFixed(2)+'%';
     if(V.sents.length){
       let idx=0;for(let i=0;i<V.sents.length-1;i++) if(to>=V.sents[i].start-V.sync) idx=i;
       V.token++;V.cur=idx;V.loop=idx;V.pass=1;V.maxPass=V.repeat?3:1;V.auto=true;vHighlight(idx);
@@ -3448,7 +3449,7 @@ function vTimeInfo(now){
   wrap.addEventListener('pointerdown',e=>{drag=true;try{wrap.setPointerCapture(e.pointerId)}catch(_){}seek(e)});
   wrap.addEventListener('pointermove',e=>{if(drag) seek(e)});
   wrap.addEventListener('pointerup',()=>drag=false);wrap.addEventListener('pointercancel',()=>drag=false);
-})();
+}
 // ---- captions on the video ----
 function vSetCap(text){const c=$('vCap');if(text){c.textContent=text;c.style.display='block'}else c.style.display='none'}
 function vRepeatCaption(i){   // pass 1: nothing · pass 2: Korean · pass 3: English
@@ -3502,49 +3503,6 @@ async function vCopy(text){
   try{await navigator.clipboard.writeText(text);toast('Copied')}
   catch(e){try{const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();toast('Copied')}catch(_){toast('Could not copy.')}}
 }
-// ---- Sentence study: the AI from Me → Settings → AI translates and parses the sentence, then you can keep asking ----
-let vChat=null;   // {vid, idx, sentence, msgs:[{role:'user'|'assistant', content}], busy, err}
-const VCHAT_SYS='You are an English tutor for a Korean learner studying English with videos. Answer in Korean and be very brief. Keep English words and phrases in English. Plain text only: no headings, no tables, no bullet lists unless asked.';
-const vFirstAsk=t=>`영상 속 영어 문장: \"${t}\"\n\n아래 형식으로만, 아주 짧게 답해 주세요.\n1줄: 자연스러운 한국어 해석 한 문장.\n2줄: 문장 성분을 단어만 매칭해서 한 문장으로 (예: 주어 I / 동사 was / 보어 dubious / 수식어 about the plan).\n3줄: 구동사나 특이하게 쓰인 표현이 있을 때만, 그 뜻을 최대 두 문장으로 간단히. 없으면 이 줄은 생략.\n다른 설명은 붙이지 마세요.`;
-function vStudyAsk(i){
-  const x=V.sents[i];if(!x) return;
-  vPause();
-  if(!aiKey()){
-    openSheet('Sentence study',`<div class="card"><p style="margin:0">Sentence study asks an AI to translate a sentence and explain how it is built, and you can keep asking questions about it.</p>
-      <p class="note" style="margin:0">No AI is set up yet. Add a Gemini, ChatGPT or Claude key in Me → Settings → AI to use it.</p>
-      <div class="row" style="gap:8px"><button class="btn ghost" id="vsNo" type="button" style="flex:1">Close</button><button class="btn" id="vsSet" type="button" style="flex:1">Open AI settings</button></div></div>`);
-    $('vsNo').onclick=closeSheet;$('vsSet').onclick=()=>{closeSheet();show('me');openMePage('ai',true)};
-    return;
-  }
-  const p=aiProv();
-  openSheet('Sentence study',`<div class="card"><div class="vsent" data-noi18n>${esc(x.text)}</div>
-    <p style="margin:0">${esc(`I'll ask ${AI[p].name} (${aiModel(p)}) to translate this sentence and explain its structure. Go ahead?`)}</p>
-    <div class="row" style="gap:8px"><button class="btn ghost" id="vsNo" type="button" style="flex:1">No</button><button class="btn" id="vsYes" type="button" style="flex:1">Yes</button></div></div>`);
-  $('vsNo').onclick=closeSheet;
-  $('vsYes').onclick=()=>{closeSheet();vChat={vid:V.vid,idx:i,sentence:x.text,msgs:[{role:'user',content:vFirstAsk(x.text),first:true}],busy:false,err:''};vChatOpen();vChatRun()};
-}
-function vMd(t){   // tiny markdown: paragraphs, "- " bullets, **bold**
-  const inline=x=>esc(x).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
-  const out=[];let list=[];
-  const flush=()=>{if(list.length){out.push('<ul>'+list.map(l=>'<li>'+inline(l)+'</li>').join('')+'</ul>');list=[]}};
-  for(const raw of String(t).replace(/\r/g,'').split('\n')){
-    const l=raw.trim();
-    if(/^([-*•]|\d+[.)])\s+/.test(l)){list.push(l.replace(/^([-*•])\s+/,''));continue}
-    flush();if(l) out.push('<p>'+inline(l.replace(/^#+\s*/,''))+'</p>');
-  }
-  flush();return out.join('');
-}
-function vChatRender(){
-  const c=vChat;if(!c) return;
-  const b=$('vchatBody');
-  b.innerHTML=`<div class="vsent" data-noi18n>${esc(c.sentence)}</div>`+c.msgs.map(m=>m.first?'':m.role==='user'?`<div class="vq" data-noi18n>${esc(m.content)}</div>`:`<div class="va" data-noi18n>${vMd(m.content)}</div>`).join('')
-    +(c.busy?`<div class="va"><span class="spin"></span> ${esc(AI[aiProv()].name)} is thinking…</div>`:'')
-    +(c.err?`<div class="msg err">${esc(c.err)}</div><button class="btn ghost" id="vchatRetry" type="button">Try again</button>`:'');
-  if($('vchatRetry')) $('vchatRetry').onclick=()=>{c.err='';vChatRun()};
-  $('vchatSend').disabled=c.busy;
-  b.scrollTop=b.scrollHeight;
-}
-function vChatOpen(){if(!vChat) return;if($('vchat').hidden) try{window.history.pushState({video:V.vid,chat:1},'')}catch(e){}$('vchat').hidden=false;$('vChatBtn').innerHTML=VI.chat;vChatRender()}
 // ---- reading mode (v2.52.0): the transcript as a document — line by line or in paragraphs, Korean under it,
 // text size and background in a panel that opens from Aa. Settings per device in localStorage wm.vread.
 const VR0={mode:'line',size:19,th:'auto',tr:false};
@@ -3571,7 +3529,7 @@ function vrRender(){
   document.querySelectorAll('#vrMode [data-vrmode]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.vrmode===VR.mode));
   document.querySelectorAll('#vrTh [data-vrth]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.vrth===VR.th));
   if(!V.sents.length){d.innerHTML='<div class="vrempty">No transcript yet.</div>';return}
-  const rs=i=>`<span class="rs${i===V.cur?' on':''}" data-ri="${i}">${tapWordsHTML(vrText(i))}${tr&&VR.mode==='line'&&V.tr[i]?`<span class="rk">${esc(V.tr[i])}</span>`:''}</span>`;
+  const rs=i=>`<span class="rs${i===V.cur?' on':''}" data-ri="${i}"><sup class="rn">${i+1}</sup>${tapWordsHTML(vrText(i))}<button class="rcp" type="button" data-rcopy="${i}" aria-label="Copy">${VI.copy}</button>${tr&&VR.mode==='line'&&V.tr[i]?`<span class="rk">${esc(V.tr[i])}</span>`:''}</span>`;
   d.innerHTML=VR.mode==='line'?V.sents.map((_,i)=>rs(i)).join('')
     :vrParas().map(p=>`<p>${p.map(rs).join(' ')}</p>${tr?`<p class="rkp">${esc(p.map(i=>V.tr[i]||'').filter(Boolean).join(' '))}</p>`:''}`).join('');
 }
@@ -3592,6 +3550,7 @@ function vrOpen(){
   $('vrTitle').textContent=V.title||$('vTitle').textContent||'';$('vrTr').innerHTML=TR_ICON;
   $('vrSet').hidden=true;$('vrSetBtn').setAttribute('aria-pressed','false');
   vrRender();$('vread').hidden=false;$('vrBody').scrollTop=0;
+  vPPIcon(vIsPlaying());vSentInfo();try{vTimeInfo(V.player&&V.player.getCurrentTime?V.player.getCurrentTime():0)}catch(_){}
   vrDocSet(true);
   requestAnimationFrame(()=>vrScrollTo(V.cur,false));
   try{window.history.pushState({video:V.vid,vread:1},'')}catch(_){}
@@ -3622,6 +3581,7 @@ window.addEventListener('scroll',()=>{   // header: hide while reading down, sho
   if(Math.abs(d)>8||y<60) vrLastY=y;
 },{passive:true});
 $('vReadBtn').onclick=vrOpen;
+$('vTopTest').onclick=()=>{vPause();vtStart()};
 $('vrBack').onclick=()=>vrClose();
 $('vrSetBtn').onclick=()=>{const h=!$('vrSet').hidden;$('vrSet').hidden=h;$('vrSetBtn').setAttribute('aria-pressed',!h)};
 $('vrTr').onclick=async()=>{
@@ -3639,39 +3599,13 @@ $('vrSz').addEventListener('input',()=>vrSize(+$('vrSz').value));
 $('vrSzM').onclick=()=>vrSize(VR.size-1);$('vrSzP').onclick=()=>vrSize(VR.size+1);
 $('vrBody').addEventListener('click',e=>{
   if(!$('vrSet').hidden){$('vrSet').hidden=true;$('vrSetBtn').setAttribute('aria-pressed','false')}
+  const cp=e.target.closest('[data-rcopy]');if(cp){vCopy(vrText(+cp.dataset.rcopy));return}   // copy icon after a sentence
   if(e.target.closest('[data-tw]')){vPause();return}   // a word: dictionary popup (global handler)
   const r=e.target.closest('[data-ri]');if(!r) return;
   const i=+r.dataset.ri;   // a sentence: hear it from the video (tap again to stop)
   if(vIsPlaying()&&V.loop===i){vPause();return}
   vPlaySingle(i);
 });
-function vChatClose(fromBack){if($('vchat').hidden) return;$('vchat').hidden=true;$('vchatIn').blur();if(!fromBack&&window.history.state&&window.history.state.chat) window.history.back()}
-async function vChatRun(){
-  const c=vChat;if(!c||c.busy) return;
-  c.busy=true;c.err='';vChatRender();
-  try{
-    const ans=await aiChat(VCHAT_SYS,c.msgs.map(m=>({role:m.role,content:m.content})));
-    if(vChat!==c) return;
-    c.msgs.push({role:'assistant',content:ans.trim()||'(no answer)'});
-  }catch(e){if(vChat===c) c.err=e.message}
-  c.busy=false;if(vChat===c) vChatRender();
-}
-$('vchatX').onclick=vChatClose;
-$('vchat').addEventListener('click',e=>{if(e.target===$('vchat')) vChatClose()});
-$('vChatBtn').onclick=()=>{   // reopen the study chat; with none yet, study the current sentence
-  vPause();
-  if(vChat&&vChat.vid===V.vid) vChatOpen();
-  else if(V.sents.length) vStudyAsk(V.cur);
-  else toast('Add the transcript first, then tap ✦ next to a sentence.');
-};
-$('vchatForm').addEventListener('submit',e=>{
-  e.preventDefault();const t=$('vchatIn').value.trim();
-  if(!t||!vChat||vChat.busy) return;
-  if(vChat.err) vChat.err='';
-  vChat.msgs.push({role:'user',content:t});$('vchatIn').value='';$('vchatIn').style.height='';vChatRun();
-});
-$('vchatIn').addEventListener('input',e=>{const t=e.target;t.style.height='';t.style.height=Math.min(120,t.scrollHeight)+'px'});
-$('vchatIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('vchatForm').requestSubmit()}});
 // Leaving the tab or the app pauses the video
 function vPause(){if(V.player&&typeof V.player.pauseVideo==='function'){try{V.player.pauseVideo()}catch(e){}}vStopTracker()}
 // Settings page
@@ -3844,7 +3778,7 @@ function vtStart(){
   if(!V.sents.length){toast('Add the transcript first.');return}
   const p=vtPick();
   if(!p.qs.length){toast('This video has no sentences long enough for a test.');return}
-  vPause();vChatClose();
+  vPause();
   VT=vtNew({kind:'video',mode:'en',vid:V.vid,title:V.title||V.vid,qs:p.qs,t0:Date.now()});
   vtOpenOverlay({video:V.vid});
   if(p.fresh<p.qs.length) toast(p.fresh?`Only ${p.fresh} new sentences left; some come back from earlier tests.`:'All sentences were asked before; starting a new round.',3200);
@@ -5157,7 +5091,7 @@ let sheetOnClose=null;
 function closeSheet(){try{crStop()}catch(_){}$('sheet').hidden=true;$('sheetBody').innerHTML='';try{speechSynthesis.cancel()}catch(e){}const f=sheetOnClose;sheetOnClose=null;if(f) f()}
 $('sheetX').onclick=closeSheet;
 $('sheet').addEventListener('click',e=>{if(e.target===$('sheet')) closeSheet()});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape') return;if(!$('pracSheet').hidden) closePracSheet();else if(!$('pop').hidden) closePop();else if(!$('sheet').hidden) closeSheet();else if(!$('vchat').hidden) vChatClose()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape') return;if(!$('pracSheet').hidden) closePracSheet();else if(!$('pop').hidden) closePop();else if(!$('sheet').hidden) closeSheet()});
 
 // ---------- dict: search ----------
 let dictPane='search',searchResults=[];   // [{q, card} | {q, error}]
@@ -6238,7 +6172,6 @@ window.addEventListener('popstate',e=>{
   if(!$('jlearn').hidden){jlClose(true);return}
   if(!$('pop').hidden){closePop();urlRestore();return}   // sheets and the word popup have no history entry of their own
   if(!$('sheet').hidden){closeSheet();urlRestore();return}
-  if(!$('vchat').hidden){vChatClose(true);return}
   if(!$('vread').hidden){vrClose(true);return}
   routeApply(parseRoute());
 });
