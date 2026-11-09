@@ -558,6 +558,7 @@ button.chip:active{filter:brightness(.92)}
 .storytext > p{transition:background .2s}
 /* story reader controls (play / stop / translate / slash level) and slash reading (끊어읽기) */
 .rctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.svstick{position:sticky;top:-4px;z-index:3;background:var(--bg);display:flex;flex-direction:column;gap:8px;padding:8px 0 10px;margin:-8px 0 -10px;box-shadow:0 8px 8px -8px rgba(0,0,0,.12)}
 .ricon{width:44px;height:44px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--fg);box-shadow:0 3px 0 var(--line);display:inline-grid;place-items:center;padding:0;flex:none;cursor:pointer;transition:transform .06s,box-shadow .06s}
 .ricon:active{transform:translateY(3px);box-shadow:0 0 0 var(--line)}
 .ricon svg{width:22px;height:22px}
@@ -1061,7 +1062,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.53.1</span> · <span class="version-date">2026/11/09</span></p>
+          <p class="note"><span class="version-tag">v2.53.2</span> · <span class="version-date">2026/11/09</span></p>
           <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
@@ -5297,7 +5298,7 @@ function srPaint(s){
   if(pr) pr.style.width=(idx<0||!n?0:(idx+1)/n*100)+'%';
   if(now&&on){
     const sc=$('storyScroll'),r=now.getBoundingClientRect(),sr=sc.getBoundingClientRect();
-    if(r.top<sr.top+60||r.bottom>sr.bottom-40) sc.scrollTo({top:Math.max(0,sc.scrollTop+(r.top-sr.top)-sr.height*.35),behavior:'smooth'});
+    if(r.top<sr.top+90||r.bottom>sr.bottom-40) sc.scrollTo({top:Math.max(0,sc.scrollTop+(r.top-sr.top)-sr.height*.35),behavior:'smooth'});
   }
 }
 // EN chunk, then its Korean (when translation is on), then the pause; reads the settings live
@@ -5391,13 +5392,13 @@ function renderStoryView(s){
       <span class="row"><button class="btn ghost" id="svDelNo" type="button">Cancel</button><button class="btn" style="background:var(--bad);border-color:var(--bad)" id="svDelYes" type="button">Delete</button></span></div>`:''}
     <h2 class="stitle">${esc(s.title)}</h2>
     <div class="note">${esc(fmtDay(s.created))} · ${plural(s.words.length,'study word')} · ${lv==='none'?'tap any word for its entry':'tap a chunk to play from there'}</div>
-    <div class="rctl">
+    <div class="svstick"><div class="rctl">
       <button class="ricon play" id="svRead" type="button" aria-label="Play">${PLAY_ICON}</button>
       <button class="ricon" id="svStop" type="button" aria-label="Stop">${STOP_ICON}</button>
       <button class="ricon${cfg.tr?' on':''}" id="svTr" type="button" aria-label="Translation" aria-pressed="${cfg.tr}">${TR_ICON}</button>
       <label class="lvsel"><select id="svLv" aria-label="Slash reading">${SL_LEVELS.map(l=>`<option value="${l.k}"${l.k===lv?' selected':''}>${esc(l.name)}</option>`).join('')}</select></label>
     </div>
-    <div class="rprog"><i id="svProg"></i></div>
+    <div class="rprog"><i id="svProg"></i></div></div>
     ${lv==='none'&&storyTrMsg?`<div class="msg${storyTrErr?' err':''}">${esc(storyTrMsg)}</div>`:''}
     <div class="card">${body}</div>
     <div class="card">
