@@ -551,8 +551,8 @@ button.chip:active{filter:brightness(.92)}
 
 /* tappable story words */
 .tw{cursor:pointer;border-radius:4px}
-#vSents .tw,#vrDoc .tw{cursor:inherit;transition:background .45s ease .15s}
-#vSents .tw.twhold,#vrDoc .tw.twhold{background:var(--accent-soft)}
+#vSents .tw,#vrDoc .tw,#snBody .snrow .tw{cursor:inherit;transition:background .45s ease .15s}
+#vSents .tw.twhold,#vrDoc .tw.twhold,#snBody .tw.twhold{background:var(--accent-soft)}
 .tw:active{background:var(--accent-soft)}
 /* story read-aloud: the paragraph being read */
 .storytext > p{transition:background .2s}
@@ -1062,7 +1062,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.53.2</span> · <span class="version-date">2026/11/09</span></p>
+          <p class="note"><span class="version-tag">v2.53.3</span> · <span class="version-date">2026/11/09</span></p>
           <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
@@ -1738,6 +1738,8 @@ function makeUtter(text){
 // Cloud Text-to-Speech API on). Audio is cached on the device, so a sentence is paid for once.
 const G_DEFAULT='en-US-Chirp3-HD-Aoede';
 const gOn=()=>voicePref.engine==='google'&&!!settings.translateKey;
+// Sentences and stories (v2.53.3): the Google voice whenever a Google key is set, whatever the engine setting (word sounds keep gOn)
+const gSent=()=>!!settings.translateKey;
 const gVoice=()=>voicePref.gvoice||G_DEFAULT;
 const gAudio=new Audio();gAudio.preload='auto';
 let gUnlocked=false,gPlayToken=0,gLastError='';
@@ -1790,7 +1792,7 @@ async function gSay(text,voice,rate){
 }
 // Example sentences: Google voice when chosen, the device voice otherwise (or if Google fails)
 function sayExample(text){
-  if(!gOn()) return speak(text);
+  if(!gSent()) return speak(text);
   gPrime();stopReading();try{speechSynthesis.cancel()}catch(e){}
   gSay(text).then(()=>{gLastError=''}).catch(e=>{gLastError=e.message;speak(text)});
   return true;
@@ -1832,14 +1834,14 @@ function stopReading(){
   markReading();
 }
 function startReading(s,ui,from){
-  if(!gOn()&&!('speechSynthesis' in window)) return;
+  if(!gSent()&&!('speechSynthesis' in window)) return;
   if(reader) stopReading();
   readUI=ui||READ_UI;markReading.lastP=-1;
-  if(gOn()) gPrime();
+  if(gSent()) gPrime();
   stopReading();try{speechSynthesis.cancel()}catch(e){}gStop();
   const parts=[];
   storyParas(s).forEach((p,pi)=>splitSentences(p).forEach(t=>parts.push({p:pi,t})));
-  reader={id:s.id,parts,i:Math.min(from||0,Math.max(0,parts.length-1)),token:Math.random(),google:gOn()};
+  reader={id:s.id,parts,i:Math.min(from||0,Math.max(0,parts.length-1)),token:Math.random(),google:gSent()};
   readNext(reader.token);
 }
 function readNext(token){
@@ -5064,8 +5066,8 @@ document.addEventListener('click',e=>{
   if(!t||t.closest(TW_HOLD)) return;   // video sentences and reading mode: long press only (twHold)
   twOpen(t.dataset.tw);
 });
-// Video sentences and reading mode (v2.53.1): hold a word ~0.6 s to open the dictionary, so a tap can play the sentence
-const TW_HOLD='#vSents,#vrDoc';let twLongAt=0;
+// Video sentences, reading mode and Writing → Sentences (v2.53.1/v2.53.3): hold a word ~0.6 s to open the dictionary, so a tap can play the sentence
+const TW_HOLD='#vSents,#vrDoc,#snBody .snrow';let twLongAt=0;
 (()=>{
   let tm=0,x0=0,y0=0,el=null;
   const cancel=()=>{clearTimeout(tm);tm=0;if(el) el.classList.remove('twhold');el=null};
@@ -5284,7 +5286,7 @@ async function loadChunks(s){
   if(storyView===s.id&&curTab==='story') renderStoryView(s);
 }
 function srSay(text,ko,rate){
-  if(gOn()) return gSay(text,ko?'ko-KR-Neural2-A':undefined,rate).catch(e=>{gLastError=e.message;return lpDevice(text,ko,rate)});
+  if(gSent()) return gSay(text,ko?'ko-KR-Neural2-A':undefined,rate).catch(e=>{gLastError=e.message;return lpDevice(text,ko,rate)});
   return lpDevice(text,ko,rate);
 }
 const srWait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -5304,7 +5306,7 @@ function srPaint(s){
 // EN chunk, then its Korean (when translation is on), then the pause; reads the settings live
 async function slashPlay(s,from){
   const lv=slashCfg().level,list=slashList(s,lv);
-  if(gOn()) gPrime();
+  if(gSent()) gPrime();
   stopReading();try{speechSynthesis.cancel()}catch(e){}gStop();
   const token=Math.random();
   reader={id:s.id,slash:true,token,parts:[],i:0};
