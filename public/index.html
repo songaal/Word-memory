@@ -1066,7 +1066,7 @@ html.vrd .vrbody{overflow:visible;min-height:0}
         <div class="card">
           <span class="label">About</span>
           <p class="note">Dictionary: Merriam-Webster Learner's Dictionary and Thesaurus. Words without dictionary audio are read by your browser's voice.</p>
-          <p class="note"><span class="version-tag">v2.54.2</span> · <span class="version-date">2026/11/09</span></p>
+          <p class="note"><span class="version-tag">v2.54.3</span> · <span class="version-date">2026/11/13</span></p>
           <p class="note" id="urlDbg" data-noi18n style="font-size:11px;word-break:break-all"></p>
         </div>
       </div></div>
@@ -1669,6 +1669,7 @@ const tapCache={};   // words looked up by tapping them in a story: word -> card
 function findCard(word){
   return cards.find(c=>c.word===word)
     ||(tapCache[word]||null)
+    ||Object.values(tapCache).find(c=>c&&c.word===word)   // a tapped form ("stores") is cached under that form but its card is the headword ("store") (v2.54.3)
     ||searchResults.find(r=>r.card&&r.card.word===word)?.card
     ||stories.map(s=>s.entries&&s.entries[word]).find(Boolean)
     ||stories.flatMap(s=>Object.values(s.entries||{})).find(c=>c&&c.word===word);
